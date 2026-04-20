@@ -116,6 +116,7 @@ export const submissions = pgTable('submissions', {
   githubLink: text('github_link').notNull(),
   note: text('note'),
   status: submissionStatusEnum('status').default('pending').notNull(),
+  rating: integer('rating'), // 1-5 scale
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

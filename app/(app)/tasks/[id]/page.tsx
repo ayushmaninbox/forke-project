@@ -1,7 +1,10 @@
 import React from 'react'
 import { auth } from '@/auth'
 import { getTaskById, getLatestRevisionRequest } from '@/lib/db/queries/tasks'
-import { getRequiredLevel } from '@/lib/utils/tasks'
+import { 
+  getLevelFromXp, 
+  getRequiredLevelForTask 
+} from '@/lib/utils/tasks'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ClaimButton from '@/components/tasks/ClaimButton'
@@ -36,8 +39,10 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const isClaimedByMe = task.claimantId === currentUser?.id
   const isClaimedByOther = task.status !== 'open' && !isClaimedByMe
   const isDeveloper = currentUser?.role === 'developer'
-  const requiredLevel = getRequiredLevel(task.budget)
-  const isLevelLocked = isDeveloper && (currentUser?.level || 1) < requiredLevel
+  
+  const userLevel = getLevelFromXp(currentUser?.xp || 0)
+  const requiredLevel = getRequiredLevelForTask(task.skillTags)
+  const isLevelLocked = isDeveloper && userLevel < requiredLevel
   const revisionRequest = isClaimedByMe && task.status === 'claimed' ? await getLatestRevisionRequest(task.id) : null
 
   return (

@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { auth } from '@/auth'
 import { getOpenTasks } from '@/lib/db/queries/tasks'
+import { getLevelFromXp } from '@/lib/utils/tasks'
 import TaskFilters from '@/components/tasks/TaskFilters'
 import TaskFeed from '@/components/tasks/TaskFeed'
 import { Metadata } from 'next'
@@ -16,7 +17,8 @@ export default async function TasksPage({
   searchParams: Promise<{ tag?: string | string[]; maxBudget?: string }>
 }) {
   const session = await auth()
-  const user = session?.user as { id: string; level: number } | undefined
+  const user = session?.user as { id: string; xp: number } | undefined
+  const userLevel = getLevelFromXp(user?.xp || 0)
   const params = await searchParams
 
   const tags = typeof params.tag === 'string' ? [params.tag] : params.tag
@@ -39,7 +41,7 @@ export default async function TasksPage({
         <TaskFilters />
 
         <Suspense fallback={<TaskFeedSkeleton />}>
-          <TaskFeed tasks={tasks} userLevel={user?.level || 1} />
+          <TaskFeed tasks={tasks} userLevel={userLevel} />
         </Suspense>
       </div>
     </div>

@@ -48,11 +48,11 @@ export default function SubmitWorkForm({ taskId }: SubmitWorkFormProps) {
           <div className="w-full p-4 bg-white/50 rounded-2xl border border-green-100/50 space-y-3">
             <div className="flex items-center justify-between text-[10px] font-bold text-green-600 uppercase tracking-widest">
               <span>Your Submission</span>
-              <span>{new Date(state.submittedAt).toLocaleTimeString()}</span>
+              <span>{state.submittedAt ? new Date(state.submittedAt).toLocaleTimeString() : ''}</span>
             </div>
             <div className="flex items-center gap-3 text-green-900 font-mono text-sm break-all">
               <GitPullRequest className="w-4 h-4 shrink-0" />
-              {state.githubLink}
+              {state.githubLink || ''}
             </div>
           </div>
         </div>

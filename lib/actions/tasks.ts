@@ -5,10 +5,14 @@ import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, count } from 'drizzle-orm'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { getRequiredLevel } from '@/lib/utils/tasks'
+import { 
+  getRequiredLevelForTask, 
+  calculateBaseXp, 
+  getLevelFromXp 
+} from '@/lib/utils/tasks'
 import { z } from 'zod'
 
 export type CreateTaskState = {
@@ -104,9 +108,11 @@ export async function claimTask(taskId: string) {
     throw new Error('This task has already been claimed.')
   }
 
-  const requiredLevel = getRequiredLevel(taskResult.task.budget)
-  if ((user.level || 1) < requiredLevel) {
-    throw new Error(`Insufficient Level: You need to be LVL ${requiredLevel} to claim this task.`)
+  const requiredLevel = getRequiredLevelForTask(taskResult.task.skillTags)
+  const userLevel = getLevelFromXp(user.xp || 0)
+
+  if (userLevel < requiredLevel) {
+    throw new Error(`Insufficient Level: You need to be LVL ${requiredLevel} to claim this task. This task requires skills: ${taskResult.task.skillTags?.join(', ')}`)
   }
 
   // Perform atomic update to handle race conditions
@@ -176,12 +182,16 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
   return { success: true, submittedAt: new Date(), githubLink }
 }
 
-export async function approveSubmission(taskId: string) {
+export async function approveSubmission(taskId: string, rating: number) {
   const session = await auth()
   const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
 
   if (!user || user.role !== 'client') {
     throw new Error('Unauthorized.')
+  }
+
+  if (rating < 1 || rating > 5) {
+    throw new Error('Invalid rating. Must be between 1 and 5.')
   }
 
   const taskResult = await getTaskById(taskId)
@@ -197,25 +207,60 @@ export async function approveSubmission(taskId: string) {
 
   try {
     await db.transaction(async (tx) => {
-      await tx
+      // 1. Update submission status and rating
+      const subResult = await tx
         .update(submissions)
-        .set({ status: 'approved' })
+        .set({ status: 'approved', rating })
         .where(and(eq(submissions.taskId, taskId), eq(submissions.status, 'pending')))
+        .returning()
 
+      if (subResult.length === 0) throw new Error('Submission not found.')
+      const submission = subResult[0]
+
+      // 2. Update task status
       await tx
         .update(tasks)
         .set({ status: 'approved' })
         .where(eq(tasks.id, taskId))
 
+      // 3. Calculate XP
+      const baseXp = calculateBaseXp(taskResult.task.budget)
+      
+      // Speed Bonus (+25)
+      let speedBonus = 0
+      if (taskResult.task.deadline) {
+        const totalDuration = taskResult.task.deadline.getTime() - taskResult.task.createdAt.getTime()
+        const timeElapsed = submission.createdAt.getTime() - taskResult.task.createdAt.getTime()
+        if (timeElapsed < totalDuration / 2) {
+          speedBonus = 25
+        }
+      }
+
+      // Rating Bonus
+      let ratingBonus = 0
+      if (rating === 5) ratingBonus = 30
+      else if (rating === 4) ratingBonus = 10
+
+      // Revision Penalty (-20)
+      const revisions = await tx
+        .select({ value: count() })
+        .from(revisionRequests)
+        .where(eq(revisionRequests.taskId, taskId))
+      
+      const revisionPenalty = revisions[0].value > 0 ? -20 : 0
+
+      const totalXpAwarded = Math.max(0, baseXp + speedBonus + ratingBonus + revisionPenalty)
+
+      // 4. Update user XP and Level
       const devResult = await tx.select().from(users).where(eq(users.id, developerId)).limit(1)
       if (devResult.length > 0) {
         const dev = devResult[0]
-        const newXp = dev.xp + 100
-        let newLevel = dev.level
-        if (newXp >= dev.level * 500) {
-          newLevel += 1
-        }
-        await tx.update(users).set({ xp: newXp, level: newLevel }).where(eq(users.id, developerId))
+        const newTotalXp = dev.xp + totalXpAwarded
+        const newLevel = getLevelFromXp(newTotalXp)
+        
+        await tx.update(users)
+          .set({ xp: newTotalXp, level: newLevel })
+          .where(eq(users.id, developerId))
       }
     })
   } catch (error: unknown) {

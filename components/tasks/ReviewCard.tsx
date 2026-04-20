@@ -26,13 +26,14 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
   const [isPending, startTransition] = useTransition()
   const [showRevisionInput, setShowRevisionInput] = useState(false)
   const [revisionNote, setRevisionNote] = useState('')
+  const [rating, setRating] = useState(5)
 
   const handleApprove = async () => {
-    if (!confirm('Are you sure you want to approve this work? This will mark the task as completed.')) return
+    if (!confirm(`Are you sure you want to approve this work with a ${rating}-star rating?`)) return
     
     startTransition(async () => {
       try {
-        await approveSubmission(task.id)
+        await approveSubmission(task.id, rating)
         router.refresh()
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Failed to approve submission.'
@@ -139,24 +140,50 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
            </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Button 
-            onClick={handleApprove} 
-            disabled={isPending}
-            className="h-14 rounded-2xl shadow-lg shadow-accent/10"
-          >
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            APPROVE WORK
-          </Button>
-          <Button 
-            variant="ghost" 
-            onClick={() => setShowRevisionInput(true)}
-            disabled={isPending}
-            className="h-14 rounded-2xl border-2 border-[var(--color-border)] hover:bg-amber-50/50 hover:text-amber-600 hover:border-amber-100 transition-all"
-          >
-            <GitPullRequest className="w-5 h-5 mr-2" />
-            REQUEST REVISION
-          </Button>
+        <div className="space-y-8">
+          <div className="p-6 bg-[var(--color-bg-surface)] rounded-[2rem] border border-[var(--color-border)] space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Quality Rating</label>
+              <span className="text-[10px] font-bold text-accent uppercase tracking-widest">
+                {rating === 5 ? 'Perfect' : rating === 4 ? 'Great' : rating === 3 ? 'Good' : rating === 2 ? 'Fair' : 'Poor'}
+              </span>
+            </div>
+            <div className="flex items-center justify-center gap-4">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setRating(s)}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                    rating >= s 
+                      ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-110' 
+                      : 'bg-white text-muted hover:bg-accent-light hover:text-accent'
+                  }`}
+                >
+                  <span className="text-xl font-bold">★</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Button 
+              onClick={handleApprove} 
+              disabled={isPending}
+              className="h-14 rounded-2xl shadow-lg shadow-accent/10"
+            >
+              <CheckCircle2 className="w-5 h-5 mr-2" />
+              APPROVE WORK
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowRevisionInput(true)}
+              disabled={isPending}
+              className="h-14 rounded-2xl border-2 border-[var(--color-border)] hover:bg-amber-50/50 hover:text-amber-600 hover:border-amber-100 transition-all"
+            >
+              <GitPullRequest className="w-5 h-5 mr-2" />
+              REQUEST REVISION
+            </Button>
+          </div>
         </div>
       )}
     </div>

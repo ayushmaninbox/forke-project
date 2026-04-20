@@ -2,8 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { getRequiredLevel } from '@/lib/utils/tasks'
 import { Lock, Clock, User, ChevronRight } from 'lucide-react'
+import { getRequiredLevelForTask } from '@/lib/utils/tasks'
 import { cn } from '@/lib/utils/cn'
 
 interface TaskCardProps {
@@ -35,7 +35,7 @@ function timeAgo(date: Date) {
 }
 
 export default function TaskCard({ task, clientName, userLevel }: TaskCardProps) {
-  const requiredLevel = getRequiredLevel(task.budget)
+  const requiredLevel = getRequiredLevelForTask(task.skillTags)
   const isLocked = userLevel < requiredLevel
   const budgetInRupees = Math.floor(task.budget / 100)
 
