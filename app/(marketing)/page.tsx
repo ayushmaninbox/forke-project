@@ -1,22 +1,25 @@
-import { Button } from '@/components/ui/Button'
+import Navbar from '@/components/shared/Navbar'
+import Hero from '@/components/shared/Hero'
+import LiveTaskTicker from '@/components/shared/LiveTaskTicker'
+import HowItWorks from '@/components/shared/HowItWorks'
+import LevelSystem from '@/components/shared/LevelSystem'
+import Stats from '@/components/shared/Stats'
+import CTA from '@/components/shared/CTA'
+import Footer from '@/components/shared/Footer'
 
-export default function Home() {
+export default function MarketingPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-      <h1 className="font-serif text-5xl text-[var(--color-text-primary)]">
-        Fork<span className="text-accent">e</span>
-      </h1>
-      <p className="font-sans text-muted text-base">scaffold ready</p>
-      
-      <div className="flex gap-4">
-        <Button variant="primary">Claim Task</Button>
-        <Button variant="secondary">Browse Work</Button>
-        <Button variant="ghost">Learn More</Button>
-      </div>
-
-      <code className="font-mono text-sm text-accent bg-accent-light px-3 py-1 rounded">
-        forke.dev
-      </code>
-    </main>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow">
+        <Hero />
+        <LiveTaskTicker />
+        <HowItWorks />
+        <LevelSystem />
+        <Stats />
+        <CTA />
+      </main>
+      <Footer />
+    </div>
   )
 }

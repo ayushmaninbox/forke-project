@@ -35,6 +35,7 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash'),
   role: userRoleEnum('role').default('developer').notNull(),
   level: integer('level').default(1).notNull(),
+  xp: integer('xp').default(0).notNull(),
   githubUrl: text('github_url'),
   bio: text('bio'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -126,5 +127,14 @@ export const escrow = pgTable('escrow', {
     .notNull(),
   amount: integer('amount').notNull(),
   status: escrowStatusEnum('status').default('held').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const revisionRequests = pgTable('revision_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  taskId: uuid('task_id')
+    .references(() => tasks.id)
+    .notNull(),
+  clientNote: text('client_note').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

@@ -1,7 +1,27 @@
-export default function AppLayout({
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
+import Sidebar from '@/components/shared/Sidebar'
+import { DashboardProvider } from '@/components/dashboard/DashboardContext'
+
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  const session = await auth()
+
+  if (!session) {
+    redirect('/')
+  }
+
+  return (
+    <DashboardProvider>
+      <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden">
+        <Sidebar user={{ name: session.user?.name, image: session.user?.image, level: (session.user as { level?: number })?.level }} />
+        <main className="flex-grow flex flex-col min-w-0 overflow-hidden">
+          {children}
+        </main>
+      </div>
+    </DashboardProvider>
+  )
 }

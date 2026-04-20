@@ -6,12 +6,12 @@ export const geistSans = GeistSans
 export const instrumentSerif = Instrument_Serif({
   weight: '400',
   subsets: ['latin'],
-  variable: '--font-serif',
+  variable: '--font-instrument-serif',
   display: 'swap',
 })
 
 export const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-mono',
+  variable: '--font-jetbrains-mono',
   display: 'swap',
 })

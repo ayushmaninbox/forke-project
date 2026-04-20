@@ -1,25 +1,49 @@
 @import "tailwindcss";
 
-:root {
-  /* Ember colour palette — approved April 2026 */
-  --color-accent:        #D97706;
-  --color-accent-hover:  #B45309;
-  --color-accent-light:  #FEF3C7;
-  --color-accent-text:   #92400E;
-  --color-bg:            #FFFFFF;
-  --color-bg-surface:    #FAFAFA;
-  --color-text-primary:  #111111;
-  --color-text-muted:    #6B7280;
-  --color-border:        #E5E7EB;
+@theme {
+  /* Ember colour palette mapped to Tailwind 4 theme */
+  --color-accent: #D97706;
+  --color-accent-hover: #B45309;
+  --color-accent-light: #FEF3C7;
+  --color-accent-text: #92400E;
+  --color-surface: #FAFAFA;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
 
-  /* Font variables */
-  --font-sans:  var(--geist-font, sans-serif);
-  --font-serif: var(--font-serif);
-  --font-mono:  var(--font-mono);
+  /* Font mapping for Next.js Fonts */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  /* CSS Variables for direct access */
+  --color-accent: #D97706;
+  --color-accent-hover: #B45309;
+  --color-accent-light: #FEF3C7;
+  --color-accent-text: #92400E;
+  --color-bg: #FFFFFF;
+  --color-bg-surface: #FAFAFA;
+  --color-text-primary: #111111;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker 60s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
 }
