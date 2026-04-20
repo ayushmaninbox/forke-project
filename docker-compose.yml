@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: forke_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: forke_dev
+      POSTGRES_USER: forke
+      POSTGRES_PASSWORD: forke_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
