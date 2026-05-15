@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { 
   LayoutDashboard, 
   PlusCircle,
@@ -16,8 +17,10 @@ import {
   X
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
-import { signOutAction } from '@/lib/auth-actions'
-import { useDashboard } from '../dashboard/DashboardContext'
+import { signOut } from 'next-auth/react'
+import { useDashboard } from '@/components/dashboard/DashboardContext'
+import { XpBar } from '@/components/ui/XpBar'
+import { getLevelTitle } from '@/lib/utils/xp'
 
 const NAV_LINKS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -34,6 +37,8 @@ interface SidebarProps {
     email?: string | null
     image?: string | null
     level?: number
+    xp?: number
+    currentStreak?: number
   }
 }
 
@@ -114,44 +119,85 @@ export default function Sidebar({ user }: SidebarProps) {
         </nav>
 
         {/* Bottom: User Card & Toggle */}
-        <div className="p-3 border-t border-[var(--color-border)] space-y-3">
-          <div className={cn("flex flex-col gap-3", isCollapsed ? "md:items-center" : "items-stretch")}>
-            {/* User Info */}
-            <div className={cn(
-              "flex items-center gap-3 px-2 py-1 transition-all duration-300 overflow-hidden",
-              isCollapsed ? "md:opacity-0 md:h-0 md:p-0" : "opacity-100 h-auto"
-            )}>
-              <div className="flex-grow min-w-0">
-                <p className="text-sm font-bold text-[var(--color-text-primary)] truncate">{user.name}</p>
-                <span className="inline-block mt-1 font-mono text-[10px] font-bold text-accent border border-accent rounded px-1.5 py-0.5">
-                  LVL {user.level || 1}
+        <div className="p-3 border-t border-[var(--color-border)]">
+          <div className="flex items-center gap-2 mb-2 min-h-[32px]">
+            {/* Avatar */}
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-accent-light flex items-center justify-center border border-accent/10">
+              {user.image ? (
+                <Image src={user.image} alt={user.name || ''} width={32} height={32} />
+              ) : (
+                <span className="text-xs font-mono text-accent font-bold">
+                  {user.name?.[0]?.toUpperCase()}
                 </span>
+              )}
+            </div>
+          
+            {/* Name + level (only show when expanded) */}
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                <p className="text-sm font-bold text-[var(--color-text-primary)] truncate leading-none mb-1">
+                  {user.name?.split(' ')[0]}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-accent text-white font-bold leading-none">
+                    LVL {user.level}
+                  </span>
+                  <span className="text-[10px] text-muted truncate font-medium uppercase tracking-tight">
+                    {getLevelTitle(user.level || 1)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* XP bar — only show in expanded sidebar */}
+          {!isCollapsed && (
+            <div className="mb-3 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150">
+              <XpBar totalXp={user.xp ?? 0} compact />
+            </div>
+          )}
+          
+          {/* Streak badge — show if streak > 1 */}
+          {!isCollapsed && (user.currentStreak ?? 0) > 1 && (
+            <div className="flex items-center justify-between mb-4 px-1 animate-in fade-in duration-700 delay-300">
+              <span className="text-[10px] text-muted font-bold uppercase tracking-tighter">
+                {user.currentStreak} day streak
+              </span>
+              {/* Flame dots — one per milestone hit */}
+              <div className="flex gap-1">
+                {[2, 5, 7, 14, 30].map((m) => (
+                  <div
+                    key={m}
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full ring-1 ring-offset-0',
+                      (user.currentStreak ?? 0) >= m
+                        ? 'bg-accent ring-accent/30'
+                        : 'bg-border ring-transparent'
+                    )}
+                  />
+                ))}
               </div>
             </div>
-
-            {/* Actions */}
+          )}
+          
+          <div className="flex items-center justify-between gap-2">
             <button 
-              onClick={() => signOutAction()}
+              onClick={() => signOut({ callbackUrl: '/' })}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 text-muted hover:text-red-600 hover:bg-red-50 rounded-md transition-colors",
-                isCollapsed ? "md:justify-center" : "justify-start"
+                "flex items-center gap-3 px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted hover:text-red-500 transition-colors",
+                isCollapsed ? "justify-center w-full" : "justify-start"
               )}
             >
-              <LogOut className="w-5 h-5" />
-              <span className={cn(
-                "font-medium transition-opacity duration-300",
-                isCollapsed ? "md:opacity-0 md:w-0" : "opacity-100"
-              )}>
-                Sign Out
-              </span>
+              <LogOut className="w-3.5 h-3.5" />
+              {!isCollapsed && <span>Sign Out</span>}
             </button>
 
             {/* Collapse Toggle (Desktop only) */}
             <button 
               onClick={toggleSidebar}
-              className="hidden md:flex items-center justify-center p-2 text-muted hover:bg-[var(--color-bg-surface)] rounded-md transition-colors"
+              className="hidden md:flex items-center justify-center p-1.5 text-muted hover:bg-[var(--color-bg-surface)] rounded-md transition-colors"
             >
-              {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+              {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </button>
           </div>
         </div>

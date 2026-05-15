@@ -13,7 +13,6 @@ export default function MarketingPage() {
       <Navbar />
       <main className="flex-grow">
         <Hero />
-        <LiveTaskTicker />
         <HowItWorks />
         <LevelSystem />
         <Stats />

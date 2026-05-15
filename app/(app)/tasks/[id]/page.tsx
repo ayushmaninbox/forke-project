@@ -3,8 +3,8 @@ import { auth } from '@/auth'
 import { getTaskById, getLatestRevisionRequest } from '@/lib/db/queries/tasks'
 import { 
   getLevelFromXp, 
-  getRequiredLevelForTask 
-} from '@/lib/utils/tasks'
+  getRequiredLevel 
+} from '@/lib/utils/xp'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import ClaimButton from '@/components/tasks/ClaimButton'
@@ -41,7 +41,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const isDeveloper = currentUser?.role === 'developer'
   
   const userLevel = getLevelFromXp(currentUser?.xp || 0)
-  const requiredLevel = getRequiredLevelForTask(task.skillTags)
+  const requiredLevel = getRequiredLevel(task.skillTags ?? [])
   const isLevelLocked = isDeveloper && userLevel < requiredLevel
   const revisionRequest = isClaimedByMe && task.status === 'claimed' ? await getLatestRevisionRequest(task.id) : null
 

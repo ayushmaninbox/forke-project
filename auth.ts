@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { users, accounts, sessions, verificationTokens } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { processLoginStreak } from '@/lib/actions/auth-actions'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -22,11 +23,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      if (user?.id) {
+        try {
+          await processLoginStreak(user.id)
+        } catch (error) {
+          console.error('Error processing login streak:', error)
+          // Don't block sign-in if streak processing fails
+        }
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         // Initial sign in
-        let role = (user as { role?: string }).role
-        const level = (user as { level?: number }).level
+        let role = user.role
+        const level = user.level
+        const xp = user.xp
+        const currentStreak = user.currentStreak
 
         try {
           // Read the forke_role cookie to ensure the role is correct on the very first sign-in
@@ -48,16 +62,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id
         token.role = role
         token.level = level
+        token.xp = xp
+        token.currentStreak = currentStreak
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        // @ts-expect-error - role added to session user
-        session.user.role = token.role as string
-        // @ts-expect-error - level added to session user
+        session.user.role = token.role as 'developer' | 'client'
         session.user.level = token.level as number
+        session.user.xp = token.xp as number
+        session.user.currentStreak = token.currentStreak as number
       }
       return session
     },

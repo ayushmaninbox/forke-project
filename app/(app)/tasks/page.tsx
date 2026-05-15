@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react'
 import { auth } from '@/auth'
 import { getOpenTasks } from '@/lib/db/queries/tasks'
-import { getLevelFromXp } from '@/lib/utils/tasks'
+import { getLevelFromXp } from '@/lib/utils/xp'
 import TaskFilters from '@/components/tasks/TaskFilters'
 import TaskFeed from '@/components/tasks/TaskFeed'
 import { Metadata } from 'next'

@@ -5,14 +5,15 @@ import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { and, eq, count } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
 import { 
-  getRequiredLevelForTask, 
-  calculateBaseXp, 
+  getRequiredLevel, 
+  calculateXpAward, 
   getLevelFromXp 
-} from '@/lib/utils/tasks'
+} from '@/lib/utils/xp'
+import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
 
 export type CreateTaskState = {
@@ -108,11 +109,12 @@ export async function claimTask(taskId: string) {
     throw new Error('This task has already been claimed.')
   }
 
-  const requiredLevel = getRequiredLevelForTask(taskResult.task.skillTags)
-  const userLevel = getLevelFromXp(user.xp || 0)
+  const developer = await db.query.users.findFirst({ where: eq(users.id, user.id) })
+  const developerLevel = getLevelFromXp(developer?.xp ?? 0)
+  const requiredLevel = getRequiredLevel(taskResult.task.skillTags ?? [])
 
-  if (userLevel < requiredLevel) {
-    throw new Error(`Insufficient Level: You need to be LVL ${requiredLevel} to claim this task. This task requires skills: ${taskResult.task.skillTags?.join(', ')}`)
+  if (developerLevel < requiredLevel) {
+    throw new Error(`This task requires LVL ${requiredLevel}. You are LVL ${developerLevel}.`)
   }
 
   // Perform atomic update to handle race conditions
@@ -128,6 +130,12 @@ export async function claimTask(taskId: string) {
   if (updated.length === 0) {
     throw new Error('Task was just claimed by someone else! Try another one.')
   }
+
+  // Award small XP for claiming
+  const newXp = (developer?.xp ?? 0) + XP_CLAIM_TASK
+  await db.update(users)
+    .set({ xp: newXp, level: getLevelFromXp(newXp) })
+    .where(eq(users.id, user.id))
 
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
@@ -206,7 +214,7 @@ export async function approveSubmission(taskId: string, rating: number) {
   const developerId = taskResult.task.claimantId!
 
   try {
-    await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // 1. Update submission status and rating
       const subResult = await tx
         .update(submissions)
@@ -224,53 +232,45 @@ export async function approveSubmission(taskId: string, rating: number) {
         .where(eq(tasks.id, taskId))
 
       // 3. Calculate XP
-      const baseXp = calculateBaseXp(taskResult.task.budget)
-      
-      // Speed Bonus (+25)
-      let speedBonus = 0
-      if (taskResult.task.deadline) {
-        const totalDuration = taskResult.task.deadline.getTime() - taskResult.task.createdAt.getTime()
-        const timeElapsed = submission.createdAt.getTime() - taskResult.task.createdAt.getTime()
-        if (timeElapsed < totalDuration / 2) {
-          speedBonus = 25
-        }
-      }
+      const revisionRequest = await tx.query.revisionRequests.findFirst({
+        where: eq(revisionRequests.taskId, taskId),
+      })
 
-      // Rating Bonus
-      let ratingBonus = 0
-      if (rating === 5) ratingBonus = 30
-      else if (rating === 4) ratingBonus = 10
-
-      // Revision Penalty (-20)
-      const revisions = await tx
-        .select({ value: count() })
-        .from(revisionRequests)
-        .where(eq(revisionRequests.taskId, taskId))
-      
-      const revisionPenalty = revisions[0].value > 0 ? -20 : 0
-
-      const totalXpAwarded = Math.max(0, baseXp + speedBonus + ratingBonus + revisionPenalty)
+      const totalXpAwarded = calculateXpAward({
+        budgetPaise: taskResult.task.budget,
+        taskCreatedAt: taskResult.task.createdAt,
+        submittedAt: submission.createdAt,
+        deadline: taskResult.task.deadline ?? null,
+        rating,
+        hadRevision: !!revisionRequest,
+      })
 
       // 4. Update user XP and Level
       const devResult = await tx.select().from(users).where(eq(users.id, developerId)).limit(1)
       if (devResult.length > 0) {
         const dev = devResult[0]
+        const oldLevel = getLevelFromXp(dev.xp)
         const newTotalXp = dev.xp + totalXpAwarded
         const newLevel = getLevelFromXp(newTotalXp)
+        const leveledUp = newLevel > oldLevel
         
         await tx.update(users)
           .set({ xp: newTotalXp, level: newLevel })
           .where(eq(users.id, developerId))
+
+        return { leveledUp, newLevel }
       }
+      return { leveledUp: false, newLevel: 1 }
     })
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/tasks/${taskId}`)
+    return result
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to approve submission.'
     console.error('Approval Error:', error)
     throw new Error(message)
   }
-
-  revalidatePath('/dashboard')
-  revalidatePath(`/tasks/${taskId}`)
 }
 
 export async function requestRevision(taskId: string, revisionNote: string) {

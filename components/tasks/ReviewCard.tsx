@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, GitPullRequest, ExternalLink, MessageCircle, Clock, User } from 'lucide-react'
 
+import { cn } from '@/lib/utils/cn'
+import { LevelUpModal } from '@/components/ui/LevelUpModal'
+
 interface ReviewCardProps {
   task: {
     id: string
@@ -26,15 +29,21 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
   const [isPending, startTransition] = useTransition()
   const [showRevisionInput, setShowRevisionInput] = useState(false)
   const [revisionNote, setRevisionNote] = useState('')
-  const [rating, setRating] = useState(5)
+  const [rating, setRating] = useState<number | null>(null)
+  const [hovered, setHovered] = useState<number | null>(null)
+  const [newLevelInfo, setNewLevelInfo] = useState<number | null>(null)
 
-  const handleApprove = async () => {
-    if (!confirm(`Are you sure you want to approve this work with a ${rating}-star rating?`)) return
+  const handleApprove = async (selectedRating: number) => {
+    if (!confirm(`Are you sure you want to approve this work with a ${selectedRating}-star rating?`)) return
     
     startTransition(async () => {
       try {
-        await approveSubmission(task.id, rating)
-        router.refresh()
+        const result = await approveSubmission(task.id, selectedRating)
+        if (result && result.leveledUp) {
+          setNewLevelInfo(result.newLevel)
+        } else {
+          router.refresh()
+        }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Failed to approve submission.'
         alert(message)
@@ -144,22 +153,34 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
           <div className="p-6 bg-[var(--color-bg-surface)] rounded-[2rem] border border-[var(--color-border)] space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Quality Rating</label>
-              <span className="text-[10px] font-bold text-accent uppercase tracking-widest">
-                {rating === 5 ? 'Perfect' : rating === 4 ? 'Great' : rating === 3 ? 'Good' : rating === 2 ? 'Fair' : 'Poor'}
-              </span>
+              {rating && (
+                <span className="text-[10px] font-bold text-accent uppercase tracking-widest animate-in fade-in slide-in-from-right-1">
+                  {['', 'Needs work', 'Below average', 'Good', 'Great', 'Outstanding'][rating]}
+                </span>
+              )}
             </div>
-            <div className="flex items-center justify-center gap-4">
-              {[1, 2, 3, 4, 5].map((s) => (
+            <div className="flex items-center justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
-                  key={s}
-                  onClick={() => setRating(s)}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                    rating >= s 
-                      ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-110' 
-                      : 'bg-white text-muted hover:bg-accent-light hover:text-accent'
-                  }`}
+                  key={star}
+                  type="button"
+                  onMouseEnter={() => setHovered(star)}
+                  onMouseLeave={() => setHovered(null)}
+                  onClick={() => setRating(star)}
+                  className="p-1 transition-transform hover:scale-125 active:scale-95 duration-200"
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                 >
-                  <span className="text-xl font-bold">★</span>
+                  <svg
+                    width="40" height="40" viewBox="0 0 24 24"
+                    className="transition-colors duration-300"
+                    fill={(hovered ?? rating ?? 0) >= star ? '#D97706' : 'none'}
+                    stroke={(hovered ?? rating ?? 0) >= star ? '#D97706' : '#E5E7EB'}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
                 </button>
               ))}
             </div>
@@ -167,18 +188,23 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button 
-              onClick={handleApprove} 
-              disabled={isPending}
-              className="h-14 rounded-2xl shadow-lg shadow-accent/10"
+              onClick={() => handleApprove(rating!)} 
+              disabled={isPending || !rating}
+              className={cn(
+                "h-14 rounded-2xl shadow-lg transition-all",
+                rating 
+                  ? "bg-accent hover:bg-accent/90 shadow-accent/20" 
+                  : "bg-border text-muted cursor-not-allowed shadow-none"
+              )}
             >
               <CheckCircle2 className="w-5 h-5 mr-2" />
-              APPROVE WORK
+              {rating ? 'APPROVE WORK' : 'RATE TO APPROVE'}
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => setShowRevisionInput(true)}
               disabled={isPending}
-              className="h-14 rounded-2xl border-2 border-[var(--color-border)] hover:bg-amber-50/50 hover:text-amber-600 hover:border-amber-100 transition-all"
+              className="h-14 rounded-2xl border-2 border-[var(--color-border)] hover:bg-amber-50/50 hover:text-amber-600 hover:border-amber-100 transition-all font-bold"
             >
               <GitPullRequest className="w-5 h-5 mr-2" />
               REQUEST REVISION
@@ -186,6 +212,11 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
           </div>
         </div>
       )}
+
+      <LevelUpModal 
+        newLevel={newLevelInfo} 
+        onClose={() => setNewLevelInfo(null)} 
+      />
     </div>
   )
 }

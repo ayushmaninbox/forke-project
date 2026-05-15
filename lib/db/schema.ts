@@ -38,6 +38,8 @@ export const users = pgTable('users', {
   xp: integer('xp').default(0).notNull(),
   githubUrl: text('github_url'),
   bio: text('bio'),
+  lastLoginAt: timestamp('last_login_at'),
+  currentStreak: integer('current_streak').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

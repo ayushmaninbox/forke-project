@@ -42,6 +42,8 @@ export default function PostTaskForm() {
   const [description, setDescription] = useState('')
   const [budget, setBudget] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [customTagInput, setCustomTagInput] = useState('')
+  const [showCustomInput, setShowCustomInput] = useState(false)
 
   const toggleTag = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -49,6 +51,18 @@ export default function PostTaskForm() {
     } else if (selectedTags.length < 5) {
       setSelectedTags([...selectedTags, tag])
     }
+  }
+
+  const removeTag = (tag: string) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  const addCustomTag = () => {
+    const trimmed = customTagInput.trim()
+    if (!trimmed || selectedTags.includes(trimmed) || selectedTags.length >= 5) return
+    setSelectedTags((prev) => [...prev, trimmed])
+    setCustomTagInput('')
+    setShowCustomInput(false)
   }
 
   return (
@@ -135,24 +149,99 @@ export default function PostTaskForm() {
               Skill Tags (1-5)
             </label>
           </div>
+          
           <div className="flex flex-wrap gap-2">
             {SKILL_TAGS.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => toggleTag(tag)}
-                disabled={!selectedTags.includes(tag) && selectedTags.length >= 5}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                  'px-3 py-1.5 rounded-full text-xs font-mono border transition-all',
                   selectedTags.includes(tag)
-                    ? "bg-accent border-accent text-white shadow-sm"
-                    : "bg-white border-[var(--color-border)] text-muted hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                    ? 'bg-accent text-white border-accent shadow-sm'
+                    : 'bg-white border-[var(--color-border)] text-muted hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed'
                 )}
+                disabled={!selectedTags.includes(tag) && selectedTags.length >= 5}
               >
                 {tag}
               </button>
             ))}
+
+            {/* Custom tags already added */}
+            {selectedTags
+              .filter((t) => !SKILL_TAGS.includes(t))
+              .map((tag) => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-mono bg-accent text-white border border-accent shadow-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="ml-1 hover:opacity-70 text-lg leading-none"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+
+            {/* The "+" button */}
+            {selectedTags.length < 5 && !showCustomInput && (
+              <button
+                key="custom-add-btn"
+                type="button"
+                onClick={() => setShowCustomInput(true)}
+                className="px-3 py-1.5 rounded-full text-xs font-mono border border-dashed border-[var(--color-border)] text-muted hover:border-accent hover:text-accent transition-colors"
+              >
+                + custom
+              </button>
+            )}
+
+            {/* Inline custom tag input */}
+            {showCustomInput && (
+              <div key="custom-input-wrap" className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                <input
+                  type="text"
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value.slice(0, 20))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addCustomTag()
+                    }
+                    if (e.key === 'Escape') {
+                      setShowCustomInput(false)
+                      setCustomTagInput('')
+                    }
+                  }}
+                  placeholder="e.g. Prisma, Stripe..."
+                  autoFocus
+                  className="w-32 h-8 px-3 text-xs font-mono border border-accent rounded-full outline-none bg-white shadow-sm ring-1 ring-accent/20"
+                  maxLength={20}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={addCustomTag}
+                    className="text-[10px] font-bold text-accent uppercase tracking-wider hover:underline"
+                  >
+                    ADD
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCustomInput(false); setCustomTagInput('') }}
+                    className="text-[10px] font-bold text-muted uppercase tracking-wider hover:underline"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+          
           {/* Hidden Inputs for Form Submission */}
           {selectedTags.map((tag) => (
             <input key={tag} type="hidden" name="skillTags" value={tag} />
