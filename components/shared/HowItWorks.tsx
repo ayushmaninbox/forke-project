@@ -24,7 +24,7 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-40 px-4 bg-bg relative overflow-hidden">
+    <section id="how-it-works" className="py-48 px-4 bg-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-24 relative">
           <div className="inline-block relative">
@@ -39,16 +39,16 @@ export default function HowItWorks() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-20 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-24 relative">
           {STEPS.map((step, index) => (
             <div key={index} className="group relative flex flex-col items-center text-center">
               {/* Background Number */}
-              <span className="absolute -top-12 left-0 text-[120px] font-black text-white/[0.03] leading-none pointer-events-none group-hover:text-white/[0.05] transition-colors">
+              <span className="absolute -top-16 left-0 text-[140px] font-black text-white/[0.07] leading-none pointer-events-none group-hover:text-accent/[0.15] transition-all duration-500">
                 {step.number}
               </span>
 
               {/* Mascot Image */}
-              <div className="relative w-48 h-48 mb-6 z-10">
+              <div className="relative w-64 h-64 mb-6 z-10">
                 <Image 
                   src={step.image} 
                   alt={step.title} 
@@ -69,10 +69,10 @@ export default function HowItWorks() {
               
               {/* Curved Dashed Arrow (desktop only) */}
               {index < 2 && (
-                <div className="hidden md:block absolute top-20 -right-16 w-32 h-12 z-0">
-                  <svg width="128" height="48" viewBox="0 0 128 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white/10 opacity-60">
-                    <path d="M4 24C30 4 98 4 124 24" stroke="currentColor" strokeWidth="2" strokeDasharray="6 6" />
-                    <path d="M120 20L124 24L120 28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <div className="hidden md:block absolute top-28 -right-24 w-48 h-12 z-0">
+                  <svg width="100%" height="100%" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-accent/30 overflow-visible">
+                    <path d="M10 24C40 4 120 4 150 24" stroke="currentColor" strokeWidth="2" strokeDasharray="8 8" />
+                    <path d="M142 12L152 24L136 28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               )}

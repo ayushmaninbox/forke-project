@@ -3,19 +3,41 @@
 import React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { useAuthModal } from '@/components/auth/AuthContext'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Zap, Flame, Star, CheckCircle2 } from 'lucide-react'
 import LiveTaskTicker from './LiveTaskTicker'
+import DotField from './DotField'
 
 export default function Hero() {
-  const { openSignInModal } = useAuthModal()
+  const router = useRouter()
 
   return (
     <section className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-screen flex items-center">
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-50" />
-      <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-accent/5 blur-[120px] rounded-full" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-accent/5 blur-[100px] rounded-full" />
+      {/* Animated Background Components */}
+      <div 
+        className="absolute inset-0 z-[1] pointer-events-none opacity-50"
+        style={{
+          maskImage: 'radial-gradient(circle at 80% 50%, transparent 10%, black 40%)',
+          WebkitMaskImage: 'radial-gradient(circle at 80% 50%, transparent 10%, black 40%)',
+        }}
+      >
+        <DotField
+          dotRadius={1.2}
+          dotSpacing={22}
+          bulgeStrength={45}
+          glowRadius={150}
+          sparkle={false}
+          waveAmplitude={0}
+          cursorRadius={350}
+          cursorForce={0.1}
+          bulgeOnly
+          gradientFrom="#FF7A00"
+          gradientTo="#E66E00"
+          glowColor="#050505"
+        />
+      </div>
+
  
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -35,7 +57,7 @@ export default function Hero() {
               <Button 
                 size="lg" 
                 className="gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight"
-                onClick={openSignInModal}
+                onClick={() => router.push('/register?role=developer')}
               >
                 Start Grinding <Zap className="w-5 h-5 fill-current" />
               </Button>
@@ -43,31 +65,12 @@ export default function Hero() {
                 size="lg" 
                 variant="outline" 
                 className="text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold"
-                onClick={openSignInModal}
+                onClick={() => router.push('/register?role=client')}
               >
                 Post a Task
               </Button>
             </div>
 
-            {/* Social Proof */}
-            <div className="flex items-center gap-6 pt-6">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="w-12 h-12 rounded-full border-2 border-bg bg-surface flex items-center justify-center overflow-hidden">
-                    <Image 
-                      src={`https://i.pravatar.cc/100?img=${i + 10}`} 
-                      alt="User avatar" 
-                      width={48} 
-                      height={48} 
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="text-sm">
-                <p className="text-white font-medium">Trusted by <span className="text-accent">200+ developers</span></p>
-                <p className="text-muted">from 12+ colleges</p>
-              </div>
-            </div>
           </div>
 
           {/* Hero Visual Area - Orbital Layout */}
@@ -145,7 +148,7 @@ export default function Hero() {
       </div>
 
       {/* Live Bounty Feed at the bottom of Hero */}
-      <div className="absolute bottom-0 left-0 w-full">
+      <div className="absolute bottom-0 left-0 w-full z-40">
         <LiveTaskTicker isHeroEmbedded />
       </div>
     </section>

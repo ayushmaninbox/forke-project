@@ -5,6 +5,7 @@ import {
   integer,
   timestamp,
   pgEnum,
+  boolean,
 } from 'drizzle-orm/pg-core'
 
 export const userRoleEnum = pgEnum('user_role', ['developer', 'client'])
@@ -40,6 +41,31 @@ export const users = pgTable('users', {
   bio: text('bio'),
   lastLoginAt: timestamp('last_login_at'),
   currentStreak: integer('current_streak').default(0).notNull(),
+  isApproved: boolean('is_approved').default(false).notNull(),
+  isBanned: boolean('is_banned').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const owners = pgTable('owners', {
+  id: uuid('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  contactNumber: text('contact_number').notNull(),
+  contactEmail: text('contact_email').notNull(),
+  companyName: text('company_name').notNull(),
+  companyWebsite: text('company_website'),
+  personalLinkedIn: text('personal_linkedin').notNull(),
+  companyLinkedIn: text('company_linkedin').notNull(),
+  designation: text('designation').notNull(),
+  otherLinks: text('other_links'),
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const admins = pgTable('admins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  username: text('username').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

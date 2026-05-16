@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
-import { useAuthModal } from '@/components/auth/AuthContext'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 
 export default function Navbar() {
-  const { openSignInModal } = useAuthModal()
+  const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -47,7 +47,7 @@ export default function Navbar() {
               />
             </div>
             <div className="w-[160px] h-[40px]" /> {/* Spacer for the absolute mascot */}
-            <span className="font-sans text-3xl text-white font-bold -ml-6 relative z-10">
+            <span className="font-serif text-5xl text-white font -ml-6 relative z-10">
               Forke
             </span>
           </Link>
@@ -70,7 +70,7 @@ export default function Navbar() {
             <Button 
               variant="primary" 
               className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
-              onClick={openSignInModal}
+              onClick={() => router.push('/register')}
             >
               Get Started
             </Button>
@@ -115,10 +115,10 @@ export default function Navbar() {
             ))}
           </div>
           <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-            <Button variant="outline" className="w-full rounded-full" onClick={openSignInModal}>
+            <Button variant="outline" className="w-full rounded-full" onClick={() => router.push('/register')}>
               Post a Task
             </Button>
-            <Button variant="primary" className="w-full rounded-full" onClick={openSignInModal}>
+            <Button variant="primary" className="w-full rounded-full" onClick={() => router.push('/register')}>
               Get Started
             </Button>
           </div>

@@ -16,7 +16,7 @@ export default function LiveTaskTicker({ isHeroEmbedded = false }: { isHeroEmbed
 
   return (
     <section className={cn(
-      "left-0 w-full h-14 bg-black/90 backdrop-blur-md border-t border-white/10 flex items-center overflow-hidden",
+      "left-0 w-full h-14 bg-black border-t border-white/10 flex items-center overflow-hidden",
       isHeroEmbedded ? "absolute bottom-0" : "fixed bottom-0 z-40"
     )}>
       <div className="absolute left-0 top-0 h-full bg-black z-10 px-8 flex items-center gap-3 border-r border-white/10">

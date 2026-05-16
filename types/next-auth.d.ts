@@ -8,6 +8,8 @@ declare module 'next-auth' {
       xp: number
       level: number
       currentStreak: number
+      isApproved: boolean
+      isBanned: boolean
     } & DefaultSession['user']
   }
 
@@ -16,5 +18,7 @@ declare module 'next-auth' {
     xp?: number
     level?: number
     currentStreak?: number
+    isApproved?: boolean
+    isBanned?: boolean
   }
 }

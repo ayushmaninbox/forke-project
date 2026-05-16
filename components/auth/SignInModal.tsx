@@ -1,17 +1,19 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuthModal } from './AuthContext'
 import { Button } from '@/components/ui/Button'
 import { signInWithGoogle } from '@/lib/auth-actions'
+import { Github as GithubIcon, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
 
 export default function SignInModal() {
   const { isSignInModalOpen, closeSignInModal } = useAuthModal()
+  const [showPassword, setShowPassword] = useState(false)
 
   if (!isSignInModalOpen) return null
 
   const handleSignIn = async (role: 'developer' | 'client') => {
-    // Trigger OAuth with role
     await signInWithGoogle(role)
   }
 
@@ -19,46 +21,133 @@ export default function SignInModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300" 
+        className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity duration-300" 
         onClick={closeSignInModal}
       />
       
       {/* Modal Content */}
-      <div className="relative w-full max-w-md bg-surface border border-border rounded-2xl shadow-2xl p-8 transform transition-transform duration-300 scale-100 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-accent" />
-        <div className="flex flex-col items-center text-center space-y-8">
-          <div className="space-y-2">
-            <h2 className="font-serif text-4xl text-white">
-              Join Forke
-            </h2>
-            <p className="text-muted text-sm font-light">Select your path to get started</p>
-          </div>
-
-          <div className="grid grid-cols-1 w-full gap-4">
-            <button
-              onClick={() => handleSignIn('developer')}
-              className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-xl hover:border-accent hover:bg-accent/5 transition-all group"
-            >
-              <span className="text-xl font-bold text-white mb-1">I want to earn</span>
-              <span className="text-xs text-muted font-light">Claim micro-tasks and get paid</span>
-            </button>
-
-            <button
-              onClick={() => handleSignIn('client')}
-              className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-xl hover:border-accent hover:bg-accent/5 transition-all group"
-            >
-              <span className="text-xl font-bold text-white mb-1">I want to hire</span>
-              <span className="text-xs text-muted font-light">Post tasks and ship faster</span>
-            </button>
-          </div>
-
-          <button 
-            onClick={closeSignInModal}
-            className="text-xs text-muted hover:text-white uppercase tracking-widest font-bold transition-colors"
-          >
-            Cancel
-          </button>
+      <div className="relative w-full max-w-[1000px] bg-bg border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform transition-transform duration-300 scale-100">
+        
+        {/* Left Panel: Manga Panel */}
+        <div className="relative w-full md:w-1/2 h-[300px] md:h-auto overflow-hidden">
+          <Image
+            src="/forke-assets/auth-assets/manga-panel-desktop.png"
+            alt="Manga Panel"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Subtle Overlay to blend with the dark theme if needed */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-bg/10" />
         </div>
+
+        {/* Right Panel: Auth Form */}
+        <div className="w-full md:w-1/2 p-10 md:p-14 flex flex-col items-center justify-center space-y-10 bg-[#0A0A0A]">
+          
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 relative">
+               <svg viewBox="0 0 24 24" className="w-full h-full text-accent fill-current">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                <path d="M2 17L12 22L22 17M2 12L12 17L22 12" />
+               </svg>
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-white uppercase">Forke</span>
+          </div>
+
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-bold text-white tracking-tight">Welcome back</h2>
+            <p className="text-muted text-sm font-medium">
+              Ship real work. Earn <span className="text-[#A855F7]">XP</span>. Get <span className="text-[#10B981]">paid</span>.
+            </p>
+          </div>
+
+          <div className="w-full space-y-6">
+            {/* Social Logins */}
+            <div className="grid grid-cols-2 gap-4 relative">
+              <div className="absolute -top-3 left-[25%] -translate-x-1/2 z-10">
+                <span className="bg-[#6366F1] text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Last Used</span>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full gap-3 py-6 border-white/10 bg-white/[0.02] hover:bg-white/5 text-sm font-semibold rounded-xl"
+                onClick={() => handleSignIn('developer')}
+              >
+                <Image src="/forke-assets/landing-assets/google-icon.svg" alt="Google" width={20} height={20} />
+                Google
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full gap-3 py-6 border-white/10 bg-white/[0.02] hover:bg-white/5 text-sm font-semibold rounded-xl"
+              >
+                <GithubIcon className="w-5 h-5 text-white" />
+                GitHub
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-white/5" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[#0A0A0A] px-2 text-muted font-bold tracking-widest">OR</span>
+              </div>
+            </div>
+
+            {/* Credentials Form */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <input 
+                  type="email" 
+                  placeholder="Email" 
+                  className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-accent/30 transition-all"
+                />
+              </div>
+              <div className="space-y-2 relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Password" 
+                  className="w-full bg-[#1A1A1A] border border-white/5 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-accent/30 transition-all"
+                />
+                <button 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <Button className="w-full py-7 text-lg font-bold rounded-xl bg-[#6366F1] hover:bg-[#5558E6] text-white shadow-lg shadow-indigo-500/10">
+              Continue
+            </Button>
+          </div>
+
+          <div className="text-center space-y-4 pt-4">
+            <p className="text-xs text-muted font-medium">
+              Forgot your password? <button className="text-white hover:underline">Reset Your Password</button>
+            </p>
+            <p className="text-xs text-muted font-medium">
+              Don't have an account? <button className="text-white hover:underline">Register</button>
+            </p>
+          </div>
+
+          <p className="text-[10px] text-muted/50 text-center max-w-[280px]">
+            By continuing, you agree to our <button className="hover:text-white">Terms of Service</button> and <button className="hover:text-white">Privacy Policy</button>.
+          </p>
+
+        </div>
+
+        {/* Close Button */}
+        <button 
+          onClick={closeSignInModal}
+          className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors z-20"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
       </div>
     </div>
   )
