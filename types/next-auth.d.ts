@@ -4,21 +4,25 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string
-      role: 'developer' | 'client'
+      role: 'developer' | 'owner'
       xp: number
       level: number
       currentStreak: number
       isApproved: boolean
       isBanned: boolean
+      githubUrl?: string | null
+      username?: string | null
     } & DefaultSession['user']
   }
 
   interface User {
-    role?: 'developer' | 'client'
+    role?: 'developer' | 'owner'
     xp?: number
     level?: number
     currentStreak?: number
     isApproved?: boolean
     isBanned?: boolean
+    githubUrl?: string | null
+    username?: string | null
   }
 }

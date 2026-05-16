@@ -73,9 +73,9 @@ function Section({ title, items, icon: Icon, colorClass, statusLabel }: { title:
 
 export default async function SubmissionsPage() {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
 
-  if (!user || user.role === 'client') {
+  if (!user || user.role === 'owner') {
     redirect('/dashboard')
   }
 

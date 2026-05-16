@@ -1,3 +1,5 @@
+'use server'
+
 import { isConsecutiveDay, isAlreadyLoggedInToday } from '@/lib/utils/streak'
 import { getStreakXp, getLevelFromXp } from '@/lib/utils/xp'
 import { db } from '@/lib/db'
@@ -39,4 +41,44 @@ export async function processLoginStreak(userId: string) {
 export async function signOutAction() {
   // Helper for components that need a server action for signout
   // This is often used in Sidebar or Profile buttons
+}
+
+export async function saveGithubUrl(userId: string, url: string) {
+  if (!url || !url.includes('github.com')) {
+    return { success: false, error: 'Invalid GitHub URL' }
+  }
+
+  // Extract username to fetch basic stats
+  try {
+    const urlParts = url.replace(/\/$/, '').split('/')
+    const username = urlParts[urlParts.length - 1]
+
+    let githubStats = null;
+    try {
+      const res = await fetch(`https://api.github.com/users/${username}`)
+      if (res.ok) {
+        const githubData = await res.json()
+        githubStats = {
+          followers: githubData.followers,
+          following: githubData.following,
+          public_repos: githubData.public_repos,
+          public_gists: githubData.public_gists,
+          created_at: githubData.created_at,
+          updated_at: githubData.updated_at
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch github stats', e)
+    }
+
+    await db.update(users).set({ 
+      githubUrl: url,
+      ...(githubStats && { githubStats })
+    }).where(eq(users.id, userId))
+
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to save github url', error)
+    return { success: false, error: 'Internal server error' }
+  }
 }

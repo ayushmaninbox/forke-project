@@ -30,7 +30,7 @@ function timeAgo(date: Date) {
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const session = await auth()
-  const currentUser = session?.user as { id: string; role: 'developer' | 'client'; level: number } | undefined
+  const currentUser = session?.user as { id: string; role: 'developer' | 'owner'; level: number } | undefined
   const taskResult = await getTaskById(id)
 
   if (!taskResult) notFound()
@@ -54,7 +54,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
       <div className="space-y-12">
         {/* State Banner - Top Level */}
-        {task.status === 'submitted' && (isClaimedByMe || currentUser?.role === 'client') && (
+        {task.status === 'submitted' && (isClaimedByMe || currentUser?.role === 'owner') && (
           <div className="p-8 bg-amber-50 border-2 border-amber-100 rounded-[2rem] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm border-dashed">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-inner">

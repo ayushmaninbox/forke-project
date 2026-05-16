@@ -13,7 +13,7 @@ export default function SignInModal() {
 
   if (!isSignInModalOpen) return null
 
-  const handleSignIn = async (role: 'developer' | 'client') => {
+  const handleSignIn = async (role: 'developer' | 'owner') => {
     await signInWithGoogle(role)
   }
 

@@ -1,6 +1,16 @@
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
+import { Metadata } from 'next'
 import Sidebar from '@/components/shared/Sidebar'
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'Manage your tasks, track your earnings, and level up your career on Forke.',
+  robots: {
+    index: false, // Don't index the dashboard app pages
+    follow: false,
+  }
+}
 import { DashboardProvider } from '@/components/dashboard/DashboardContext'
 import { getLevelFromXp } from '@/lib/utils/xp'
 import LevelUpCelebration from '@/components/shared/LevelUpCelebration'
@@ -20,7 +30,7 @@ export default async function AppLayout({
   const user = session.user
   
   // Handle Client Approval
-  if (user.role === 'client' && !user.isApproved) {
+  if (user.role === 'owner' && !user.isApproved) {
     return <PendingApproval userEmail={user.email} />
   }
 

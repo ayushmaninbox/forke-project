@@ -41,9 +41,9 @@ export type SubmitWorkState = {
 
 export async function createTask(prevState: CreateTaskState, formData: FormData): Promise<CreateTaskState> {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
 
-  if (!user || user.role !== 'client') {
+  if (!user || user.role !== 'owner') {
     return { message: 'Unauthorized: Only clients can post tasks.' }
   }
 
@@ -95,7 +95,7 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
 
 export async function claimTask(taskId: string) {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client'; level: number } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner'; level: number } | undefined
 
   if (!user || user.role !== 'developer') {
     throw new Error('Unauthorized: Only developers can claim tasks.')
@@ -144,7 +144,7 @@ export async function claimTask(taskId: string) {
 
 export async function submitWork(prevState: SubmitWorkState | null, formData: FormData): Promise<SubmitWorkState> {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
   const taskId = formData.get('taskId') as string
   const githubLink = formData.get('githubLink') as string
   const note = formData.get('note') as string
@@ -192,9 +192,9 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
 
 export async function approveSubmission(taskId: string, rating: number) {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
 
-  if (!user || user.role !== 'client') {
+  if (!user || user.role !== 'owner') {
     throw new Error('Unauthorized.')
   }
 
@@ -275,9 +275,9 @@ export async function approveSubmission(taskId: string, rating: number) {
 
 export async function requestRevision(taskId: string, revisionNote: string) {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
 
-  if (!user || user.role !== 'client') {
+  if (!user || user.role !== 'owner') {
     throw new Error('Unauthorized.')
   }
 

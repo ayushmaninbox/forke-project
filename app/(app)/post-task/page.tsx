@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 
 export default async function PostTaskPage() {
   const session = await auth()
-  const user = session?.user as { id: string; role: 'developer' | 'client' } | undefined
+  const user = session?.user as { id: string; role: 'developer' | 'owner' } | undefined
 
   if (user?.role === 'developer') {
     return (

@@ -9,6 +9,7 @@ import {
   declineOwner, 
   toggleDeveloperBan 
 } from '@/lib/admin-dashboard-actions'
+import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/Button'
 import { 
@@ -29,9 +30,10 @@ import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'owners' | 'developers'>('owners')
+  const [activeTab, setActiveTab] = useState<'owners' | 'developers' | 'enquiries'>('owners')
   const [ownersList, setOwnersList] = useState<any[]>([])
   const [developersList, setDevelopersList] = useState<any[]>([])
+  const [enquiriesList, setEnquiriesList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -44,9 +46,12 @@ export default function AdminDashboard() {
       const pending = await getPendingOwners()
       const approved = await getApprovedOwners()
       setOwnersList([...pending, ...approved])
-    } else {
+    } else if (activeTab === 'developers') {
       const devs = await getDevelopers()
       setDevelopersList(devs)
+    } else if (activeTab === 'enquiries') {
+      const res = await getEnquiries()
+      if (res.success) setEnquiriesList(res.data || [])
     }
     setIsLoading(false)
   }
@@ -101,6 +106,12 @@ export default function AdminDashboard() {
             >
               Developers
             </button>
+            <button 
+              onClick={() => setActiveTab('enquiries')}
+              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'enquiries' ? 'bg-accent text-white' : 'text-white/20 hover:text-white'}`}
+            >
+              Enquiries
+            </button>
           </nav>
           
           <button 
@@ -122,7 +133,7 @@ export default function AdminDashboard() {
                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Total Users</p>
                    <Users className="w-4 h-4 text-accent" />
                 </div>
-                <h3 className="text-4xl font-serif">{isLoading ? '...' : (activeTab === 'owners' ? ownersList.length : developersList.length)}</h3>
+                <h3 className="text-4xl font-serif">{isLoading ? '...' : (activeTab === 'owners' ? ownersList.length : activeTab === 'developers' ? developersList.length : enquiriesList.length)}</h3>
              </div>
              {/* Add more stats as needed */}
           </div>
@@ -149,10 +160,21 @@ export default function AdminDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-white/5">
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">User Details</th>
-                    {activeTab === 'owners' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Company / Designation</th>}
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Actions</th>
+                    {activeTab === 'enquiries' ? (
+                      <>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Contact</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Message</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Error Type</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Date</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">User Details</th>
+                        {activeTab === 'owners' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Company / Designation</th>}
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Status</th>
+                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Actions</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
@@ -222,7 +244,7 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ))
-                  ) : (
+                  ) : activeTab === 'developers' ? (
                     developersList.map((user) => (
                       <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
                         <td className="px-8 py-6">
@@ -257,10 +279,40 @@ export default function AdminDashboard() {
                         </td>
                       </tr>
                     ))
-                  )}
+                  ) : activeTab === 'enquiries' ? (
+                    enquiriesList.map((enq) => (
+                      <tr key={enq.id} className="group hover:bg-white/[0.01] transition-colors">
+                        <td className="px-8 py-6">
+                          <div>
+                            <p className="font-bold text-white">{enq.firstName} {enq.lastName}</p>
+                            <div className="flex items-center gap-3 text-[11px] text-white/30 mt-1">
+                              <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {enq.contactEmail}</span>
+                              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {enq.contactNumber}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6 max-w-sm">
+                          <p className="text-sm text-white/70 line-clamp-2" title={enq.message}>{enq.message}</p>
+                          {enq.relevantLinks && (
+                            <a href={enq.relevantLinks} target="_blank" className="text-[9px] text-accent mt-2 inline-block uppercase tracking-widest font-black hover:underline">
+                              View Links
+                            </a>
+                          )}
+                        </td>
+                        <td className="px-8 py-6">
+                          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-[9px] font-black uppercase">
+                            {enq.errorType === 'AccessDenied' ? 'USER BAN' : enq.errorType === 'GitHubIdentityMismatch' ? 'GITHUB CONFLICT' : enq.errorType || 'GENERAL'}
+                          </span>
+                        </td>
+                        <td className="px-8 py-6">
+                          <p className="text-[11px] text-white/40">{new Date(enq.createdAt).toLocaleDateString()}</p>
+                        </td>
+                      </tr>
+                    ))
+                  ) : null}
                 </tbody>
               </table>
-              {!isLoading && (activeTab === 'owners' ? ownersList.length : developersList.length) === 0 && (
+              {!isLoading && (activeTab === 'owners' ? ownersList.length : activeTab === 'developers' ? developersList.length : enquiriesList.length) === 0 && (
                 <div className="py-20 text-center">
                    <p className="text-white/20 uppercase font-black tracking-widest">No records found in Nexus</p>
                 </div>

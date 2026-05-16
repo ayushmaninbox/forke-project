@@ -14,9 +14,9 @@ export default auth((req) => {
   const isAdminLogin = req.nextUrl.pathname === '/admin/login'
 
   // Block banned users
-  if (isLoggedIn && isBanned && !isAdminPage) {
-     const logoutUrl = new URL('/signin', req.nextUrl.origin)
-     return NextResponse.redirect(logoutUrl)
+  if (isLoggedIn && isBanned && !isAdminPage && !req.nextUrl.pathname.startsWith('/auth-error')) {
+     const errorUrl = new URL('/auth-error?error=AccessDenied', req.nextUrl.origin)
+     return NextResponse.redirect(errorUrl)
   }
 
   // Admin protection
@@ -30,6 +30,28 @@ export default auth((req) => {
   if (isAppPage && !isLoggedIn) {
     const loginUrl = new URL('/', req.nextUrl.origin)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Redirect logged in users from root to dashboard
+  if (isLoggedIn && req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
+  }
+
+  // Onboarding redirection for developers without githubUrl or username
+  const role = (req.auth?.user as any)?.role
+  const githubUrl = (req.auth?.user as any)?.githubUrl
+  const username = (req.auth?.user as any)?.username
+  const isOnboardingPage = req.nextUrl.pathname === '/onboarding'
+
+  const needsOnboarding = role === 'developer' && (!githubUrl || !username)
+
+  if (isLoggedIn && needsOnboarding && !isOnboardingPage && isAppPage) {
+    return NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin))
+  }
+
+  // Prevent users who don't need onboarding from accessing it
+  if (isLoggedIn && !needsOnboarding && isOnboardingPage) {
+    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
   }
   
   return NextResponse.next()

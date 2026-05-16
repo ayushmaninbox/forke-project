@@ -114,7 +114,7 @@ export default function LevelSystem() {
                 <h4 className="font-bold text-xl text-white tracking-tight">{item.label}</h4>
                 {item.isActive && (
                   <span className="text-[9px] border border-accent/50 text-accent px-2.5 py-0.5 rounded-md uppercase font-black tracking-wider bg-accent/10">
-                    Current
+                    Level Up
                   </span>
                 )}
               </div>

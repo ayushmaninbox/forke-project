@@ -3,13 +3,15 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { signInWithGoogle, signInWithGitHub } from '@/lib/auth-actions'
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Info } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export default function SignInContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [lastUsed, setLastUsed] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('forke_last_auth')
@@ -22,6 +24,41 @@ export default function SignInContent() {
       await signInWithGoogle()
     } else {
       await signInWithGitHub()
+    }
+  }
+
+  const handleCredentialsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    if (!email || !password) {
+      setError('Please enter both email and password.')
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      const { signIn } = await import('next-auth/react')
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Invalid email or password.')
+      } else if (result?.ok) {
+        window.location.href = '/dashboard'
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -135,23 +172,35 @@ export default function SignInContent() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="w-8 h-8 rounded-full border border-red-500/20 flex items-center justify-center bg-red-500/10 shrink-0">
+                  <Info className="w-4 h-4 text-red-400" />
+                </div>
+                <p className="text-xs text-red-400 font-medium leading-relaxed">{error}</p>
+              </div>
+            )}
+
             {/* Elegant Form Fields */}
-            <div className="space-y-3">
+            <form onSubmit={handleCredentialsSubmit} className="space-y-4" noValidate>
               <div className="space-y-1">
-                <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Email Address</label>
+                <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Email or Username</label>
                 <input 
-                  type="email" 
-                  placeholder="name@example.com"
+                  name="email"
+                  type="text" 
+                  placeholder="name@example.com or username"
                   className="w-full h-12 md:h-14 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
                 />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest">Password</label>
-                  <button className="text-[10px] text-accent/60 hover:text-accent font-black uppercase tracking-widest transition-colors whitespace-nowrap">Forgot Your Password?</button>
+                  <button type="button" className="text-[10px] text-accent/60 hover:text-accent font-black uppercase tracking-widest transition-colors whitespace-nowrap">Forgot Your Password?</button>
                 </div>
                 <div className="relative">
                   <input 
+                    name="password"
                     type={showPassword ? "text" : "password"} 
                     placeholder="••••••••"
                     className="w-full h-12 md:h-14 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
@@ -165,11 +214,11 @@ export default function SignInContent() {
                   </button>
                 </div>
               </div>
-            </div>
 
-            <Button className="w-full h-12 md:h-14 text-sm font-black uppercase tracking-widest rounded-2xl bg-accent hover:bg-accent/90 text-white shadow-xl shadow-accent/20 active:scale-[0.98] transition-all">
-              Sign In
-            </Button>
+              <Button type="submit" disabled={isSubmitting} className="w-full h-12 md:h-14 text-sm font-black uppercase tracking-widest rounded-2xl bg-accent hover:bg-accent/90 text-white shadow-xl shadow-accent/20 active:scale-[0.98] transition-all !mt-6">
+                {isSubmitting ? 'Signing In...' : 'Sign In'}
+              </Button>
+            </form>
           </div>
 
           <div className="text-center pt-2">

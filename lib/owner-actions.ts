@@ -6,7 +6,7 @@ import { auth } from '@/auth'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
-export async function submitClientApplication(formData: any) {
+export async function submitOwnerApplication(formData: any) {
   const session = await auth()
   if (!session?.user?.id) {
     return { success: false, error: 'Unauthorized' }
@@ -26,7 +26,7 @@ export async function submitClientApplication(formData: any) {
 
     // 2. Update user role and status
     await db.update(users).set({
-      role: 'client',
+      role: 'owner',
       isApproved: false
     }).where(eq(users.id, userId))
 

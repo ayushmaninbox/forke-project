@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/admin/'], // Protect sensitive routes from crawling
+      disallow: ['/admin/', '/api/', '/dashboard/', '/onboarding/', '/auth-error'],
     },
     sitemap: 'https://forke.dev/sitemap.xml',
   }

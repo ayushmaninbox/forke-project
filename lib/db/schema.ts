@@ -6,9 +6,10 @@ import {
   timestamp,
   pgEnum,
   boolean,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 
-export const userRoleEnum = pgEnum('user_role', ['developer', 'client'])
+export const userRoleEnum = pgEnum('user_role', ['developer', 'owner'])
 export const taskStatusEnum = pgEnum('task_status', [
   'open',
   'claimed',
@@ -29,6 +30,7 @@ export const escrowStatusEnum = pgEnum('escrow_status', [
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
+  username: text('username').unique(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
   emailVerified: timestamp('email_verified', { mode: 'date' }),
@@ -39,6 +41,7 @@ export const users = pgTable('users', {
   xp: integer('xp').default(0).notNull(),
   githubUrl: text('github_url'),
   bio: text('bio'),
+  githubStats: jsonb('github_stats'),
   lastLoginAt: timestamp('last_login_at'),
   currentStreak: integer('current_streak').default(0).notNull(),
   isApproved: boolean('is_approved').default(false).notNull(),
@@ -165,5 +168,32 @@ export const revisionRequests = pgTable('revision_requests', {
     .references(() => tasks.id)
     .notNull(),
   clientNote: text('client_note').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const githubProfiles = pgTable('github_profiles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  githubId: text('github_id').notNull(),
+  login: text('login').notNull(),
+  avatarUrl: text('avatar_url'),
+  profileUrl: text('profile_url'),
+  repos: jsonb('repos'),
+  languages: jsonb('languages'),
+  rawProfile: jsonb('raw_profile'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const supportEnquiries = pgTable('support_enquiries', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  contactNumber: text('contact_number').notNull(),
+  contactEmail: text('contact_email').notNull(),
+  message: text('message').notNull(),
+  relevantLinks: text('relevant_links'),
+  errorType: text('error_type'),
+  status: text('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
