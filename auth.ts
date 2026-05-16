@@ -92,7 +92,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (dbUser) {
           if (dbUser.isBanned) {
-            cookies().set('forke_auth_error', '1', { maxAge: 60, path: '/' })
+            const cookieStore = await cookies()
+            cookieStore.set('forke_auth_error', '1', { maxAge: 60, path: '/' })
             return '/auth-error?error=AccessDenied' // Block sign-in and redirect to specific error
           }
           
@@ -102,7 +103,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const newLogin = (profile.login as string).toLowerCase()
             if (existingLogin && existingLogin !== newLogin) {
               console.error(`GitHub Conflict: existing (${existingLogin}) vs new (${newLogin})`)
-              cookies().set('forke_auth_error', '1', { maxAge: 60, path: '/' })
+              const cookieStore = await cookies()
+              cookieStore.set('forke_auth_error', '1', { maxAge: 60, path: '/' })
               return '/auth-error?error=GitHubIdentityMismatch'
             }
           }
