@@ -72,6 +72,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
     >
       <body className="antialiased bg-[#0A0A0A]">
         <NextAuthProvider>

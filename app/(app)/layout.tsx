@@ -29,6 +29,10 @@ export default async function AppLayout({
 
   const user = session.user
   
+  if (user.isBanned) {
+    redirect('/auth-error?error=AccessDenied')
+  }
+  
   // Handle Client Approval
   if (user.role === 'owner' && !user.isApproved) {
     return <PendingApproval userEmail={user.email} />
