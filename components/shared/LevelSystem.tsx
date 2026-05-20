@@ -1,6 +1,15 @@
-import React from 'react'
+'use client'
+
+import React, { useRef } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 const LEVELS = [
   { 
@@ -41,11 +50,79 @@ const LEVELS = [
   },
 ]
 
-const CURRENT_LEVEL = 3
-
 export default function LevelSystem() {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    // 1. Level System Main ScrollTrigger Timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: 'top 75%',
+        toggleActions: 'play none none none',
+      }
+    })
+
+    // Header animate
+    tl.fromTo('.gsap-lvl-title',
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out' }
+    )
+    .fromTo('.gsap-lvl-desc',
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8 },
+      '-=0.6'
+    )
+    // Progress line animate (scale from left)
+    .fromTo('.gsap-lvl-line',
+      { scaleX: 0 },
+      { scaleX: 1, duration: 1.2, ease: 'power3.inOut' },
+      '-=0.4'
+    )
+    // Progress nodes animate
+    .fromTo('.gsap-lvl-node',
+      { scale: 0, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(2)' },
+      '-=0.8'
+    )
+    // Level cards stagger in
+    .fromTo('.gsap-lvl-card',
+      { y: 60, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' },
+      '-=0.6'
+    )
+
+    // 2. Stats Card Counter ScrollTrigger
+    const statsObj = { completed: 0, paid: 0, active: 0, colleges: 0 }
+    
+    gsap.to(statsObj, {
+      completed: 1240,
+      paid: 4.8,
+      active: 850,
+      colleges: 12,
+      duration: 2.2,
+      ease: 'power2.out',
+      scrollTrigger: {
+        trigger: '.gsap-stats-card',
+        start: 'top 85%',
+        toggleActions: 'play none none none'
+      },
+      onUpdate: () => {
+        const elCompleted = document.querySelector('.gsap-stat-completed')
+        const elPaid = document.querySelector('.gsap-stat-paid')
+        const elActive = document.querySelector('.gsap-stat-active')
+        const elColleges = document.querySelector('.gsap-stat-colleges')
+        
+        if (elCompleted) elCompleted.innerHTML = Math.floor(statsObj.completed).toLocaleString() + '+'
+        if (elPaid) elPaid.innerHTML = '₹' + statsObj.paid.toFixed(1) + 'L+'
+        if (elActive) elActive.innerHTML = Math.floor(statsObj.active) + '+'
+        if (elColleges) elColleges.innerHTML = Math.floor(statsObj.colleges) + '+'
+      }
+    })
+  }, { scope: containerRef })
+
   return (
-    <section id="levels" className="py-32 px-4 bg-bg relative overflow-hidden border-t border-white/[0.05]">
+    <section ref={containerRef} id="levels" className="py-32 px-4 bg-bg relative overflow-hidden border-t border-white/[0.05]">
       {/* Background Gradients */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-10 pointer-events-none" />
@@ -53,10 +130,10 @@ export default function LevelSystem() {
       <div className="max-w-7xl mx-auto text-center relative z-10">
         {/* Header */}
         <div className="space-y-4 mb-16">
-          <h2 className="font-serif text-5xl md:text-7xl text-white flex items-center justify-center gap-3">
+          <h2 className="gsap-lvl-title font-serif text-5xl md:text-7xl text-white flex items-center justify-center gap-3 opacity-0">
             The Level System <span className="text-accent text-3xl">✦</span>
           </h2>
-          <p className="text-muted text-lg max-w-2xl mx-auto font-light leading-relaxed">
+          <p className="gsap-lvl-desc text-muted text-lg max-w-2xl mx-auto font-light leading-relaxed opacity-0">
             The more you ship, the faster you level up. <br />
             Higher levels unlock bigger task budgets and exclusive bounties.
           </p>
@@ -68,13 +145,13 @@ export default function LevelSystem() {
           <div className="absolute top-1/2 left-8 right-8 h-[2px] bg-white/5 -translate-y-1/2" />
           
           {/* Glowing Progress Line - Radiating from 3 */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-60 shadow-[0_0_15px_rgba(255,122,0,0.5)]" />
+          <div className="gsap-lvl-line absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-60 shadow-[0_0_15px_rgba(255,122,0,0.5)] origin-center" />
           
           {LEVELS.map((item) => (
             <div 
               key={item.lvl}
               className={cn(
-                "relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300",
+                "gsap-lvl-node relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 opacity-0 scale-50",
                 item.isActive 
                   ? "bg-accent text-bg w-14 h-14 shadow-[0_0_30px_rgba(255,122,0,0.6)] border-2 border-accent" 
                   : "bg-[#1a1a1a] text-white/40 border border-white/10"
@@ -94,7 +171,7 @@ export default function LevelSystem() {
             <div 
               key={index} 
               className={cn(
-                "relative rounded-2xl border p-6 pt-7 pb-8 text-left flex flex-col group overflow-visible min-h-[420px]",
+                "gsap-lvl-card relative rounded-2xl border p-6 pt-7 pb-8 text-left flex flex-col group overflow-visible min-h-[420px] opacity-0",
                 item.isActive 
                   ? "bg-[#111] border-accent/70 shadow-[0_0_60px_rgba(255,122,0,0.15),_0_0_20px_rgba(255,122,0,0.08),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
                   : "bg-gradient-to-b from-[#151515] to-[#0d0d0d] border-white/[0.06]"
@@ -132,9 +209,9 @@ export default function LevelSystem() {
               </div>
 
               {/* Mascot Image — Absolutely positioned to break out of the card width */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-72 pointer-events-none">
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-72 pointer-events-none overflow-visible">
                 <div className={cn(
-                  "relative w-full h-full transition-transform duration-500",
+                  "gsap-lvl-mascot relative w-full h-full transition-transform duration-500",
                   (index === 2 || index === 4) && "-scale-x-100"
                 )}>
                   <Image 
@@ -150,7 +227,7 @@ export default function LevelSystem() {
         </div>
 
         {/* Stats Card */}
-        <div className="mt-32 p-12 rounded-[3rem] bg-[#111]/40 border border-white/[0.04] backdrop-blur-xl relative overflow-hidden group">
+        <div className="gsap-stats-card mt-32 p-12 rounded-[3rem] bg-[#111]/40 border border-white/[0.04] backdrop-blur-xl relative overflow-hidden group">
           <div className="relative z-10 flex flex-wrap justify-center items-center gap-16 md:gap-24">
             {/* Stat 1 */}
             <div className="flex items-center gap-6">
@@ -160,7 +237,7 @@ export default function LevelSystem() {
                 </svg>
               </div>
               <div className="text-left">
-                <p className="text-4xl font-bold text-white tracking-tight">1,240+</p>
+                <p className="gsap-stat-completed text-4xl font-bold text-white tracking-tight">0+</p>
                 <p className="text-[11px] text-white/30 font-normal tracking-wide">Tasks Completed</p>
               </div>
             </div>
@@ -171,7 +248,7 @@ export default function LevelSystem() {
                 <span className="text-xl font-medium">₹</span>
               </div>
               <div className="text-left">
-                <p className="text-4xl font-bold text-white tracking-tight">₹4.8L+</p>
+                <p className="gsap-stat-paid text-4xl font-bold text-white tracking-tight">₹0.0L+</p>
                 <p className="text-[11px] text-white/30 font-normal tracking-wide">Total Paid Out</p>
               </div>
             </div>
@@ -184,7 +261,7 @@ export default function LevelSystem() {
                 </svg>
               </div>
               <div className="text-left">
-                <p className="text-4xl font-bold text-white tracking-tight">850+</p>
+                <p className="gsap-stat-active text-4xl font-bold text-white tracking-tight">0+</p>
                 <p className="text-[11px] text-white/30 font-normal tracking-wide">Active Developers</p>
               </div>
             </div>
@@ -197,7 +274,7 @@ export default function LevelSystem() {
                 </svg>
               </div>
               <div className="text-left">
-                <p className="text-4xl font-bold text-white tracking-tight">12+</p>
+                <p className="gsap-stat-colleges text-4xl font-bold text-white tracking-tight">0+</p>
                 <p className="text-[11px] text-white/30 font-normal tracking-wide">Colleges Reached</p>
               </div>
             </div>

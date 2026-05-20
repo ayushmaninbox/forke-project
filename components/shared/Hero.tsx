@@ -1,19 +1,106 @@
 'use client'
 
-import React from 'react'
+import React, { useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Zap, Flame, Star, CheckCircle2 } from 'lucide-react'
+import { Zap, Flame, Star } from 'lucide-react'
 import LiveTaskTicker from './LiveTaskTicker'
 import DotField from './DotField'
+import { gsap } from 'gsap'
+import { useGSAP } from '@gsap/react'
 
 export default function Hero() {
   const router = useRouter()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    // 1. Entrance timeline
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    
+    tl.fromTo('.gsap-hero-title', 
+      { y: 50, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 1.2, delay: 0.2 }
+    )
+    .fromTo('.gsap-hero-subtitle',
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 1 },
+      '-=0.8'
+    )
+    .fromTo('.gsap-hero-btn',
+      { scale: 0.9, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.8, stagger: 0.1, ease: 'back.out(1.5)' },
+      '-=0.6'
+    )
+    .fromTo('.gsap-hero-mascot',
+      { scale: 0.85, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 1.5, ease: 'elastic.out(1, 0.75)' },
+      '-=1.2'
+    )
+    .fromTo('.gsap-hero-badge',
+      { scale: 0, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 1, stagger: 0.12, ease: 'back.out(1.7)' },
+      '-=1'
+    )
+
+    // 2. Slow floating/breathing animation for badges
+    gsap.utils.toArray<HTMLElement>('.gsap-hero-badge').forEach((badge, index) => {
+      const yOffset = 12 + (index % 3) * 4
+      const duration = 4 + (index % 2) * 1.5
+      const delay = index * 0.3
+      
+      gsap.to(badge, {
+        y: `+=${yOffset}`,
+        rotation: index % 2 === 0 ? '+=2' : '-=2',
+        duration: duration,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        delay: delay
+      })
+    })
+
+    // 3. Mouse Parallax Effect
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      
+      const { clientX, clientY } = e
+      const centerX = window.innerWidth / 2
+      const centerY = window.innerHeight / 2
+      
+      const moveX = clientX - centerX
+      const moveY = clientY - centerY
+
+      // Mascot Parallax
+      gsap.to('.gsap-hero-mascot', {
+        x: moveX * 0.015,
+        y: moveY * 0.015,
+        duration: 1.2,
+        ease: 'power2.out',
+        overwrite: 'auto'
+      })
+
+      // Badges Parallax
+      gsap.utils.toArray<HTMLElement>('.gsap-hero-badge').forEach((badge) => {
+        const speed = parseFloat(badge.getAttribute('data-speed') || '0.04')
+        gsap.to(badge, {
+          x: moveX * speed,
+          y: moveY * speed,
+          duration: 1,
+          ease: 'power2.out',
+          overwrite: 'auto'
+        })
+      })
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+    }
+  }, { scope: containerRef })
 
   return (
-    <section className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-screen flex items-center">
+    <section ref={containerRef} className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-screen flex items-center">
       {/* Animated Background Components */}
       <div 
         className="absolute inset-0 z-[1] pointer-events-none opacity-50"
@@ -43,12 +130,12 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-12 relative z-30">
             <div className="space-y-6">
-              <h1 className="font-serif text-6xl md:text-8xl text-white leading-[1.1] tracking-tight">
+              <h1 className="gsap-hero-title font-serif text-6xl md:text-8xl text-white leading-[1.1] tracking-tight opacity-0">
                 Ship real work. <br />
                 Earn XP. <span className="text-accent text-glow">Get paid.</span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-muted max-w-xl leading-relaxed font-light">
+              <p className="gsap-hero-subtitle text-xl md:text-2xl text-muted max-w-xl leading-relaxed font-light opacity-0">
                 Micro-task marketplace for developers. Claim bounties, build reputation and cash out instantly.
               </p>
             </div>
@@ -56,7 +143,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-5 pt-4">
               <Button 
                 size="lg" 
-                className="gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight"
+                className="gsap-hero-btn gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0"
                 onClick={() => router.push('/register?role=developer')}
               >
                 Start Grinding <Zap className="w-5 h-5 fill-current" />
@@ -64,7 +151,7 @@ export default function Hero() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold"
+                className="gsap-hero-btn text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold opacity-0"
                 onClick={() => router.push('/register?role=client')}
               >
                 Post a Task
@@ -91,7 +178,7 @@ export default function Hero() {
 
             {/* The Mascot */}
             <div 
-              className="absolute inset-0 flex items-center justify-center z-10"
+              className="gsap-hero-mascot absolute inset-0 flex items-center justify-center z-10 opacity-0"
               style={{
                 maskImage: 'radial-gradient(circle, black 70%, transparent 95%)',
                 WebkitMaskImage: 'radial-gradient(circle, black 70%, transparent 95%)',
@@ -107,11 +194,24 @@ export default function Hero() {
             </div>
 
             {/* Floating Rupees */}
-            <div className="absolute top-[45%] left-[25%] w-14 h-14 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-xl font-bold animate-bounce [animation-duration:3s] z-0 rotate-[-5deg]">₹</div>
-            <div className="absolute top-[58%] right-[25%] w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-lg font-bold animate-bounce [animation-duration:4s] [animation-delay:1s] z-0 rotate-[9deg]">₹</div>
+            <div 
+              className="gsap-hero-badge absolute top-[45%] left-[25%] w-14 h-14 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-xl font-bold z-0 rotate-[-5deg] opacity-0"
+              data-speed="0.07"
+            >
+              ₹
+            </div>
+            <div 
+              className="gsap-hero-badge absolute top-[58%] right-[25%] w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-lg font-bold z-0 rotate-[9deg] opacity-0"
+              data-speed="0.06"
+            >
+              ₹
+            </div>
 
             {/* Floating Task Cards */}
-            <div className="absolute top-[28%] left-[26%] glass p-3 rounded-xl shadow-glow animate-bounce [animation-duration:6s] z-0 pointer-events-auto transition-transform">
+            <div 
+              className="gsap-hero-badge absolute top-[28%] left-[26%] glass p-3 rounded-xl shadow-glow z-0 pointer-events-auto transition-transform opacity-0"
+              data-speed="0.04"
+            >
               <div className="flex items-center justify-between gap-6 mb-1">
                 <span className="text-xs font-medium text-white">Fix navbar overflow</span>
                 <span className="text-accent font-bold text-xs">₹300</span>
@@ -119,7 +219,10 @@ export default function Hero() {
               <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold tracking-wider uppercase">Bug Fix</span>
             </div>
 
-            <div className="absolute top-[42%] right-[19.5%] glass p-3 rounded-xl shadow-glow animate-bounce [animation-duration:7s] [animation-delay:1s] z-20 pointer-events-none transition-transform">
+            <div 
+              className="gsap-hero-badge absolute top-[42%] right-[19.5%] glass p-3 rounded-xl shadow-glow z-20 pointer-events-none transition-transform opacity-0"
+              data-speed="0.05"
+            >
               <div className="flex items-center justify-between gap-6 mb-1">
                 <span className="text-xs font-medium text-white">Add dark mode</span>
                 <span className="text-accent font-bold text-xs">₹600</span>
@@ -128,7 +231,10 @@ export default function Hero() {
             </div>
 
             {/* Streak Badge - Horizontal Pill */}
-            <div className="absolute top-[24%] right-[42%] glass-orange px-4 py-2 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(255,122,0,0.2)] animate-pulse z-20 border border-white/20 pointer-events-none hover:scale-105 transition-transform">
+            <div 
+              className="gsap-hero-badge absolute top-[24%] right-[42%] glass-orange px-4 py-2 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(255,122,0,0.2)] z-20 border border-white/20 pointer-events-none hover:scale-105 transition-transform opacity-0"
+              data-speed="0.03"
+            >
               <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                 <Flame className="w-5 h-5 text-accent fill-accent" />
               </div>
@@ -139,7 +245,10 @@ export default function Hero() {
             </div>
 
             {/* XP Badge - Tucked behind right ear tip */}
-            <div className="absolute top-[27%] right-[30%] glass px-3 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-2xl z-10 pointer-events-none rotate-[7deg] animate-in fade-in zoom-in duration-1000">
+            <div 
+              className="gsap-hero-badge absolute top-[27%] right-[30%] glass px-3 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-2xl z-10 pointer-events-none rotate-[7deg] opacity-0"
+              data-speed="0.02"
+            >
               <Star className="w-4 h-4 text-accent fill-accent" />
               <span className="text-accent font-bold text-sm">+250 XP</span>
             </div>

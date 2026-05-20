@@ -170,7 +170,7 @@ export default function PostTaskForm() {
 
             {/* Custom tags already added */}
             {selectedTags
-              .filter((t) => !SKILL_TAGS.includes(t))
+              .filter((t) => !(SKILL_TAGS as readonly string[]).includes(t))
               .map((tag) => (
                 <span
                   key={tag}

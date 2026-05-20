@@ -30,7 +30,7 @@ function timeAgo(date: Date) {
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const session = await auth()
-  const currentUser = session?.user as { id: string; role: 'developer' | 'owner'; level: number } | undefined
+  const currentUser = session?.user as { id: string; role: 'developer' | 'owner'; level: number; xp: number } | undefined
   const taskResult = await getTaskById(id)
 
   if (!taskResult) notFound()
