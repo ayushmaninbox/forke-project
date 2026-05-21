@@ -152,7 +152,7 @@ export default function Hero() {
                 size="lg" 
                 variant="outline" 
                 className="gsap-hero-btn text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold opacity-0"
-                onClick={() => router.push('/register?role=client')}
+                onClick={() => router.push('/register?role=owner')}
               >
                 Post a Task
               </Button>

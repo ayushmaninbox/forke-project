@@ -64,9 +64,11 @@ function RegisterContentInner() {
     const saved = localStorage.getItem('forke_last_auth')
     if (saved) setLastUsed(saved)
 
-    const roleParam = searchParams.get('role') as 'developer' | 'owner' | null
-    if (roleParam === 'developer' || roleParam === 'owner') {
-      setRole(roleParam)
+    const roleParam = searchParams.get('role')
+    if (roleParam === 'developer') {
+      setRole('developer')
+    } else if (roleParam === 'owner' || roleParam === 'client') {
+      setRole('owner')
     }
   }, [searchParams])
 
@@ -75,7 +77,7 @@ function RegisterContentInner() {
     localStorage.setItem('forke_last_auth', provider)
     
     // For clients, we want to redirect back here to finish the form
-    const redirectTo = role === 'owner' ? '/register?role=client' : '/dashboard'
+    const redirectTo = role === 'owner' ? '/register?role=owner' : '/dashboard'
     
     if (provider === 'google') {
       await signInWithGoogle(role, redirectTo)

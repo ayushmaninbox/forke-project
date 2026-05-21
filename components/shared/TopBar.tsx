@@ -20,19 +20,19 @@ export default async function TopBar({ title }: TopBarProps) {
     : '?'
 
   return (
-    <header className="h-16 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-md px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-md px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4">
         <MobileMenuTrigger />
-        <h1 className="font-serif text-xl md:text-2xl text-white tracking-tight">{title}</h1>
+        <h1 className="font-serif text-xl md:text-2xl text-[var(--color-text-primary)] tracking-tight">{title}</h1>
       </div>
       
       <div className="flex items-center gap-6">
-        <button className="text-white/40 hover:text-white transition-colors relative group">
+        <button className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors relative group">
           <Bell className="w-5 h-5" />
           <span className="absolute top-0 right-0 w-2 h-2 bg-accent rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
         
-        <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-accent/10 flex items-center justify-center">
+        <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[var(--color-border)] bg-accent/10 flex items-center justify-center">
           {user?.image ? (
             <Image 
               src={user.image} 

@@ -42,7 +42,7 @@ export default async function AppLayout({
 
   return (
     <DashboardProvider>
-      <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden">
+      <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember">
         <Sidebar user={{ 
           name: user.name, 
           image: user.image, 

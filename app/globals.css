@@ -1,14 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-accent: #FF7A00;
-  --color-accent-hover: #E66E00;
-  --color-accent-muted: #FF7A0022;
-  --color-surface: #121212;
-  --color-surface-hover: #1A1A1A;
-  --color-muted: #888888;
-  --color-border: #222222;
-  --color-bg: #050505;
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-muted: var(--color-accent-muted);
+  --color-accent-light: var(--color-accent-light);
+  --color-accent-text: var(--color-accent-text);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-muted: var(--color-text-muted);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-bg: var(--color-bg);
 
   /* Font mapping for Next.js Fonts */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -19,11 +24,38 @@
 :root {
   --color-accent: #FF7A00;
   --color-accent-hover: #E66E00;
+  --color-accent-muted: rgba(255, 122, 0, 0.1);
+  --color-accent-light: rgba(255, 122, 0, 0.05);
+  --color-accent-text: #FF7A00;
   --color-bg: #050505;
+  --color-bg-surface: #050505;
   --color-text-primary: #FFFFFF;
   --color-text-muted: #888888;
   --color-border: #222222;
   --color-surface: #121212;
+  --color-surface-hover: #1A1A1A;
+  --color-muted: #888888;
+}
+
+/* Premium Light Notion/Stripe Brand Design System (Ember) */
+.theme-ember {
+  --color-accent: #D97706;
+  --color-accent-hover: #B45309;
+  --color-accent-muted: rgba(217, 119, 6, 0.1);
+  --color-accent-light: #FEF3C7;
+  --color-accent-text: #92400E;
+  --color-bg: #FFFFFF;
+  --color-bg-surface: #FAFAFA;
+  --color-text-primary: #111111;
+  --color-text-muted: #6B7280;
+  --color-border: #E5E7EB;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F9FAFB;
+  --color-muted: #6B7280;
+
+  color-scheme: light;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-surface);
 }
 
 body {
@@ -54,12 +86,32 @@ img {
     border: 1px solid rgba(255, 122, 0, 0.2);
   }
 
+  .theme-ember .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .theme-ember .glass-orange {
+    background: rgba(217, 119, 6, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(217, 119, 6, 0.15);
+  }
+
   .text-glow {
     text-shadow: 0 0 20px rgba(255, 122, 0, 0.4);
   }
 
+  .theme-ember .text-glow {
+    text-shadow: 0 0 20px rgba(217, 119, 6, 0.15);
+  }
+
   .shadow-glow {
     box-shadow: 0 0 30px rgba(255, 122, 0, 0.15);
+  }
+
+  .theme-ember .shadow-glow {
+    box-shadow: 0 0 30px rgba(217, 119, 6, 0.05);
   }
 }
 
@@ -99,8 +151,36 @@ img {
   background: var(--color-accent-hover);
 }
 
+/* theme-ember scrollbar overrides */
+.theme-ember::-webkit-scrollbar-track,
+.theme-ember ::-webkit-scrollbar-track {
+  background: var(--color-bg-surface);
+}
+
+.theme-ember::-webkit-scrollbar-thumb,
+.theme-ember ::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+}
+
+.theme-ember::-webkit-scrollbar-thumb:hover,
+.theme-ember ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-hover);
+}
+
 /* For Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-accent) var(--color-bg);
 }
+
+.theme-ember,
+.theme-ember * {
+  scrollbar-color: var(--color-accent) var(--color-bg-surface);
+}
+
+/* Selection overrides */
+.theme-ember ::selection {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent-text);
+}
+

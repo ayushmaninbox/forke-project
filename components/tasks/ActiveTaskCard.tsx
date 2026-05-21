@@ -16,17 +16,17 @@ interface ActiveTaskCardProps {
 
 export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
   const statusConfig = {
-    claimed: { label: 'CLAIMED', color: 'bg-white/5 text-white/60 border-white/10' },
-    submitted: { label: 'SUBMITTED', color: 'bg-accent/10 text-accent border-accent/20' },
-    approved: { label: 'APPROVED', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    claimed: { label: 'CLAIMED', color: 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]' },
+    submitted: { label: 'SUBMITTED', color: 'bg-[var(--color-accent-light)] text-[var(--color-accent-text)] border-[var(--color-accent)]/20' },
+    approved: { label: 'APPROVED', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   }
 
-  const config = statusConfig[task.status as keyof typeof statusConfig] || { label: task.status.toUpperCase(), color: 'bg-white/5 text-white/40 border-white/10' }
+  const config = statusConfig[task.status as keyof typeof statusConfig] || { label: task.status.toUpperCase(), color: 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]' }
 
   return (
     <Link 
       href={`/tasks/${task.id}`}
-      className="block bg-white/[0.02] border border-white/5 rounded-2xl p-6 hover:border-accent/40 hover:bg-accent/[0.02] transition-all group glass"
+      className="block bg-white border border-[var(--color-border)] rounded-2xl p-6 hover:border-accent/40 hover:bg-accent/[0.02] transition-all group glass shadow-sm"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-3">
@@ -39,7 +39,7 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
             </span>
           </div>
           
-          <h4 className="text-lg font-serif text-white truncate group-hover:text-accent transition-colors">
+          <h4 className="text-lg font-serif text-[var(--color-text-primary)] truncate group-hover:text-accent transition-colors">
             {task.title}
           </h4>
 
@@ -50,8 +50,8 @@ export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
           </div>
         </div>
 
-        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-accent group-hover:border-accent group-hover:text-white transition-all">
-          <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white" />
+        <div className="w-10 h-10 rounded-full border border-[var(--color-border)] flex items-center justify-center group-hover:bg-accent group-hover:border-accent group-hover:text-white transition-all">
+          <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
         </div>
       </div>
     </Link>

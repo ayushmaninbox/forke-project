@@ -15,15 +15,15 @@ export default async function DashboardPage() {
   const activeTasks = user?.role === 'developer' ? await getTasksByClaimant(user.id) : []
 
   return (
-    <div className="flex flex-col h-full font-sans bg-[#0A0A0A]">
+    <div className="flex flex-col h-full font-sans bg-[var(--color-bg)]">
       <TopBar title="Dashboard" />
       <div className="flex-grow p-8 overflow-y-auto space-y-12">
         {/* Welcome Section */}
         <div className="max-w-4xl space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <h2 className="font-serif text-4xl md:text-5xl text-white tracking-tight">
+          <h2 className="font-serif text-4xl md:text-5xl text-[var(--color-text-primary)] tracking-tight">
             Welcome back, <span className="text-accent italic">{firstName}</span>
           </h2>
-          <p className="text-white/40 text-sm md:text-lg font-medium tracking-wide">
+          <p className="text-[var(--color-text-muted)] text-sm md:text-lg font-medium tracking-wide">
             Here&apos;s an overview of your active workflow.
           </p>
         </div>
@@ -39,7 +39,7 @@ export default async function DashboardPage() {
                   <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent border border-accent/20 shadow-glow">
                     <Clock className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif text-white tracking-tight">Pending <span className="text-accent italic">Reviews</span></h3>
+                  <h3 className="text-2xl md:text-3xl font-serif text-[var(--color-text-primary)] tracking-tight">Pending <span className="text-accent italic">Reviews</span></h3>
                 </div>
                 <span className="px-4 py-1.5 bg-accent/10 text-accent text-[10px] font-black rounded-full border border-accent/20 uppercase tracking-widest shadow-[0_0_15px_rgba(255,122,0,0.2)]">
                   {pendingReviews.length} ACTION REQUIRED
@@ -58,16 +58,16 @@ export default async function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-12 border border-white/5 rounded-[2.5rem] flex flex-col items-center text-center gap-4 glass bg-white/[0.02]">
-                   <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/10 flex items-center justify-center text-white/20 relative group overflow-hidden">
+                <div className="p-12 border border-[var(--color-border)] rounded-[2.5rem] flex flex-col items-center text-center gap-4 glass bg-white shadow-sm">
+                   <div className="w-16 h-16 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] relative group overflow-hidden">
                      <div className="absolute inset-0 bg-accent/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                     <CheckCircle2 className="w-8 h-8 relative z-10" />
+                     <CheckCircle2 className="w-8 h-8 relative z-10 text-[var(--color-text-muted)]" />
                    </div>
                    <div className="space-y-2">
-                     <p className="text-white text-lg font-serif tracking-wide">All caught up!</p>
-                     <p className="text-white/40 text-xs px-12 leading-relaxed">When developers submit work for your tasks, they&apos;ll appear here for review.</p>
+                     <p className="text-[var(--color-text-primary)] text-lg font-serif tracking-wide">All caught up!</p>
+                     <p className="text-[var(--color-text-muted)] text-xs px-12 leading-relaxed">When developers submit work for your tasks, they&apos;ll appear here for review.</p>
                    </div>
-                   <Link href="/post-task" className="mt-4 px-6 py-2.5 bg-white/[0.03] hover:bg-accent hover:text-white border border-white/10 hover:border-accent/50 transition-all rounded-full text-white/60 font-black text-[10px] uppercase tracking-widest">
+                   <Link href="/post-task" className="mt-4 px-6 py-2.5 bg-[var(--color-bg-surface)] hover:bg-accent hover:text-white border border-[var(--color-border)] hover:border-accent/50 transition-all rounded-full text-[var(--color-text-muted)] hover:text-white font-black text-[10px] uppercase tracking-widest">
                      Post another task
                    </Link>
                 </div>
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
                   <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent border border-accent/20 shadow-glow">
                     <LayoutGrid className="w-6 h-6" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif text-white tracking-tight">Active <span className="text-accent italic">Tasks</span></h3>
+                  <h3 className="text-2xl md:text-3xl font-serif text-[var(--color-text-primary)] tracking-tight">Active <span className="text-accent italic">Tasks</span></h3>
                 </div>
                 <span className="px-4 py-1.5 bg-accent/10 text-accent text-[10px] font-black rounded-full border border-accent/20 uppercase tracking-widest shadow-[0_0_15px_rgba(255,122,0,0.2)]">
                   {activeTasks.length} IN PROGRESS
@@ -100,16 +100,16 @@ export default async function DashboardPage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-12 border border-white/5 rounded-[2.5rem] flex flex-col items-center text-center gap-4 glass bg-white/[0.02]">
-                   <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/10 flex items-center justify-center text-white/20 relative group overflow-hidden">
+                <div className="p-12 border border-[var(--color-border)] rounded-[2.5rem] flex flex-col items-center text-center gap-4 glass bg-white shadow-sm">
+                   <div className="w-16 h-16 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)] relative group overflow-hidden">
                      <div className="absolute inset-0 bg-accent/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                     <AlertCircle className="w-8 h-8 relative z-10" />
+                     <AlertCircle className="w-8 h-8 relative z-10 text-[var(--color-text-muted)]" />
                    </div>
                    <div className="space-y-2">
-                     <p className="text-white text-lg font-serif tracking-wide">No active tasks</p>
-                     <p className="text-white/40 text-xs px-12 leading-relaxed">You haven&apos;t claimed any tasks lately. Go find your next challenge!</p>
+                     <p className="text-[var(--color-text-primary)] text-lg font-serif tracking-wide">No active tasks</p>
+                     <p className="text-[var(--color-text-muted)] text-xs px-12 leading-relaxed">You haven&apos;t claimed any tasks lately. Go find your next challenge!</p>
                    </div>
-                   <Link href="/tasks" className="mt-4 px-6 py-2.5 bg-white/[0.03] hover:bg-accent hover:text-white border border-white/10 hover:border-accent/50 transition-all rounded-full text-white/60 font-black text-[10px] uppercase tracking-widest">
+                   <Link href="/tasks" className="mt-4 px-6 py-2.5 bg-[var(--color-bg-surface)] hover:bg-accent hover:text-white border border-[var(--color-border)] hover:border-accent/50 transition-all rounded-full text-[var(--color-text-muted)] hover:text-white font-black text-[10px] uppercase tracking-widest">
                      Browse tasks
                    </Link>
                 </div>

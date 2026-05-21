@@ -66,7 +66,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
   }
 
   return (
-    <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-8 space-y-8 glass hover:border-accent/40 hover:bg-accent/[0.02] transition-all group">
+    <div className="bg-white border border-[var(--color-border)] rounded-3xl p-8 space-y-8 glass hover:border-accent/40 hover:bg-accent/[0.02] transition-all group shadow-sm">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div className="space-y-4 flex-1">
           <div className="flex items-center gap-3">
@@ -74,22 +74,22 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                <GitPullRequest className="w-6 h-6" />
              </div>
              <div>
-               <h3 className="text-xl font-serif text-white leading-none tracking-tight">
+               <h3 className="text-xl font-serif text-[var(--color-text-primary)] leading-none tracking-tight">
                  {task.title}
                </h3>
-               <div className="flex items-center gap-2 mt-2 text-xs font-bold text-white/40 uppercase tracking-widest leading-none">
+               <div className="flex items-center gap-2 mt-2 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-widest leading-none">
                  <User className="w-3 h-3" />
                  Submitted by <span className="text-accent">{claimantName}</span>
                </div>
              </div>
           </div>
           
-          <div className="flex items-center gap-4 text-xs font-mono text-white/40">
+          <div className="flex items-center gap-4 text-xs font-mono text-[var(--color-text-muted)]">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
               {new Date(submission.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div className="w-1 h-1 rounded-full bg-white/10" />
+            <div className="w-1 h-1 rounded-full bg-[var(--color-border)]" />
             <div className="text-accent font-bold">₹ {Math.floor(task.budget / 100)}</div>
           </div>
         </div>
@@ -98,22 +98,22 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
           href={submission.githubLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 px-5 py-3 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-accent/40 rounded-2xl transition-all group/link"
+          className="flex items-center gap-3 px-5 py-3 bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-surface)]/80 border border-[var(--color-border)] hover:border-accent/40 rounded-2xl transition-all group/link"
         >
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none mb-1">Source Code</span>
-            <span className="text-sm font-mono text-white/80 group-hover/link:text-accent transition-colors truncate max-w-[200px]">
+            <span className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.2em] leading-none mb-1">Source Code</span>
+            <span className="text-sm font-mono text-[var(--color-text-primary)]/80 group-hover/link:text-accent transition-colors truncate max-w-[200px]">
               {submission.githubLink.replace('https://', '')}
             </span>
           </div>
-          <ExternalLink className="w-4 h-4 text-white/40 group-hover/link:text-accent group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-all" />
+          <ExternalLink className="w-4 h-4 text-[var(--color-text-muted)] group-hover/link:text-accent group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-all" />
         </a>
       </div>
 
       {submission.note && (
-        <div className="relative p-6 bg-accent/5 border-l-4 border-accent rounded-r-2xl">
+        <div className="relative p-6 bg-[var(--color-accent-light)] border-l-4 border-accent rounded-r-2xl">
           <MessageCircle className="absolute -top-3 -right-3 w-8 h-8 text-accent/20" />
-          <p className="text-white/60 leading-relaxed italic text-sm font-medium">
+          <p className="text-[var(--color-accent-text)] leading-relaxed italic text-sm font-medium">
             &ldquo;{submission.note}&rdquo;
           </p>
         </div>
@@ -122,13 +122,13 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
       {showRevisionInput ? (
         <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
            <div className="space-y-2">
-             <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest pl-1">What needs to be fixed?</label>
+             <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest pl-1">What needs to be fixed?</label>
              <textarea 
                autoFocus
                value={revisionNote}
                onChange={(e) => setRevisionNote(e.target.value)}
                placeholder="Be specific. e.g. 'The API endpoint returns 404 for empty results, should return 200 []'"
-               className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-medium text-white placeholder:text-white/20 transition-all focus:outline-none focus:border-accent/50 focus:bg-accent/[0.02] min-h-[100px]"
+               className="w-full bg-white border border-[var(--color-border)] rounded-2xl p-4 text-sm font-medium text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]/50 transition-all focus:outline-none focus:border-accent/50 focus:bg-[var(--color-bg-surface)] min-h-[100px]"
              />
            </div>
            <div className="flex gap-3">
@@ -142,17 +142,17 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
              <Button 
                variant="outline" 
                onClick={() => setShowRevisionInput(false)}
-               className="px-6 border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.06]"
+               className="px-6 border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border)]/50"
              >
                CANCEL
              </Button>
            </div>
-        </div>
+         </div>
       ) : (
         <div className="space-y-8">
-          <div className="p-6 bg-white/[0.03] rounded-[2rem] border border-white/5 space-y-4">
+          <div className="p-6 bg-[var(--color-bg-surface)] rounded-[2rem] border border-[var(--color-border)] space-y-4">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Quality Rating</label>
+              <label className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-[0.2em]">Quality Rating</label>
               {rating && (
                 <span className="text-[10px] font-bold text-accent uppercase tracking-widest animate-in fade-in slide-in-from-right-1">
                   {['', 'Needs work', 'Below average', 'Good', 'Great', 'Outstanding'][rating]}
@@ -173,8 +173,8 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                   <svg
                     width="40" height="40" viewBox="0 0 24 24"
                     className="transition-colors duration-300"
-                    fill={(hovered ?? rating ?? 0) >= star ? '#FF7A00' : 'none'}
-                    stroke={(hovered ?? rating ?? 0) >= star ? '#FF7A00' : 'rgba(255,255,255,0.1)'}
+                    fill={(hovered ?? rating ?? 0) >= star ? 'var(--color-accent)' : 'none'}
+                    stroke={(hovered ?? rating ?? 0) >= star ? 'var(--color-accent)' : '#E5E7EB'}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -194,7 +194,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                 "h-14 rounded-2xl shadow-lg transition-all",
                 rating 
                   ? "bg-accent hover:bg-accent-hover text-white shadow-glow" 
-                  : "bg-white/5 text-white/20 cursor-not-allowed shadow-none"
+                  : "bg-[var(--color-bg-surface)] text-[var(--color-text-muted)]/40 cursor-not-allowed border border-[var(--color-border)] shadow-none"
               )}
             >
               <CheckCircle2 className="w-5 h-5 mr-2" />
@@ -204,7 +204,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
               variant="outline" 
               onClick={() => setShowRevisionInput(true)}
               disabled={isPending}
-              className="h-14 rounded-2xl border border-white/5 bg-white/[0.03] text-white/60 hover:bg-accent/10 hover:text-accent hover:border-accent/40 transition-all font-bold"
+              className="h-14 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] hover:bg-accent/10 hover:text-accent hover:border-accent/40 transition-all font-bold"
             >
               <GitPullRequest className="w-5 h-5 mr-2" />
               REQUEST REVISION
