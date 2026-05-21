@@ -2,15 +2,23 @@
 
 import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
-
-const ADMIN_USERNAME = 'ayushmaninbox'
-const ADMIN_PASSWORD_HASH = '$2b$10$u/o97bSN.LxU1VxIP7RvZO98DxJ0slaeJiUhAIp0szm1UCgmAftN.' // pupulu123
+import { db } from '@/lib/db'
+import { admins } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function adminLogin(formData: FormData) {
   const username = formData.get('username') as string
   const password = formData.get('password') as string
 
-  if (username === ADMIN_USERNAME && await bcrypt.compare(password, ADMIN_PASSWORD_HASH)) {
+  // Query the admins table — no hardcoded credentials
+  const admin = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.username, username))
+    .limit(1)
+    .then((rows) => rows[0])
+
+  if (admin && await bcrypt.compare(password, admin.passwordHash)) {
     const cookieStore = await cookies()
     cookieStore.set('admin_token', 'forke_admin_session', {
       httpOnly: true,

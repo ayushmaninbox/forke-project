@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776689386107,
-      "tag": "0000_great_william_stryker",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776690228192,
-      "tag": "0001_open_felicia_hardy",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1778905914010,
-      "tag": "0002_chubby_star_brand",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1778948397680,
-      "tag": "0003_tiresome_betty_brant",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1778954568871,
-      "tag": "0004_chubby_toad",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1778955525971,
-      "tag": "0005_fixed_nuke",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1778957671846,
-      "tag": "0006_curved_amazoness",
+      "when": 1779365247554,
+      "tag": "0000_fast_loki",
       "breakpoints": true
     }
   ]
