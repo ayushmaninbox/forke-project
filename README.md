@@ -28,10 +28,6 @@ Forget dry resumes and competitive bidding wars. On Forke, your code does the ta
 * 🎮 **RPG Progression System:** Every task you complete awards you XP. Climb the ranks from **Script Kiddie** to **Sprint Soldier**, all the way to **Forke Legend**, unlocking exclusive platform perks and higher-paying tasks along the way.
 * 📝 **Verified Proof of Work:** As you complete tasks, Forke automatically builds a gorgeous public developer portfolio for you. Every contribution is verified, timestamped, and linked directly to your GitHub commits so recruiters know your skills are 100% real.
 
-<p align="center">
-  <img src="./public/forke-assets/forky-reactions/level_up_forky.png" width="120" alt="Level Up Forky" />
-</p>
-
 ---
 
 ## 💼 For Founders & Startups: Micro-Task Velocity
@@ -49,15 +45,11 @@ Need a quick feature built or a bug squashed, but don't want to hire a full-time
 **Forky** is Forke's official mascot—a mischievous, chibi orange creature who supports you throughout your entire developer journey! He reacts dynamically to what you do on the platform:
 
 <p align="center">
-  <img src="./public/forke-assets/forky-reactions/locked_in_forky.png" width="100" alt="Locked In Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="./public/forke-assets/forky-reactions/grind_mode_forky.png" width="100" alt="Grind Mode Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="./public/forke-assets/forky-reactions/loot_goblin_forky.png" width="100" alt="Loot Goblin Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="./public/forke-assets/forky-reactions/confused_forky.png" width="100" alt="Confused Forky" />
+  <img src="./public/forke-assets/forky-reactions/locked_in_forky.png" width="180" alt="Locked In Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./public/forke-assets/forky-reactions/grind_mode_forky.png" width="180" alt="Grind Mode Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./public/forke-assets/forky-reactions/loot_goblin_forky.png" width="180" alt="Loot Goblin Forky" /> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./public/forke-assets/forky-reactions/confused_forky.png" width="180" alt="Confused Forky" />
 </p>
-
-* **Locked In & Grind Mode:** Keeps you company when you're focused, typing away with your coffee close by.
-* **Happy & Rich:** Celebrates with you when your PR gets merged and that sweet UPI payout hits your account!
-* **Bug Panic:** Panics slightly (but cute!) when a build fails or tests don't pass.
 
 ---
 
