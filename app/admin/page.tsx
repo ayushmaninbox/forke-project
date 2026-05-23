@@ -7,7 +7,9 @@ import {
   getDevelopers, 
   approveOwner, 
   declineOwner, 
-  toggleDeveloperBan 
+  toggleDeveloperBan,
+  getWaitlistConfig,
+  updateWaitlistConfig
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -35,6 +37,8 @@ export default function AdminDashboard() {
   const [developersList, setDevelopersList] = useState<any[]>([])
   const [enquiriesList, setEnquiriesList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [waitlistEnabled, setWaitlistEnabled] = useState(true)
+  const [isTogglingWaitlist, setIsTogglingWaitlist] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -42,6 +46,15 @@ export default function AdminDashboard() {
 
   async function fetchData() {
     setIsLoading(true)
+    
+    // Fetch waitlist configuration
+    try {
+      const config = await getWaitlistConfig()
+      setWaitlistEnabled(config.enabled)
+    } catch (e) {
+      console.error('Failed to fetch waitlist status:', e)
+    }
+
     if (activeTab === 'owners') {
       const pending = await getPendingOwners()
       const approved = await getApprovedOwners()
@@ -54,6 +67,21 @@ export default function AdminDashboard() {
       if (res.success) setEnquiriesList(res.data || [])
     }
     setIsLoading(false)
+  }
+
+  async function handleToggleWaitlist() {
+    setIsTogglingWaitlist(true)
+    try {
+      const newStatus = !waitlistEnabled
+      const res = await updateWaitlistConfig(newStatus)
+      if (res.success) {
+        setWaitlistEnabled(newStatus)
+      }
+    } catch (error) {
+      console.error('Failed to toggle waitlist:', error)
+    } finally {
+      setIsTogglingWaitlist(false)
+    }
   }
 
   async function handleApprove(userId: string) {
@@ -135,7 +163,37 @@ export default function AdminDashboard() {
                 </div>
                 <h3 className="text-4xl font-serif">{isLoading ? '...' : (activeTab === 'owners' ? ownersList.length : activeTab === 'developers' ? developersList.length : enquiriesList.length)}</h3>
              </div>
-             {/* Add more stats as needed */}
+
+             {/* Waitlist Control Card */}
+             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col justify-between min-h-[140px]">
+                <div className="flex items-center justify-between">
+                   <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Waitlist Gate Mode</p>
+                   <span className={`w-2.5 h-2.5 rounded-full ${waitlistEnabled ? 'bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-white/20'}`} />
+                </div>
+                
+                <div className="flex items-center justify-between mt-4">
+                  <div>
+                    <h3 className="text-xl font-serif text-white">
+                      {waitlistEnabled ? 'Active / Enabled' : 'Inactive / Disabled'}
+                    </h3>
+                    <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider mt-1">
+                      {waitlistEnabled ? 'Redirecting all guests' : 'Open access for everyone'}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleToggleWaitlist}
+                    disabled={isTogglingWaitlist}
+                    className={`h-10 px-4 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center border ${
+                      waitlistEnabled 
+                        ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white' 
+                        : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                    }`}
+                  >
+                    {isTogglingWaitlist ? '...' : (waitlistEnabled ? 'Disable' : 'Enable')}
+                  </button>
+                </div>
+             </div>
           </div>
 
           {/* Table Container */}

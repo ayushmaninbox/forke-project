@@ -4,13 +4,22 @@ import React, { useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { Loader } from '@/components/ui/Loader'
+import { usePathname } from 'next/navigation'
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const loaderRef = useRef<HTMLDivElement>(null)
   const [showLoader, setShowLoader] = useState(true)
+  const pathname = usePathname()
+
+  const isBypassed = pathname === '/waitlist' || pathname === '/checkout'
 
   useGSAP(() => {
+    if (isBypassed) {
+      setShowLoader(false)
+      return
+    }
+
     const tl = gsap.timeline({
       onComplete: () => {
         setShowLoader(false)
@@ -36,7 +45,11 @@ export default function Template({ children }: { children: React.ReactNode }) {
       duration: 0.45,
       ease: 'power2.out'
     }, '-=0.25') // Overlap slightly with loader exit for a seamless reveal
-  }, { scope: containerRef })
+  }, { scope: containerRef, dependencies: [isBypassed] })
+
+  if (isBypassed) {
+    return <>{children}</>
+  }
 
   return (
     <div className="relative min-h-screen">

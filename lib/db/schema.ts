@@ -203,3 +203,9 @@ export const subscribers = pgTable('subscribers', {
   email: text('email').notNull().unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const systemSettings = pgTable('system_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})

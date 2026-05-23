@@ -167,7 +167,7 @@ export default function WaitlistPage() {
   }
 
   return (
-    <div ref={containerRef} className="h-screen max-h-screen min-h-screen bg-[#050505] text-white overflow-hidden relative selection:bg-accent selection:text-white flex flex-col justify-between pt-6 md:pt-8 lg:pt-12">
+    <div ref={containerRef} className="h-[100dvh] max-h-[100dvh] min-h-[100dvh] bg-[#050505] text-white overflow-hidden relative selection:bg-accent selection:text-white flex flex-col justify-between pt-2 sm:pt-4 md:pt-8 lg:pt-12">
       {/* Animated Dot Field Background */}
       <div 
         className="fixed inset-0 z-[1] pointer-events-none opacity-40"
@@ -199,11 +199,11 @@ export default function WaitlistPage() {
       </div>
 
       {/* ===== HERO / CTA MAIN VIEW ===== */}
-      <main className="flex-1 flex items-center justify-center overflow-hidden py-4 px-6 md:px-8 lg:px-12 relative z-10">
+      <main className="flex-1 flex items-center justify-center overflow-hidden py-2 px-6 md:px-8 lg:px-12 relative z-10">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center h-full relative">
           
           {/* Left Content */}
-          <div className="lg:col-span-7 flex flex-col justify-center space-y-6 text-left relative z-20">
+          <div className="lg:col-span-7 flex flex-col justify-center space-y-4 sm:space-y-6 text-left relative z-20">
             {/* Tagline */}
             <div className="gsap-wl-tagline opacity-0 whitespace-nowrap">
               <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.35em] text-accent/70 whitespace-nowrap">
@@ -212,8 +212,8 @@ export default function WaitlistPage() {
             </div>
 
             {/* Main Heading */}
-            <div className="space-y-4">
-              <h1 className="gsap-wl-title font-serif text-5xl md:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight opacity-0">
+            <div className="space-y-2 sm:space-y-4">
+              <h1 className="gsap-wl-title font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight opacity-0">
                 Join the waitlist. <br />
                 <span className="text-accent text-glow">Build the future.</span>
               </h1>
@@ -224,7 +224,7 @@ export default function WaitlistPage() {
             </div>
 
             {/* Email CTA Glass Card */}
-            <div className="gsap-wl-cta opacity-0 relative p-6 md:p-8 rounded-[2rem] bg-black/60 border border-white/10 backdrop-blur-2xl shadow-[0_32px_80px_-16px_rgba(0,0,0,0.8)] overflow-hidden group max-w-md w-full">
+            <div className="gsap-wl-cta opacity-0 relative p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] bg-black/60 border border-white/10 backdrop-blur-2xl shadow-[0_32px_80px_-16px_rgba(0,0,0,0.8)] overflow-hidden group max-w-md w-full">
               {/* Ambient gradient hover */}
               <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
               
@@ -398,9 +398,9 @@ export default function WaitlistPage() {
       </main>
 
       {/* ===== DARKER DOCK FOOTER (LOCKS 100% TO BOTTOM EDGES) ===== */}
-      <footer className="gsap-wl-footer opacity-0 flex-shrink-0 w-full border-t border-white/[0.03] bg-[#020202]/75 backdrop-blur-md py-4 px-6 md:px-8 lg:px-12 mt-auto relative z-20">
+      <footer className="gsap-wl-footer opacity-0 flex-shrink-0 w-full border-t border-white/[0.03] bg-[#020202]/75 backdrop-blur-md py-3 px-6 md:px-8 lg:px-12 mt-auto relative z-20">
         {/* Peeking Forky for Phone/Mobile viewports only — Static and enlarged */}
-        <div className="absolute -top-[86px] left-[8%] sm:left-[12%] w-[165px] h-[100px] pointer-events-none lg:hidden z-10 select-none">
+        <div className="absolute -top-[80px] left-[8%] sm:left-[12%] w-[165px] h-[100px] pointer-events-none lg:hidden z-10 select-none">
           <Image 
             src="/forke-assets/nav_peeking_forky.png" 
             alt="Peeking Forky" 
@@ -413,13 +413,9 @@ export default function WaitlistPage() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="flex items-center gap-4 text-[10px] text-white/15 font-bold uppercase tracking-wider">
             <span>© 2026 FORKE</span>
-            <div className="w-1 h-1 bg-white/5 rounded-full" />
-            <Link href="/privacy" className="hover:text-white/30 transition-colors">Privacy Policy</Link>
-            <div className="w-1 h-1 bg-white/5 rounded-full" />
-            <Link href="/terms" className="hover:text-white/30 transition-colors">Terms of Service</Link>
           </div>
           
-          <p className="font-serif text-xs text-white/20 italic">
+          <p className="font-serif text-xs text-white/20">
             See you on the other side! ♥
           </p>
         </div>

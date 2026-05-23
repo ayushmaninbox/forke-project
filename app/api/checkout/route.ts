@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import bcrypt from 'bcryptjs'
 
-const SITE_PASSWORD = 'Password#6#7'
+const DEFAULT_BYPASS_HASH = '$2b$10$JEQiYsDtj2tUN2SXWMsYBu6g/cXZfWa5fDcYg0t32TSUx5NQklJpy'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { password } = body
 
-    if (password !== SITE_PASSWORD) {
+    // Allow overriding bypass password via environment variable (git-ignored)
+    const customBypass = process.env.WAITLIST_BYPASS_PASSWORD
+    const isMatch = customBypass 
+      ? (password === customBypass)
+      : (await bcrypt.compare(password, DEFAULT_BYPASS_HASH))
+
+    if (!isMatch) {
       return NextResponse.json(
         { success: false, message: 'Incorrect password.' },
         { status: 401 }

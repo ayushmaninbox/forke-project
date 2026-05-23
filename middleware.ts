@@ -4,29 +4,49 @@ import { NextResponse } from 'next/server'
 
 const { auth } = NextAuth(authConfig)
 
-export default auth((req) => {
+export default auth(async (req) => {
   // ===== WAITLIST GATE =====
   // Block all routes unless the user has the site_access cookie.
-  // Only /waitlist, /checkout, and their API routes are allowed through.
+  // Only /waitlist, /checkout, /admin, and their API routes are allowed through.
   const siteAccess = req.cookies.get('site_access')?.value
   const pathname = req.nextUrl.pathname
 
   const isWaitlistAllowed = 
     pathname === '/waitlist' ||
     pathname === '/checkout' ||
-    pathname === '/privacy' ||
-    pathname === '/terms' ||
+    pathname.startsWith('/admin') ||
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/auth')
 
   if (!siteAccess && !isWaitlistAllowed) {
-    return NextResponse.redirect(new URL('/waitlist', req.nextUrl.origin))
+    // Dynamically check if the waitlist is enabled
+    let waitlistEnabled = true
+    try {
+      const statusRes = await fetch(new URL('/api/waitlist/status', req.nextUrl.origin))
+      const statusData = await statusRes.json()
+      waitlistEnabled = statusData.enabled
+    } catch (e) {
+      console.error('Failed to fetch waitlist status in middleware:', e)
+    }
+
+    if (waitlistEnabled) {
+      return NextResponse.redirect(new URL('/waitlist', req.nextUrl.origin))
+    }
   }
 
-  // If user HAS access and tries to visit /waitlist, send them home
-  if (siteAccess && pathname === '/waitlist') {
-    return NextResponse.redirect(new URL('/', req.nextUrl.origin))
+  // If user HAS access (or waitlist is disabled) and tries to visit /waitlist, redirect them
+  if (pathname === '/waitlist') {
+    let waitlistEnabled = true
+    try {
+      const statusRes = await fetch(new URL('/api/waitlist/status', req.nextUrl.origin))
+      const statusData = await statusRes.json()
+      waitlistEnabled = statusData.enabled
+    } catch {}
+
+    if (!waitlistEnabled || siteAccess) {
+      return NextResponse.redirect(new URL('/', req.nextUrl.origin))
+    }
   }
 
   // ===== EXISTING AUTH LOGIC =====

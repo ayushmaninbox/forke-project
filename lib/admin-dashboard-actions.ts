@@ -60,3 +60,18 @@ export async function toggleDeveloperBan(userId: string, shouldBan: boolean) {
   revalidatePath('/admin')
   return { success: true }
 }
+
+import { isWaitlistEnabled, setWaitlistEnabled } from './db/settings'
+
+export async function getWaitlistConfig() {
+  await ensureAdmin()
+  const enabled = await isWaitlistEnabled()
+  return { enabled }
+}
+
+export async function updateWaitlistConfig(enabled: boolean) {
+  await ensureAdmin()
+  await setWaitlistEnabled(enabled)
+  revalidatePath('/admin')
+  return { success: true }
+}
