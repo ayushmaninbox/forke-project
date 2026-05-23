@@ -1,11 +1,12 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://forke.dev'
+  const baseUrl = 'https://www.forke.space'
 
   // Define static routes
   const routes = [
     '',
+    '/waitlist',
     '/signin',
     '/register',
     '/terms',

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/', '/dashboard/', '/onboarding/', '/auth-error'],
     },
-    sitemap: 'https://forke.dev/sitemap.xml',
+    sitemap: 'https://www.forke.space/sitemap.xml',
   }
 }

@@ -5,6 +5,31 @@ import { NextResponse } from 'next/server'
 const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
+  // ===== WAITLIST GATE =====
+  // Block all routes unless the user has the site_access cookie.
+  // Only /waitlist, /checkout, and their API routes are allowed through.
+  const siteAccess = req.cookies.get('site_access')?.value
+  const pathname = req.nextUrl.pathname
+
+  const isWaitlistAllowed = 
+    pathname === '/waitlist' ||
+    pathname === '/checkout' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
+    pathname.startsWith('/api/waitlist') ||
+    pathname.startsWith('/api/checkout') ||
+    pathname.startsWith('/api/auth')
+
+  if (!siteAccess && !isWaitlistAllowed) {
+    return NextResponse.redirect(new URL('/waitlist', req.nextUrl.origin))
+  }
+
+  // If user HAS access and tries to visit /waitlist, send them home
+  if (siteAccess && pathname === '/waitlist') {
+    return NextResponse.redirect(new URL('/', req.nextUrl.origin))
+  }
+
+  // ===== EXISTING AUTH LOGIC =====
   const isLoggedIn = !!req.auth
   const isBanned = (req.auth?.user as any)?.isBanned
   const isAppPage = req.nextUrl.pathname.startsWith('/dashboard') || 

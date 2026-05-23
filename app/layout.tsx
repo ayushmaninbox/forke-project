@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Forke — Ship Real Work, Get Paid',
     description: 'The micro-task marketplace for developers. Complete bounties and level up your engineering career.',
-    url: 'https://forke.dev',
+    url: 'https://www.forke.space',
     siteName: 'Forke',
     images: [
       {
