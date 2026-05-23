@@ -9,6 +9,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.forke.space'),
   title: {
     default: 'Forke — Ship Real Work, Get Paid',
     template: '%s | Forke'
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     siteName: 'Forke',
     images: [
       {
-        url: '/forke-assets/og-image.png',
+        url: '/forke-assets/banner.png',
         width: 1200,
         height: 630,
         alt: 'Forke — The Developer Marketplace',
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
     title: 'Forke — Ship Real Work, Get Paid',
     description: 'The micro-task marketplace for developers. Complete bounties and level up your engineering career.',
     creator: '@forkedotdev',
-    images: ['/forke-assets/og-image.png'],
+    images: ['/forke-assets/banner.png'],
   },
 
   manifest: '/site.webmanifest',
