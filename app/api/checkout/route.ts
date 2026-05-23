@@ -10,7 +10,10 @@ export async function POST(request: Request) {
     const { password } = body
 
     // Allow overriding bypass password via environment variable (git-ignored)
-    const customBypass = process.env.WAITLIST_BYPASS_PASSWORD
+    let customBypass = process.env.WAITLIST_BYPASS_PASSWORD
+    if (customBypass && customBypass.startsWith('"') && customBypass.endsWith('"')) {
+      customBypass = customBypass.slice(1, -1)
+    }
     const isMatch = customBypass 
       ? (password === customBypass)
       : (await bcrypt.compare(password, DEFAULT_BYPASS_HASH))

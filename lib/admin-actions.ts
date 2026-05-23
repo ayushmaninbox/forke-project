@@ -10,8 +10,16 @@ export async function adminLogin(formData: FormData) {
   const username = formData.get('username') as string
   const password = formData.get('password') as string
 
-  const adminUsername = process.env.ADMIN_USERNAME
-  const adminPassword = process.env.ADMIN_PASSWORD
+  let adminUsername = process.env.ADMIN_USERNAME
+  let adminPassword = process.env.ADMIN_PASSWORD
+
+  // Strip accidental surrounding double quotes (e.g. from Vercel env dashboard)
+  if (adminUsername && adminUsername.startsWith('"') && adminUsername.endsWith('"')) {
+    adminUsername = adminUsername.slice(1, -1)
+  }
+  if (adminPassword && adminPassword.startsWith('"') && adminPassword.endsWith('"')) {
+    adminPassword = adminPassword.slice(1, -1)
+  }
 
   // Auto-seed/update the admin user in Neon DB on login attempt
   if (adminUsername && adminPassword && username === adminUsername) {
