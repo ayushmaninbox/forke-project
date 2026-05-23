@@ -74,6 +74,10 @@ export default function Footer() {
       
       <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
         <p className="text-muted text-xs uppercase tracking-widest font-bold">© 2026 Forke. All rights reserved.</p>
+        <div className="flex gap-6 text-muted text-xs font-light">
+          <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+          <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+        </div>
         <p className="text-muted text-xs font-light">Made with <span className="text-red-500">❤️</span> and late nights.</p>
       </div>
     </footer>
