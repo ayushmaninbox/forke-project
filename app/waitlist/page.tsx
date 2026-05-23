@@ -235,7 +235,7 @@ export default function WaitlistPage() {
                       <Check className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-base font-serif text-white">You&apos;re on the list!</h3>
+                      <h3 className="text-base font-serif text-white">{message || "You're on the list!"}</h3>
                       <p className="text-xs text-white/40">We&apos;ll notify you the moment Forke goes live.</p>
                     </div>
                   </div>

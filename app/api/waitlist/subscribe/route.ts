@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { subscribers } from '@/lib/db/schema'
 import { z } from 'zod'
 import { sendWelcomeEmail } from '@/lib/email'
+import { eq } from 'drizzle-orm'
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -12,6 +13,21 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email } = emailSchema.parse(body)
+
+    // Check if subscriber already exists in Drizzle
+    const existing = await db
+      .select()
+      .from(subscribers)
+      .where(eq(subscribers.email, email))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (existing) {
+      return NextResponse.json({ 
+        success: true, 
+        message: "You're already on the list!" 
+      })
+    }
 
     await db.insert(subscribers).values({ email }).onConflictDoNothing()
 
