@@ -31,9 +31,9 @@ export async function POST(request: Request) {
 
     await db.insert(subscribers).values({ email }).onConflictDoNothing()
 
-    // Send the welcome email in the background to keep the API response extremely fast (< 30ms)
-    sendWelcomeEmail(email).catch((err) => {
-      console.error('Failed to send welcome email in background:', err)
+    // Dispatch the welcome email synchronously to guarantee delivery and zero delays before responding
+    await sendWelcomeEmail(email).catch((err) => {
+      console.error('Failed to send welcome email:', err)
     })
 
     return NextResponse.json({ success: true, message: "You're on the list!" })

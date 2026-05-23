@@ -19,11 +19,11 @@ export default function WaitlistPage() {
     const originalHtmlOverflow = document.documentElement.style.overflow
     const originalBodyOverflow = document.body.style.overflow
     const originalBodyHeight = document.body.style.height
-    
+
     document.documentElement.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
     document.body.style.height = '100%'
-    
+
     return () => {
       document.documentElement.style.overflow = originalHtmlOverflow
       document.body.style.overflow = originalBodyOverflow
@@ -38,41 +38,41 @@ export default function WaitlistPage() {
       { y: 15, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.5, delay: 0.2 }
     )
-    .fromTo('.gsap-wl-title',
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 },
-      '-=0.3'
-    )
-    .fromTo('.gsap-wl-subtitle',
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6 },
-      '-=0.5'
-    )
-    .fromTo('.gsap-wl-cta',
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: 'back.out(1.2)' },
-      '-=0.4'
-    )
-    .fromTo('.gsap-wl-check',
-      { x: -15, opacity: 0 },
-      { x: 0, opacity: 1, duration: 0.4, stagger: 0.08 },
-      '-=0.3'
-    )
-    .fromTo('.gsap-hero-mascot',
-      { scale: 0.85, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1.5, ease: 'elastic.out(1, 0.75)' },
-      '-=1.2'
-    )
-    .fromTo('.gsap-hero-badge',
-      { scale: 0, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1, stagger: 0.12, ease: 'back.out(1.7)' },
-      '-=1'
-    )
-    .fromTo('.gsap-wl-footer',
-      { opacity: 0 },
-      { opacity: 1, duration: 0.5 },
-      '-=0.5'
-    )
+      .fromTo('.gsap-wl-title',
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8 },
+        '-=0.3'
+      )
+      .fromTo('.gsap-wl-subtitle',
+        { y: 20, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6 },
+        '-=0.5'
+      )
+      .fromTo('.gsap-wl-cta',
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: 'back.out(1.2)' },
+        '-=0.4'
+      )
+      .fromTo('.gsap-wl-check',
+        { x: -15, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.4, stagger: 0.08 },
+        '-=0.3'
+      )
+      .fromTo('.gsap-hero-mascot',
+        { scale: 0.85, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1.5, ease: 'elastic.out(1, 0.75)' },
+        '-=1.2'
+      )
+      .fromTo('.gsap-hero-badge',
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1, stagger: 0.12, ease: 'back.out(1.7)' },
+        '-=1'
+      )
+      .fromTo('.gsap-wl-footer',
+        { opacity: 0 },
+        { opacity: 1, duration: 0.5 },
+        '-=0.5'
+      )
 
     // Floating badges animation
     gsap.utils.toArray<HTMLElement>('.gsap-hero-badge').forEach((badge, index) => {
@@ -169,7 +169,7 @@ export default function WaitlistPage() {
   return (
     <div ref={containerRef} className="h-[100dvh] max-h-[100dvh] min-h-[100dvh] bg-[#050505] text-white overflow-hidden relative selection:bg-accent selection:text-white flex flex-col justify-between pt-2 sm:pt-4 md:pt-8 lg:pt-12">
       {/* Animated Dot Field Background */}
-      <div 
+      <div
         className="fixed inset-0 z-[1] pointer-events-none opacity-40"
         style={{
           maskImage: 'radial-gradient(circle at 80% 50%, transparent 10%, black 40%)',
@@ -201,7 +201,7 @@ export default function WaitlistPage() {
       {/* ===== HERO / CTA MAIN VIEW ===== */}
       <main className="flex-1 flex items-center justify-center overflow-hidden py-2 px-6 md:px-8 lg:px-12 relative z-10">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center h-full relative">
-          
+
           {/* Left Content */}
           <div className="lg:col-span-7 flex flex-col justify-center space-y-4 sm:space-y-6 text-left relative z-20">
             {/* Tagline */}
@@ -217,7 +217,7 @@ export default function WaitlistPage() {
                 Join the waitlist. <br />
                 <span className="text-accent text-glow">Build the future.</span>
               </h1>
-              
+
               <p className="gsap-wl-subtitle text-sm md:text-base text-white/50 max-w-xl leading-relaxed font-light opacity-0">
                 Forke is a micro-task marketplace where developers claim bounties, ship real code, and earn rewards. We&apos;re building something big — and you can be first in.
               </p>
@@ -227,7 +227,7 @@ export default function WaitlistPage() {
             <div className="gsap-wl-cta opacity-0 relative p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-[2rem] bg-black/60 border border-white/10 backdrop-blur-2xl shadow-[0_32px_80px_-16px_rgba(0,0,0,0.8)] overflow-hidden group max-w-md w-full">
               {/* Ambient gradient hover */}
               <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-              
+
               <div className="relative z-10">
                 {status === 'success' ? (
                   <div className="gsap-wl-success flex flex-col items-center justify-center text-center space-y-4 py-2">
@@ -245,7 +245,7 @@ export default function WaitlistPage() {
                       <h2 className="text-base font-serif text-white tracking-wide">Be the first to know</h2>
                       <p className="text-xs text-white/40">Drop your email to join early access and product updates.</p>
                     </div>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-3">
                       <div className="relative flex-1">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-white/20" />
@@ -274,7 +274,7 @@ export default function WaitlistPage() {
                         )}
                       </button>
                     </div>
-                    
+
                     {status === 'error' && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium animate-pulse">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -301,7 +301,7 @@ export default function WaitlistPage() {
           <div className="hidden lg:block lg:col-span-5 relative h-full w-full pointer-events-none">
             {/* Hero Visual Area - Orbital Layout */}
             <div className="absolute right-[-300px] top-1/2 -translate-y-1/2 w-[1200px] h-[1200px] pointer-events-none">
-              
+
               {/* Connecting Lines SVG Layer */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible opacity-20">
                 <defs>
@@ -316,16 +316,16 @@ export default function WaitlistPage() {
               </svg>
 
               {/* The Mascot */}
-              <div 
+              <div
                 className="gsap-hero-mascot absolute inset-0 flex items-center justify-center z-10 opacity-0"
                 style={{
                   maskImage: 'radial-gradient(circle, black 70%, transparent 95%)',
                   WebkitMaskImage: 'radial-gradient(circle, black 70%, transparent 95%)',
                 }}
               >
-                <Image 
-                  src="/forke-assets/landing-assets/hero-image-forky.png" 
-                  alt="Forky Mascot" 
+                <Image
+                  src="/forke-assets/landing-assets/hero-image-forky.png"
+                  alt="Forky Mascot"
                   fill
                   className="object-contain"
                   priority
@@ -333,13 +333,13 @@ export default function WaitlistPage() {
               </div>
 
               {/* Floating Rupees */}
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[45%] left-[25%] w-14 h-14 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-xl font-bold z-0 rotate-[-5deg] opacity-0"
                 data-speed="0.07"
               >
                 ₹
               </div>
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[58%] right-[25%] w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-lg font-bold z-0 rotate-[9deg] opacity-0"
                 data-speed="0.06"
               >
@@ -347,7 +347,7 @@ export default function WaitlistPage() {
               </div>
 
               {/* Floating Task Cards */}
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[28%] left-[26%] glass p-3 rounded-xl shadow-glow z-0 pointer-events-auto transition-transform opacity-0 border border-white/10"
                 data-speed="0.04"
               >
@@ -358,7 +358,7 @@ export default function WaitlistPage() {
                 <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold tracking-wider uppercase">Bug Fix</span>
               </div>
 
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[42%] right-[19.5%] glass p-3 rounded-xl shadow-glow z-20 pointer-events-none transition-transform opacity-0 border border-white/10"
                 data-speed="0.05"
               >
@@ -370,7 +370,7 @@ export default function WaitlistPage() {
               </div>
 
               {/* Streak Badge */}
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[24%] right-[42%] glass-orange px-4 py-2 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(255,122,0,0.2)] z-20 border border-white/20 pointer-events-none hover:scale-105 transition-transform opacity-0"
                 data-speed="0.03"
               >
@@ -384,7 +384,7 @@ export default function WaitlistPage() {
               </div>
 
               {/* XP Badge */}
-              <div 
+              <div
                 className="gsap-hero-badge absolute top-[27%] right-[30%] glass px-3 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-2xl z-10 pointer-events-none rotate-[7deg] opacity-0"
                 data-speed="0.02"
               >
@@ -401,9 +401,9 @@ export default function WaitlistPage() {
       <footer className="gsap-wl-footer opacity-0 flex-shrink-0 w-full border-t border-white/[0.03] bg-[#020202]/75 backdrop-blur-md py-3 px-6 md:px-8 lg:px-12 mt-auto relative z-20">
         {/* Peeking Forky for Phone/Mobile viewports only — Static and enlarged */}
         <div className="absolute -top-[80px] left-[8%] sm:left-[12%] w-[165px] h-[100px] pointer-events-none lg:hidden z-10 select-none">
-          <Image 
-            src="/forke-assets/nav_peeking_forky.png" 
-            alt="Peeking Forky" 
+          <Image
+            src="/forke-assets/nav_peeking_forky.png"
+            alt="Peeking Forky"
             fill
             className="object-contain"
             priority
@@ -414,7 +414,7 @@ export default function WaitlistPage() {
           <div className="flex items-center gap-4 text-[10px] text-white/15 font-bold uppercase tracking-wider">
             <span>© 2026 FORKE</span>
           </div>
-          
+
           <p className="font-serif text-xs text-white/20">
             See you on the other side! ♥
           </p>
