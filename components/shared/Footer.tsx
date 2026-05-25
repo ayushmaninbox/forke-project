@@ -24,7 +24,7 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Product</h4>
           <ul className="space-y-4">
-            <li><a href="#how-it-works" className="text-muted hover:text-white transition-colors text-sm font-light">How it works</a></li>
+            <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">What's Forke?</a></li>
             <li><a href="/bounties" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>
             <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Levels</a></li>
             <li><a href="/leaderboard" className="text-muted hover:text-white transition-colors text-sm font-light">Leaderboards</a></li>

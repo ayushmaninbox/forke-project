@@ -67,8 +67,11 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
                     <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
                       Thanks for joining early access. Forke is the premier micro-task marketplace where developers claim bounties, ship real code, and earn rewards.
                     </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
+                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
                       We&apos;ll email you the exact moment we launch your workspace. In the meantime, prepare your editor. Something big is about to drop.
+                    </p>
+                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
+                      Have questions or feedback? Feel free to reach out to us at <a href="mailto:support@forke.space" style="color:#FF7A00;text-decoration:none;font-weight:500;">support@forke.space</a>.
                     </p>
                     
                     <!-- Features Checks -->
@@ -104,13 +107,32 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
                       </tr>
                     </table>
                     
-                    <!-- CTA Button -->
+                    <!-- CTA Buttons -->
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 40px auto;">
                       <tr>
-                        <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
-                          <a href="https://forke.space" target="_blank" style="display:inline-block;padding:16px 36px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);">
-                            Visit Workspace
-                          </a>
+                        <!-- LinkedIn Button -->
+                        <td align="center" style="padding:0 8px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
+                                <a href="https://www.linkedin.com/company/forke/" target="_blank" style="display:inline-block;padding:16px 24px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);white-space:nowrap;">
+                                  Follow us on LinkedIn
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                        <!-- Contact Us Button -->
+                        <td align="center" style="padding:0 8px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="center" style="background-color:rgba(255,122,0,0.03);border:1px solid rgba(255,122,0,0.3);border-radius:12px;box-shadow:0 4px 0 rgba(255,122,0,0.15);">
+                                <a href="mailto:support@forke.space" style="display:inline-block;padding:15px 24px;font-size:11px;font-weight:900;color:#FF7A00;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;white-space:nowrap;">
+                                  Contact Us
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
