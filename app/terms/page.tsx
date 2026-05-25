@@ -173,8 +173,8 @@ export default function TermsPage() {
              <div className="text-center space-y-4">
                 <h2 className="text-3xl font-serif text-white italic">Contact</h2>
                 <p className="text-sm">For questions regarding these Terms or legal inquiries:</p>
-                <a href="mailto:support@forke.dev" className="inline-block px-8 py-4 bg-accent text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-accent/20 hover:scale-105 transition-all">
-                  support@forke.dev
+                <a href="mailto:support@forke.space" className="inline-block px-8 py-4 bg-accent text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-accent/20 hover:scale-105 transition-all">
+                  support@forke.space
                 </a>
              </div>
 

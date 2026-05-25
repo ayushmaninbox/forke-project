@@ -139,8 +139,8 @@ export default function PrivacyPage() {
              <div className="text-center space-y-4">
                 <h2 className="text-3xl font-serif text-white italic">Privacy Concerns?</h2>
                 <p className="text-sm">For any privacy-related questions or data requests:</p>
-                <a href="mailto:support@forke.dev" className="inline-block px-8 py-4 bg-accent text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-accent/20 hover:scale-105 transition-all">
-                  support@forke.dev
+                <a href="mailto:support@forke.space" className="inline-block px-8 py-4 bg-accent text-white font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-accent/20 hover:scale-105 transition-all">
+                  support@forke.space
                 </a>
              </div>
 
