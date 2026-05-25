@@ -20,10 +20,13 @@ export default auth(async (req) => {
     pathname.startsWith('/api/auth')
 
   if (!siteAccess && !isWaitlistAllowed) {
-    // Dynamically check if the waitlist is enabled
+    // Dynamically check if the waitlist is enabled (force fresh state check)
     let waitlistEnabled = true
     try {
-      const statusRes = await fetch(new URL('/api/waitlist/status', req.nextUrl.origin))
+      const statusRes = await fetch(
+        new URL('/api/waitlist/status', req.nextUrl.origin),
+        { cache: 'no-store' }
+      )
       const statusData = await statusRes.json()
       waitlistEnabled = statusData.enabled
     } catch (e) {
@@ -39,7 +42,10 @@ export default auth(async (req) => {
   if (pathname === '/waitlist') {
     let waitlistEnabled = true
     try {
-      const statusRes = await fetch(new URL('/api/waitlist/status', req.nextUrl.origin))
+      const statusRes = await fetch(
+        new URL('/api/waitlist/status', req.nextUrl.origin),
+        { cache: 'no-store' }
+      )
       const statusData = await statusRes.json()
       waitlistEnabled = statusData.enabled
     } catch {}
@@ -102,7 +108,14 @@ export default auth(async (req) => {
     return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
   }
   
-  return NextResponse.next()
+  const response = NextResponse.next()
+
+  // Disable browser caching for all page routes to make waitlist activation instant on reload
+  if (!pathname.startsWith('/_next') && !pathname.startsWith('/api') && pathname !== '/favicon.ico') {
+    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
+  }
+
+  return response
 })
 
 export const config = {
