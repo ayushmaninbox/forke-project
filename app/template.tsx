@@ -23,6 +23,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
     const tl = gsap.timeline({
       onComplete: () => {
         setShowLoader(false)
+        // Clear transform inline styling so that fixed elements (like Navbar) correctly reference the global viewport
+        gsap.set(containerRef.current, { clearProps: 'transform' })
       }
     })
 

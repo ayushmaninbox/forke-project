@@ -29,13 +29,14 @@ export default function Navbar() {
   ]
 
   return (
-    <nav 
-      className={cn(
-        "fixed top-6 left-0 right-0 z-50 transition-all duration-300 px-4",
-      )}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center h-20 px-8 rounded-full border border-white/10 glass-dark backdrop-blur-2xl bg-black/40 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+    <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
+      <div className="w-full max-w-7xl mx-auto">
+        <div className={cn(
+          "flex justify-between items-center h-20 px-8 rounded-full border transition-all duration-300",
+          isScrolled 
+            ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]" 
+            : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+        )}>
           
           <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
             <div className="absolute -top-[30px] -left-4 w-[180px] h-[110px] z-20 pointer-events-none">

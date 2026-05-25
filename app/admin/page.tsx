@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   getPendingOwners, 
   getApprovedOwners, 
@@ -15,30 +16,46 @@ import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/Button'
 import { 
+  LayoutDashboard,
   Users, 
+  MessageSquare,
+  User,
+  KeyRound,
+  Shield,
+  LogOut,
+  ChevronDown,
+  ChevronRight,
   ShieldCheck, 
   UserX, 
   CheckCircle2, 
   XCircle, 
   Search, 
   Filter,
-  LogOut,
-  ExternalLink,
   Mail,
   Phone,
-  Briefcase
+  Briefcase,
+  ChevronRightSquare,
+  Globe,
+  Settings
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'owners' | 'developers' | 'enquiries'>('owners')
+  
+  // Navigation states
+  const [activeTab, setActiveTab] = useState<
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'profile' | 'change-password' | 'admins'
+  >('dashboard')
+  const [usersMenuOpen, setUsersMenuOpen] = useState(true)
+
+  // Data states
   const [ownersList, setOwnersList] = useState<any[]>([])
   const [developersList, setDevelopersList] = useState<any[]>([])
   const [enquiriesList, setEnquiriesList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
   const [isTogglingWaitlist, setIsTogglingWaitlist] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -47,7 +64,7 @@ export default function AdminDashboard() {
   async function fetchData() {
     setIsLoading(true)
     
-    // Fetch waitlist configuration
+    // Fetch waitlist config
     try {
       const config = await getWaitlistConfig()
       setWaitlistEnabled(config.enabled)
@@ -55,17 +72,25 @@ export default function AdminDashboard() {
       console.error('Failed to fetch waitlist status:', e)
     }
 
-    if (activeTab === 'owners') {
-      const pending = await getPendingOwners()
-      const approved = await getApprovedOwners()
-      setOwnersList([...pending, ...approved])
-    } else if (activeTab === 'developers') {
-      const devs = await getDevelopers()
-      setDevelopersList(devs)
-    } else if (activeTab === 'enquiries') {
-      const res = await getEnquiries()
-      if (res.success) setEnquiriesList(res.data || [])
+    // Fetch lists
+    try {
+      if (activeTab === 'dashboard' || activeTab === 'owner-approval') {
+        const pending = await getPendingOwners()
+        const approved = await getApprovedOwners()
+        setOwnersList([...pending, ...approved])
+      }
+      if (activeTab === 'dashboard' || activeTab === 'developer-ban') {
+        const devs = await getDevelopers()
+        setDevelopersList(devs)
+      }
+      if (activeTab === 'dashboard' || activeTab === 'enquiries') {
+        const res = await getEnquiries()
+        if (res.success) setEnquiriesList(res.data || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err)
     }
+    
     setIsLoading(false)
   }
 
@@ -85,299 +110,657 @@ export default function AdminDashboard() {
   }
 
   async function handleApprove(userId: string) {
-    await approveOwner(userId)
-    fetchData()
+    try {
+      await approveOwner(userId)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to approve owner:', err)
+    }
   }
 
   async function handleDecline(userId: string) {
     if (confirm('Are you sure you want to decline and DELETE this user?')) {
-      await declineOwner(userId)
-      fetchData()
+      try {
+        await declineOwner(userId)
+        fetchData()
+      } catch (err) {
+        console.error('Failed to decline owner:', err)
+      }
     }
   }
 
   async function handleToggleBan(userId: string, isBanned: boolean) {
-    await toggleDeveloperBan(userId, !isBanned)
-    fetchData()
+    try {
+      await toggleDeveloperBan(userId, !isBanned)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to toggle developer ban:', err)
+    }
   }
 
   async function handleLogout() {
-    await adminLogout()
-    router.push('/admin/login')
+    try {
+      await adminLogout()
+      router.push('/admin/login')
+    } catch (err) {
+      console.error('Logout error:', err)
+    }
   }
 
+  // Real-time filtering logic
+  const filteredOwners = ownersList.filter(({ owner, user }) => {
+    const fullName = `${owner.firstName} ${owner.lastName}`.toLowerCase()
+    return fullName.includes(searchQuery.toLowerCase()) || 
+           owner.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           owner.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  const filteredDevelopers = developersList.filter((user) => {
+    return user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  const filteredEnquiries = enquiriesList.filter((enq) => {
+    const fullName = `${enq.firstName} ${enq.lastName}`.toLowerCase()
+    return fullName.includes(searchQuery.toLowerCase()) || 
+           enq.contactEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           enq.message.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col">
-      {/* Sidebar Header */}
-      <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-black/40 backdrop-blur-xl sticky top-0 z-30">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center border border-accent/20">
-            <ShieldCheck className="w-6 h-6 text-accent" />
-          </div>
-          <div>
-            <h1 className="text-xl font-serif tracking-tight">Forke Admin</h1>
-            <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">System Control Unit</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-6">
-          <nav className="flex items-center bg-white/[0.02] border border-white/5 rounded-full p-1">
-            <button 
-              onClick={() => setActiveTab('owners')}
-              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'owners' ? 'bg-accent text-white' : 'text-white/20 hover:text-white'}`}
-            >
-              Owners
-            </button>
-            <button 
-              onClick={() => setActiveTab('developers')}
-              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'developers' ? 'bg-accent text-white' : 'text-white/20 hover:text-white'}`}
-            >
-              Developers
-            </button>
-            <button 
-              onClick={() => setActiveTab('enquiries')}
-              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'enquiries' ? 'bg-accent text-white' : 'text-white/20 hover:text-white'}`}
-            >
-              Enquiries
-            </button>
-          </nav>
+    <div className="min-h-screen bg-[#050505] text-white flex">
+      
+      {/* --- FLOATING LEFT SIDEBAR --- */}
+      <aside className="w-72 fixed left-6 top-6 bottom-6 rounded-[2.5rem] bg-[#0c0c0c]/85 border border-white/[0.05] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.8)] z-40 p-6 flex flex-col justify-between">
+        <div className="space-y-8">
           
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-white/20 hover:text-red-400 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+          {/* Logo & Header */}
+          <div className="flex items-center gap-3.5 px-3 pt-2">
+            <div className="w-10 h-10 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center text-accent shadow-[0_0_15px_rgba(255,122,0,0.1)]">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <h2 className="font-serif text-xl font-bold leading-none tracking-tight">Forke Nexus</h2>
+              <p className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] mt-1.5">Control Terminal</p>
+            </div>
+          </div>
 
-      <main className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-7xl mx-auto space-y-8">
-          
-          {/* Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-4">
-                <div className="flex items-center justify-between">
-                   <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Total Users</p>
-                   <Users className="w-4 h-4 text-accent" />
+          {/* Navigation Links */}
+          <nav className="space-y-2">
+            
+            {/* Dashboard */}
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'dashboard'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </button>
+
+            {/* Users (Nested Sub-menu) */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setUsersMenuOpen(!usersMenuOpen)}
+                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                  activeTab === 'owner-approval' || activeTab === 'developer-ban'
+                    ? 'text-accent bg-accent/5 border border-accent/10'
+                    : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <Users className="w-4 h-4" />
+                  <span>Users</span>
                 </div>
-                <h3 className="text-4xl font-serif">{isLoading ? '...' : (activeTab === 'owners' ? ownersList.length : activeTab === 'developers' ? developersList.length : enquiriesList.length)}</h3>
-             </div>
+                {usersMenuOpen ? <ChevronDown className="w-4 h-4 text-white/20" /> : <ChevronRight className="w-4 h-4 text-white/20" />}
+              </button>
 
-             {/* Waitlist Control Card */}
-             <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col justify-between min-h-[140px]">
-                <div className="flex items-center justify-between">
-                   <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Waitlist Gate Mode</p>
-                   <span className={`w-2.5 h-2.5 rounded-full ${waitlistEnabled ? 'bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'bg-white/20'}`} />
-                </div>
-                
-                <div className="flex items-center justify-between mt-4">
-                  <div>
-                    <h3 className="text-xl font-serif text-white">
-                      {waitlistEnabled ? 'Active / Enabled' : 'Inactive / Disabled'}
-                    </h3>
-                    <p className="text-[9px] text-white/30 font-bold uppercase tracking-wider mt-1">
-                      {waitlistEnabled ? 'Redirecting all guests' : 'Open access for everyone'}
-                    </p>
-                  </div>
-
+              {usersMenuOpen && (
+                <div className="pl-6 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
-                    onClick={handleToggleWaitlist}
-                    disabled={isTogglingWaitlist}
-                    className={`h-10 px-4 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center border ${
-                      waitlistEnabled 
-                        ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white' 
-                        : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                    onClick={() => setActiveTab('owner-approval')}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-200 text-left ${
+                      activeTab === 'owner-approval'
+                        ? 'text-accent font-black'
+                        : 'text-white/30 hover:text-white/80'
                     }`}
                   >
-                    {isTogglingWaitlist ? '...' : (waitlistEnabled ? 'Disable' : 'Enable')}
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'owner-approval' ? 'bg-accent shadow-[0_0_8px_rgba(255,122,0,0.5)]' : 'bg-white/10'}`} />
+                    <span>Owner Approval</span>
                   </button>
-                </div>
-             </div>
-          </div>
 
-          {/* Table Container */}
-          <div className="rounded-[2.5rem] bg-white/[0.01] border border-white/5 overflow-hidden">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                <input 
-                  type="text" 
-                  placeholder={`Search ${activeTab}...`}
-                  className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" className="gap-2 border-white/5 text-[10px] font-black uppercase rounded-xl h-11">
-                  <Filter className="w-3 h-3" /> Filter
-                </Button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    {activeTab === 'enquiries' ? (
-                      <>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Contact</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Message</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Error Type</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Date</th>
-                      </>
-                    ) : (
-                      <>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">User Details</th>
-                        {activeTab === 'owners' && <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Company / Designation</th>}
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Status</th>
-                        <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20">Actions</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest">Loading Records...</td>
-                    </tr>
-                  ) : activeTab === 'owners' ? (
-                    ownersList.map(({ user, owner }) => (
-                      <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative">
-                              {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
-                            </div>
-                            <div>
-                              <p className="font-bold text-white">{owner.firstName} {owner.lastName}</p>
-                              <div className="flex items-center gap-3 text-[11px] text-white/30 mt-1">
-                                <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {owner.contactEmail}</span>
-                                <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {owner.contactNumber}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          <div>
-                            <p className="text-sm font-medium text-white/80">{owner.companyName}</p>
-                            <p className="text-[11px] text-accent/60 font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
-                              <Briefcase className="w-3 h-3" /> {owner.designation}
-                            </p>
-                            <div className="flex items-center gap-3 mt-3">
-                              <a href={owner.personalLinkedIn} target="_blank" className="text-[9px] text-white/20 hover:text-white transition-colors underline">LinkedIn</a>
-                              {owner.companyWebsite && <a href={owner.companyWebsite} target="_blank" className="text-[9px] text-white/20 hover:text-white transition-colors underline">Website</a>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          {user.isApproved ? (
-                            <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit">
-                              <CheckCircle2 className="w-3 h-3" /> Approved
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit">
-                              <ShieldCheck className="w-3 h-3" /> Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-2">
-                            {!user.isApproved && (
-                              <button 
-                                onClick={() => handleApprove(user.id)}
-                                className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all"
-                                title="Approve"
-                              >
-                                <CheckCircle2 className="w-5 h-5" />
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => handleDecline(user.id)}
-                              className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
-                              title="Decline / Delete"
-                            >
-                              <XCircle className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : activeTab === 'developers' ? (
-                    developersList.map((user) => (
-                      <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative">
-                              {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
-                            </div>
-                            <div>
-                              <p className="font-bold text-white">{user.name}</p>
-                              <p className="text-[11px] text-white/30 mt-1 flex items-center gap-1"><Mail className="w-3 h-3" /> {user.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6">
-                          {user.isBanned ? (
-                            <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit">
-                              <UserX className="w-3 h-3" /> Banned
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit">
-                              <CheckCircle2 className="w-3 h-3" /> Active
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-8 py-6">
-                          <button 
-                            onClick={() => handleToggleBan(user.id, user.isBanned)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${user.isBanned ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white' : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white'}`}
-                          >
-                            {user.isBanned ? 'Unban User' : 'Ban User'}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : activeTab === 'enquiries' ? (
-                    enquiriesList.map((enq) => (
-                      <tr key={enq.id} className="group hover:bg-white/[0.01] transition-colors">
-                        <td className="px-8 py-6">
-                          <div>
-                            <p className="font-bold text-white">{enq.firstName} {enq.lastName}</p>
-                            <div className="flex items-center gap-3 text-[11px] text-white/30 mt-1">
-                              <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {enq.contactEmail}</span>
-                              <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {enq.contactNumber}</span>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-6 max-w-sm">
-                          <p className="text-sm text-white/70 line-clamp-2" title={enq.message}>{enq.message}</p>
-                          {enq.relevantLinks && (
-                            <a href={enq.relevantLinks} target="_blank" className="text-[9px] text-accent mt-2 inline-block uppercase tracking-widest font-black hover:underline">
-                              View Links
-                            </a>
-                          )}
-                        </td>
-                        <td className="px-8 py-6">
-                          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-[9px] font-black uppercase">
-                            {enq.errorType === 'AccessDenied' ? 'USER BAN' : enq.errorType === 'GitHubIdentityMismatch' ? 'GITHUB CONFLICT' : enq.errorType || 'GENERAL'}
-                          </span>
-                        </td>
-                        <td className="px-8 py-6">
-                          <p className="text-[11px] text-white/40">{new Date(enq.createdAt).toLocaleDateString()}</p>
-                        </td>
-                      </tr>
-                    ))
-                  ) : null}
-                </tbody>
-              </table>
-              {!isLoading && (activeTab === 'owners' ? ownersList.length : activeTab === 'developers' ? developersList.length : enquiriesList.length) === 0 && (
-                <div className="py-20 text-center">
-                   <p className="text-white/20 uppercase font-black tracking-widest">No records found in Nexus</p>
+                  <button
+                    onClick={() => setActiveTab('developer-ban')}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-200 text-left ${
+                      activeTab === 'developer-ban'
+                        ? 'text-accent font-black'
+                        : 'text-white/30 hover:text-white/80'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'developer-ban' ? 'bg-accent shadow-[0_0_8px_rgba(255,122,0,0.5)]' : 'bg-white/10'}`} />
+                    <span>Developers Ban</span>
+                  </button>
                 </div>
               )}
             </div>
-          </div>
+
+            {/* Enquiries */}
+            <button
+              onClick={() => setActiveTab('enquiries')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'enquiries'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <MessageSquare className="w-4 h-4" />
+                <span>Enquiries</span>
+              </div>
+              {enquiriesList.length > 0 && (
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                  activeTab === 'enquiries' ? 'bg-bg text-accent' : 'bg-accent/10 text-accent border border-accent/20'
+                }`}>
+                  {enquiriesList.length}
+                </span>
+              )}
+            </button>
+
+            {/* Admins */}
+            <button
+              onClick={() => setActiveTab('admins')}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'admins'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admins</span>
+            </button>
+
+            {/* Profile */}
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'profile'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>Profile</span>
+            </button>
+
+            {/* Change Password */}
+            <button
+              onClick={() => setActiveTab('change-password')}
+              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'change-password'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Change Password</span>
+            </button>
+
+          </nav>
         </div>
+
+        {/* User Card & Logout at bottom */}
+        <div className="p-3.5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent text-xs">
+            SA
+          </div>
+          <div className="flex-grow text-left">
+            <h4 className="text-xs font-bold text-white tracking-tight leading-none">Super Admin</h4>
+            <p className="text-[9px] text-white/40 uppercase tracking-[0.1em] font-black mt-1">Nexus Access</p>
+          </div>
+          <button 
+            onClick={handleLogout} 
+            className="text-white/20 hover:text-red-400 transition-colors p-1"
+            title="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+
+      </aside>
+
+      {/* --- MAIN PAGE CONTENT --- */}
+      <main className="flex-grow pl-[21rem] pr-6 py-6 min-h-screen flex flex-col relative z-10 text-left">
+        
+        {/* --- HEADER --- */}
+        <header className="h-20 mb-8 border-b border-white/[0.04] flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-serif text-white tracking-tight capitalize">
+              {activeTab === 'owner-approval' 
+                ? 'Owner Approval' 
+                : activeTab === 'developer-ban' 
+                ? 'Developers Ban' 
+                : activeTab}
+            </h1>
+            <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-1">
+              SYSTEM CONTROL PANEL
+            </p>
+          </div>
+        </header>
+
+        {/* --- DYNAMIC BODY VIEWS --- */}
+        <div className="flex-grow space-y-8">
+
+          {/* ==================== DASHBOARD PANEL ==================== */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-8">
+              
+              {/* Waitlist Control Card (Visual Perfect Match) */}
+              <div className="p-8 md:p-10 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] relative overflow-hidden group shadow-2xl">
+                {/* Subtle top-border glow */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
+
+                {/* Top Row: Title on Left, Glowing indicator on Right */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] font-mono select-none">
+                    Waitlist Gate Mode
+                  </span>
+                  
+                  {/* Glowing Indicator Dot */}
+                  <span className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                    waitlistEnabled 
+                      ? 'bg-orange-500 shadow-[0_0_15px_#f97316,0_0_5px_#f97316]' 
+                      : 'bg-white/10 shadow-none'
+                  }`} />
+                </div>
+
+                {/* Bottom Row: Text content on Left, Action button on Right */}
+                <div className="mt-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                  <div className="text-left space-y-1">
+                    <h3 className="text-3xl font-serif text-white tracking-wide font-normal">
+                      {waitlistEnabled ? 'Active / Enabled' : 'Inactive / Disabled'}
+                    </h3>
+                    <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.15em] font-mono">
+                      {waitlistEnabled ? 'Redirecting all guests' : 'Open access active'}
+                    </p>
+                  </div>
+
+                  <div className="shrink-0">
+                    <button
+                      onClick={handleToggleWaitlist}
+                      disabled={isTogglingWaitlist}
+                      className={`px-8 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl border transition-all duration-300 active:scale-[0.97] cursor-pointer ${
+                        waitlistEnabled 
+                          ? 'border-[#3a1a1a] bg-[#1a0c0c] text-[#ff6a6a] hover:bg-[#3a1a1a] hover:text-white hover:shadow-[0_0_15px_rgba(255,106,106,0.15)]' 
+                          : 'border-[#1a3a21] bg-[#0c1a0e] text-[#6aff87] hover:bg-[#1a3a21] hover:text-white hover:shadow-[0_0_15px_rgba(106,255,135,0.15)]'
+                      }`}
+                    >
+                      {isTogglingWaitlist ? 'Toggling...' : (waitlistEnabled ? 'Disable' : 'Enable')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Summary Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                {/* Total Owners */}
+                <div className="p-6 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Total Clients</span>
+                    <Briefcase className="w-4 h-4 text-accent/60" />
+                  </div>
+                  <div className="text-left mt-4">
+                    <h3 className="text-4xl font-serif">{isLoading ? '...' : ownersList.length}</h3>
+                    <p className="text-[9px] text-white/20 font-black uppercase tracking-wider mt-1">Pending & Approved Owners</p>
+                  </div>
+                </div>
+
+                {/* Total Devs */}
+                <div className="p-6 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Total Developers</span>
+                    <Users className="w-4 h-4 text-accent/60" />
+                  </div>
+                  <div className="text-left mt-4">
+                    <h3 className="text-4xl font-serif">{isLoading ? '...' : developersList.length}</h3>
+                    <p className="text-[9px] text-white/20 font-black uppercase tracking-wider mt-1">Registered Builders</p>
+                  </div>
+                </div>
+
+                {/* Total Enquiries */}
+                <div className="p-6 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Pending Support</span>
+                    <MessageSquare className="w-4 h-4 text-accent/60" />
+                  </div>
+                  <div className="text-left mt-4">
+                    <h3 className="text-4xl font-serif">{isLoading ? '...' : enquiriesList.length}</h3>
+                    <p className="text-[9px] text-white/20 font-black uppercase tracking-wider mt-1">Support & Conflict Enquiries</p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* ==================== OWNER APPROVAL PANEL ==================== */}
+          {activeTab === 'owner-approval' && (
+            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+              
+              {/* Search & filters */}
+              <div className="p-6 border-b border-white/[0.04] flex items-center justify-between bg-white/[0.01]">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="Search owners by name, company, or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" className="gap-2 border-white/5 text-[10px] font-black uppercase rounded-xl h-11 bg-transparent">
+                    <Filter className="w-3 h-3" /> Filter
+                  </Button>
+                </div>
+              </div>
+
+              {/* Table list */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Company / Designation</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                      </tr>
+                    ) : filteredOwners.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                      </tr>
+                    ) : (
+                      filteredOwners.map(({ user, owner }) => (
+                        <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shrink-0">
+                                {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white leading-none">{owner.firstName} {owner.lastName}</p>
+                                <div className="flex items-center gap-3 text-[11px] text-white/30 mt-2 font-mono">
+                                  <span className="flex items-center gap-1.5"><Mail className="w-3 h-3" /> {owner.contactEmail}</span>
+                                  {owner.contactNumber && <span className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {owner.contactNumber}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="text-left">
+                              <p className="text-sm font-semibold text-white/80 leading-none">{owner.companyName}</p>
+                              <p className="text-[10px] text-accent/70 font-black uppercase tracking-widest mt-2 flex items-center gap-1.5 font-mono">
+                                <Briefcase className="w-3.5 h-3.5" /> {owner.designation}
+                              </p>
+                              <div className="flex items-center gap-3 mt-3">
+                                <a href={owner.personalLinkedIn} target="_blank" className="text-[9px] text-white/25 hover:text-white transition-colors underline uppercase tracking-widest font-bold">LinkedIn</a>
+                                {owner.companyWebsite && <a href={owner.companyWebsite} target="_blank" className="text-[9px] text-white/25 hover:text-white transition-colors underline uppercase tracking-widest font-bold">Website</a>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            {user.isApproved ? (
+                              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <CheckCircle2 className="w-3 h-3" /> Approved
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono animate-pulse">
+                                <ShieldCheck className="w-3 h-3" /> Pending
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-2">
+                              {!user.isApproved && (
+                                <button 
+                                  onClick={() => handleApprove(user.id)}
+                                  className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
+                                  title="Approve Owner"
+                                >
+                                  <CheckCircle2 className="w-5 h-5" />
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => handleDecline(user.id)}
+                                className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                title="Decline & Delete"
+                              >
+                                <XCircle className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* ==================== DEVELOPER BAN PANEL ==================== */}
+          {activeTab === 'developer-ban' && (
+            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+              
+              {/* Search */}
+              <div className="p-6 border-b border-white/[0.04] bg-white/[0.01]">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="Search developers by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Table list */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={3} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                      </tr>
+                    ) : filteredDevelopers.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                      </tr>
+                    ) : (
+                      filteredDevelopers.map((user) => (
+                        <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shrink-0">
+                                {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-white leading-none">{user.name}</p>
+                                <p className="text-[11px] text-white/30 mt-2 flex items-center gap-1.5 font-mono"><Mail className="w-3.5 h-3.5" /> {user.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            {user.isBanned ? (
+                              <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <UserX className="w-3 h-3" /> Banned
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <CheckCircle2 className="w-3 h-3" /> Active
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-8 py-6">
+                            <button 
+                              onClick={() => handleToggleBan(user.id, user.isBanned)}
+                              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                user.isBanned 
+                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
+                                  : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
+                              }`}
+                            >
+                              {user.isBanned ? 'Unban User' : 'Ban User'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* ==================== ENQUIRIES PANEL ==================== */}
+          {activeTab === 'enquiries' && (
+            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+              
+              {/* Search */}
+              <div className="p-6 border-b border-white/[0.04] bg-white/[0.01]">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="Search enquiries..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Contact Info</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Message Details</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Issue Category</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                      </tr>
+                    ) : filteredEnquiries.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                      </tr>
+                    ) : (
+                      filteredEnquiries.map((enq) => (
+                        <tr key={enq.id} className="group hover:bg-white/[0.01] transition-colors">
+                          <td className="px-8 py-6">
+                            <div>
+                              <p className="font-bold text-white leading-none">{enq.firstName} {enq.lastName}</p>
+                              <div className="flex items-center gap-3 text-[11px] text-white/30 mt-2 font-mono">
+                                <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {enq.contactEmail}</span>
+                                <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {enq.contactNumber}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 max-w-sm">
+                            <p className="text-sm text-white/70 line-clamp-3 leading-relaxed font-sans" title={enq.message}>
+                              {enq.message}
+                            </p>
+                            {enq.relevantLinks && (
+                              <a href={enq.relevantLinks} target="_blank" className="text-[9px] text-accent mt-3.5 inline-block uppercase tracking-widest font-black hover:underline font-mono">
+                                View Attached Link
+                              </a>
+                            )}
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-[9px] font-black uppercase font-mono">
+                              {enq.errorType === 'AccessDenied' 
+                                ? 'USER BAN' 
+                                : enq.errorType === 'GitHubIdentityMismatch' 
+                                ? 'GITHUB CONFLICT' 
+                                : enq.errorType || 'GENERAL'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="text-[11px] text-white/40 font-mono">{new Date(enq.createdAt).toLocaleDateString()}</p>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
+          {/* ==================== ADMINS PANEL (Placeholder) ==================== */}
+          {activeTab === 'admins' && (
+            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
+              <Shield className="w-12 h-12 text-white/15 mb-4" />
+              <h3 className="text-xl font-serif text-white tracking-tight">Nexus Admins Control</h3>
+              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
+                This section manages administrative credentials, security roles, and system permission overrides.
+              </p>
+            </div>
+          )}
+
+          {/* ==================== PROFILE PANEL (Placeholder) ==================== */}
+          {activeTab === 'profile' && (
+            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
+              <User className="w-12 h-12 text-white/15 mb-4" />
+              <h3 className="text-xl font-serif text-white tracking-tight">Admin Profile Settings</h3>
+              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
+                Configure your system nickname, profile avatar, support signature, and administrative notification email here.
+              </p>
+            </div>
+          )}
+
+          {/* ==================== CHANGE PASSWORD PANEL (Placeholder) ==================== */}
+          {activeTab === 'change-password' && (
+            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
+              <KeyRound className="w-12 h-12 text-white/15 mb-4" />
+              <h3 className="text-xl font-serif text-white tracking-tight">Change Password Credentials</h3>
+              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
+                Securely update your terminal access password. Double factor validation will be requested to proceed.
+              </p>
+            </div>
+          )}
+
+        </div>
+
       </main>
     </div>
   )
