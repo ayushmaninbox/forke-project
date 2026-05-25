@@ -49,11 +49,11 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
                 <!-- Content Padding Area -->
                 <tr>
                   <td style="padding:48px 40px;text-align:center;">
-                    <!-- Brand Title (Forke - Georgia Serif font) -->
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 24px auto;">
+                    <!-- Brand Logo -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px auto;">
                       <tr>
-                        <td style="font-family:Georgia,serif;font-size:32px;font-weight:normal;letter-spacing:-0.02em;color:#ffffff;">
-                          Forke
+                        <td align="center">
+                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="100" style="width:100px;height:auto;display:block;margin:0 auto;" />
                         </td>
                       </tr>
                     </table>
