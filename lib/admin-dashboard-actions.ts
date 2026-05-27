@@ -2,7 +2,7 @@
 
 import { db } from './db'
 import { users, owners, subscribers, admins, developers, githubProfiles, accounts } from './db/schema'
-import { eq, and, desc } from 'drizzle-orm'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { sendBroadcastEmail, sendAdminInvitation } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
 import { revalidatePath } from 'next/cache'
@@ -41,28 +41,27 @@ export async function getDevelopers() {
   await ensureAdmin()
   const rows = await db
     .select({
-      id: users.id,
+      id: developers.id,
+      githubId: developers.githubId,
+      username: developers.username,
+      accessToken: developers.accessToken,
+      createdAt: developers.createdAt,
+      userId: users.id,
       name: users.name,
       email: users.email,
-      username: users.username,
       image: users.image,
       isBanned: users.isBanned,
-      createdAt: users.createdAt,
-      githubId: githubProfiles.githubId,
-      githubUsername: githubProfiles.login,
-      accessToken: accounts.access_token,
     })
-    .from(users)
-    .leftJoin(githubProfiles, eq(users.id, githubProfiles.userId))
+    .from(developers)
     .leftJoin(
-      accounts,
-      and(
-        eq(users.id, accounts.userId),
-        eq(accounts.provider, 'github')
-      )
+      githubProfiles,
+      eq(sql`CAST(${developers.githubId} AS TEXT)`, githubProfiles.githubId)
     )
-    .where(eq(users.role, 'developer'))
-    .orderBy(desc(users.createdAt))
+    .leftJoin(
+      users,
+      eq(githubProfiles.userId, users.id)
+    )
+    .orderBy(desc(developers.createdAt))
 
   return rows
 }

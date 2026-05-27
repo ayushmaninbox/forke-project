@@ -1144,14 +1144,14 @@ export default function AdminDashboard() {
                               </div>
                               <div>
                                 <a 
-                                  href={`https://github.com/${dev.githubUsername || dev.username || ''}`}
+                                  href={`https://github.com/${dev.username || ''}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-bold text-white hover:text-accent transition-colors font-bold block"
                                 >
-                                  {dev.githubUsername || dev.username || 'N/A'}
+                                  {dev.username || 'N/A'}
                                 </a>
-                                <p className="text-[11px] text-white/30 mt-1 font-mono">{dev.name || 'No Name'} &middot; {dev.email}</p>
+                                <p className="text-[11px] text-white/30 mt-1 font-mono">{dev.name || 'No Display Name'} &middot; {dev.email || 'No Email Linked'}</p>
                               </div>
                             </div>
                           </td>
@@ -1190,7 +1190,7 @@ export default function AdminDashboard() {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-xs text-white/20 italic">No GitHub Link</span>
+                              <span className="text-xs text-white/20 italic">No Access Token</span>
                             )}
                           </td>
                           <td className="px-8 py-3.5">
@@ -1202,7 +1202,11 @@ export default function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-8 py-3.5">
-                            {dev.isBanned ? (
+                            {!dev.userId ? (
+                              <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <Terminal className="w-3 h-3" /> Unlinked
+                              </span>
+                            ) : dev.isBanned ? (
                               <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
                                 <UserX className="w-3 h-3" /> Banned
                               </span>
@@ -1213,16 +1217,20 @@ export default function AdminDashboard() {
                             )}
                           </td>
                           <td className="px-8 py-3.5">
-                            <button 
-                              onClick={() => handleToggleBan(dev.id, dev.isBanned)}
-                              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                dev.isBanned 
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
-                                  : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
-                              }`}
-                            >
-                              {dev.isBanned ? 'Unban' : 'Ban'}
-                            </button>
+                            {dev.userId ? (
+                              <button 
+                                onClick={() => handleToggleBan(dev.userId, dev.isBanned)}
+                                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                  dev.isBanned 
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
+                                    : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
+                                }`}
+                              >
+                                {dev.isBanned ? 'Unban' : 'Ban'}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-white/20 italic">No Action Needed</span>
+                            )}
                           </td>
                         </tr>
                       ))

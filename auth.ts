@@ -4,7 +4,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { users, accounts, sessions, verificationTokens, githubProfiles } from '@/lib/db/schema'
+import { users, accounts, sessions, verificationTokens, githubProfiles, developers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { processLoginStreak } from '@/lib/actions/auth-actions'
 import { authConfig } from './auth.config'
@@ -171,6 +171,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                await db.insert(githubProfiles).values({
                  ...profileData,
                  createdAt: new Date(),
+               })
+             }
+
+             // Also sync to the developers table for compatibility with other systems (like the review engines)
+             const existingDev = await db.query.developers.findFirst({
+               where: eq(developers.githubId, Number(githubData.id))
+             })
+
+             if (existingDev) {
+               await db.update(developers).set({
+                 username: githubData.login,
+                 accessToken: account.access_token,
+               }).where(eq(developers.id, existingDev.id))
+             } else {
+               await db.insert(developers).values({
+                 githubId: Number(githubData.id),
+                 username: githubData.login,
+                 accessToken: account.access_token,
                })
              }
            }
