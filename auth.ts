@@ -181,11 +181,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
              if (existingDev) {
                await db.update(developers).set({
+                 userId: token.id as string,
                  username: githubData.login,
                  accessToken: account.access_token,
                }).where(eq(developers.id, existingDev.id))
              } else {
                await db.insert(developers).values({
+                 userId: token.id as string,
                  githubId: Number(githubData.id),
                  username: githubData.login,
                  accessToken: account.access_token,

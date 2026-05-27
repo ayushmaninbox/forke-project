@@ -54,12 +54,8 @@ export async function getDevelopers() {
     })
     .from(developers)
     .leftJoin(
-      githubProfiles,
-      eq(sql`CAST(${developers.githubId} AS TEXT)`, githubProfiles.githubId)
-    )
-    .leftJoin(
       users,
-      eq(githubProfiles.userId, users.id)
+      eq(developers.userId, users.id)
     )
     .orderBy(desc(developers.createdAt))
 

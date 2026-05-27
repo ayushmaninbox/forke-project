@@ -220,6 +220,7 @@ export const systemSettings = pgTable('system_settings', {
 
 export const developers = pgTable('developers', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
   githubId: integer('github_id').notNull().unique(),
   username: text('username').notNull(),
   accessToken: text('access_token').notNull(),
