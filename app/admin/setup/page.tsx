@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { validateInviteToken, setupAdminCredentials } from '@/lib/admin-dashboard-actions'
 import { Button } from '@/components/ui/Button'
-import { Lock, User, Terminal, ShieldAlert, KeyRound, Check, AlertCircle } from 'lucide-react'
+import { Lock, User, Terminal, ShieldAlert, KeyRound, Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 
 function SetupFormContent() {
@@ -19,6 +19,8 @@ function SetupFormContent() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -193,12 +195,19 @@ function SetupFormContent() {
             </span>
             <input 
               required 
-              type="password" 
+              type={showPassword ? "text" : "password"} 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
+              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
               placeholder="••••••••" 
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
@@ -212,12 +221,19 @@ function SetupFormContent() {
             </span>
             <input 
               required 
-              type="password" 
+              type={showConfirmPassword ? "text" : "password"} 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
+              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
               placeholder="••••••••" 
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-1"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </div>

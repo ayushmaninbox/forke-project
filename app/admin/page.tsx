@@ -50,7 +50,9 @@ import {
   Settings,
   UserPlus,
   Terminal,
-  Copy
+  Copy,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 
 const maskToken = (token: string) => {
@@ -111,6 +113,12 @@ export default function AdminDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Show/Hide password toggle states
+  const [showResetPassword, setShowResetPassword] = useState(false)
+  const [showOldPassword, setShowOldPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Waitlist bypass password states
   const [waitlistBypassPassword, setWaitlistBypassPasswordState] = useState('')
@@ -481,9 +489,15 @@ export default function AdminDashboard() {
   })
 
   const filteredDevelopers = developersList.filter((dev) => {
-    const query = searchQuery.toLowerCase()
-    return (dev.username?.toLowerCase().includes(query) || 
-            dev.githubId?.toString().includes(query))
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+    return (
+      dev.username?.toLowerCase().includes(query) ||
+      dev.githubUsername?.toLowerCase().includes(query) ||
+      dev.githubId?.toString().includes(query) ||
+      dev.name?.toLowerCase().includes(query) ||
+      dev.email?.toLowerCase().includes(query)
+    )
   })
 
   const filteredEnquiries = enquiriesList.filter((enq) => {
@@ -848,9 +862,32 @@ export default function AdminDashboard() {
                       {waitlistEnabled ? 'Redirecting all guests' : 'Open access active'}
                     </p>
                     {waitlistEnabled && waitlistBypassPassword && (
-                      <p className="text-xs text-accent/80 font-mono mt-3">
-                        Bypass Key: <span className="text-white border border-accent/20 bg-accent/5 px-2 py-0.5 rounded font-bold">{waitlistBypassPassword}</span>
-                      </p>
+                      <div className="flex items-center gap-2.5 mt-3">
+                        <span className="text-xs text-accent/80 font-mono">Bypass Key:</span>
+                        <span className="text-white border border-accent/20 bg-accent/5 px-2 py-0.5 rounded font-bold font-mono text-xs">{waitlistBypassPassword}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(waitlistBypassPassword)
+                            const btnId = `copied-bypass`
+                            const el = document.getElementById(btnId)
+                            if (el) {
+                              el.classList.remove('opacity-0')
+                              el.classList.add('opacity-100')
+                              setTimeout(() => {
+                                el.classList.remove('opacity-100')
+                                el.classList.add('opacity-0')
+                              }, 2000)
+                            }
+                          }}
+                          className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all text-white/40 hover:text-white inline-flex items-center justify-center cursor-pointer"
+                          title="Copy Bypass Key"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                        <span id="copied-bypass" className="text-[10px] text-emerald-400 font-mono opacity-0 transition-opacity duration-300">
+                          Copied!
+                        </span>
+                      </div>
                     )}
                   </div>
 
@@ -1080,74 +1117,112 @@ export default function AdminDashboard() {
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">GitHub ID</th>
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Access Token</th>
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Joined Date</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                        <td colSpan={6} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
                       </tr>
                     ) : filteredDevelopers.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                        <td colSpan={6} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
                       paginatedDevelopers.map((dev) => (
                         <tr key={dev.id} className="group hover:bg-white/[0.01] transition-colors">
                           <td className="px-8 py-3.5">
-                            <a 
-                              href={`https://github.com/${dev.username}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 w-fit text-white hover:text-accent transition-colors font-bold group/link"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                                <Terminal className="w-4 h-4 text-white/60 group-hover/link:text-accent transition-colors" />
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative">
+                                {dev.image ? (
+                                  <img src={dev.image} alt={dev.name || dev.username} className="object-cover w-full h-full" />
+                                ) : (
+                                  <Terminal className="w-4 h-4 text-white/60" />
+                                )}
                               </div>
-                              <span>{dev.username}</span>
-                            </a>
-                          </td>
-                          <td className="px-8 py-3.5">
-                            <span className="px-2.5 py-1 rounded bg-white/[0.03] border border-white/10 text-white/60 text-xs font-mono">
-                              {dev.githubId}
-                            </span>
-                          </td>
-                          <td className="px-8 py-3.5">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-white/40 font-mono">
-                                {maskToken(dev.accessToken)}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(dev.accessToken)
-                                  const btnId = `copied-${dev.id}`
-                                  const el = document.getElementById(btnId)
-                                  if (el) {
-                                    el.classList.remove('opacity-0')
-                                    el.classList.add('opacity-100')
-                                    setTimeout(() => {
-                                      el.classList.remove('opacity-100')
-                                      el.classList.add('opacity-0')
-                                    }, 2000)
-                                  }
-                                }}
-                                className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all text-white/40 hover:text-white"
-                                title="Copy Access Token"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                              <span id={`copied-${dev.id}`} className="text-[10px] text-emerald-400 font-mono opacity-0 transition-opacity duration-300">
-                                Copied!
-                              </span>
+                              <div>
+                                <a 
+                                  href={`https://github.com/${dev.githubUsername || dev.username || ''}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-bold text-white hover:text-accent transition-colors font-bold block"
+                                >
+                                  {dev.githubUsername || dev.username || 'N/A'}
+                                </a>
+                                <p className="text-[11px] text-white/30 mt-1 font-mono">{dev.name || 'No Name'} &middot; {dev.email}</p>
+                              </div>
                             </div>
                           </td>
                           <td className="px-8 py-3.5">
+                            <span className="px-2.5 py-1 rounded bg-white/[0.03] border border-white/10 text-white/60 text-xs font-mono">
+                              {dev.githubId || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            {dev.accessToken ? (
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-white/40 font-mono">
+                                  {maskToken(dev.accessToken)}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(dev.accessToken)
+                                    const btnId = `copied-${dev.id}`
+                                    const el = document.getElementById(btnId)
+                                    if (el) {
+                                      el.classList.remove('opacity-0')
+                                      el.classList.add('opacity-100')
+                                      setTimeout(() => {
+                                        el.classList.remove('opacity-100')
+                                        el.classList.add('opacity-0')
+                                      }, 2000)
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all text-white/40 hover:text-white"
+                                  title="Copy Access Token"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <span id={`copied-${dev.id}`} className="text-[10px] text-emerald-400 font-mono opacity-0 transition-opacity duration-300">
+                                  Copied!
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-white/20 italic">No GitHub Link</span>
+                            )}
+                          </td>
+                          <td className="px-8 py-3.5">
                             <span className="text-xs text-white/40 font-mono">
-                              {new Date(dev.createdAt).toLocaleString('en-IN', {
+                              {dev.createdAt ? new Date(dev.createdAt).toLocaleString('en-IN', {
                                 dateStyle: 'medium',
                                 timeStyle: 'short',
-                              })}
+                              }) : 'N/A'}
                             </span>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            {dev.isBanned ? (
+                              <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <UserX className="w-3 h-3" /> Banned
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <CheckCircle2 className="w-3 h-3" /> Active
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-8 py-3.5">
+                            <button 
+                              onClick={() => handleToggleBan(dev.id, dev.isBanned)}
+                              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                                dev.isBanned 
+                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
+                                  : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
+                              }`}
+                            >
+                              {dev.isBanned ? 'Unban' : 'Ban'}
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -1622,14 +1697,23 @@ export default function AdminDashboard() {
               <form onSubmit={handleResetPassword} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">New Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={resetNewPassword}
-                    onChange={(e) => setResetNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showResetPassword ? "text" : "password"}
+                      required
+                      value={resetNewPassword}
+                      onChange={(e) => setResetNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-12 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+                    >
+                      {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
@@ -1639,6 +1723,7 @@ export default function AdminDashboard() {
                       setIsResetModalOpen(false)
                       setResetTargetAdmin(null)
                       setResetNewPassword('')
+                      setShowResetPassword(false)
                     }}
                     className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
                   >
@@ -1846,38 +1931,65 @@ export default function AdminDashboard() {
               <form onSubmit={handleChangePassword} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Current Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showOldPassword ? "text" : "password"}
+                      required
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-12 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOldPassword(!showOldPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+                    >
+                      {showOldPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">New Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-12 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+                    >
+                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Confirm New Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl pl-4 pr-12 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
@@ -1888,6 +2000,9 @@ export default function AdminDashboard() {
                       setOldPassword('')
                       setNewPassword('')
                       setConfirmPassword('')
+                      setShowOldPassword(false)
+                      setShowNewPassword(false)
+                      setShowConfirmPassword(false)
                     }}
                     className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
                   >

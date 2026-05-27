@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from './db'
-import { users, owners, subscribers, admins, developers } from './db/schema'
+import { users, owners, subscribers, admins, developers, githubProfiles, accounts } from './db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { sendBroadcastEmail, sendAdminInvitation } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
@@ -39,7 +39,32 @@ export async function getApprovedOwners() {
 
 export async function getDevelopers() {
   await ensureAdmin()
-  return await db.select().from(developers).orderBy(desc(developers.createdAt))
+  const rows = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      username: users.username,
+      image: users.image,
+      isBanned: users.isBanned,
+      createdAt: users.createdAt,
+      githubId: githubProfiles.githubId,
+      githubUsername: githubProfiles.login,
+      accessToken: accounts.access_token,
+    })
+    .from(users)
+    .leftJoin(githubProfiles, eq(users.id, githubProfiles.userId))
+    .leftJoin(
+      accounts,
+      and(
+        eq(users.id, accounts.userId),
+        eq(accounts.provider, 'github')
+      )
+    )
+    .where(eq(users.role, 'developer'))
+    .orderBy(desc(users.createdAt))
+
+  return rows
 }
 
 export async function approveOwner(userId: string) {

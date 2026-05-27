@@ -3,13 +3,14 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Lock } from 'lucide-react'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 
 export default function CheckoutPage() {
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -78,14 +79,23 @@ export default function CheckoutPage() {
             <label className="text-[9px] text-white/40 font-black uppercase tracking-widest ml-1 flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-accent" /> Password
             </label>
-            <input 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-              type="password" 
-              className="w-full h-12 bg-white/[0.02] border border-white/10 rounded-xl px-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.03] transition-all" 
-              placeholder="••••••••" 
-            />
+            <div className="relative">
+              <input 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+                type={showPassword ? "text" : "password"} 
+                className="w-full h-12 bg-white/[0.02] border border-white/10 rounded-xl pl-5 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.03] transition-all" 
+                placeholder="••••••••" 
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors p-1"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button 
