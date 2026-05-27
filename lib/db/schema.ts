@@ -76,6 +76,7 @@ export const admins = pgTable('admins', {
   inviteToken: text('invite_token').unique(),
   inviteExpiresAt: timestamp('invite_expires_at'),
   isDisabled: boolean('is_disabled').default(false).notNull(),
+  lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -216,3 +217,12 @@ export const systemSettings = pgTable('system_settings', {
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
+
+export const developers = pgTable('developers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubId: integer('github_id').notNull().unique(),
+  username: text('username').notNull(),
+  accessToken: text('access_token').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+

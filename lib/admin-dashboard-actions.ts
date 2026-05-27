@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from './db'
-import { users, owners, subscribers, admins } from './db/schema'
+import { users, owners, subscribers, admins, developers } from './db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { sendBroadcastEmail, sendAdminInvitation } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
@@ -39,7 +39,7 @@ export async function getApprovedOwners() {
 
 export async function getDevelopers() {
   await ensureAdmin()
-  return await db.select().from(users).where(eq(users.role, 'developer'))
+  return await db.select().from(developers).orderBy(desc(developers.createdAt))
 }
 
 export async function approveOwner(userId: string) {

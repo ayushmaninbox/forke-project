@@ -34,6 +34,7 @@ import {
   Shield,
   LogOut,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ShieldCheck, 
   UserX, 
@@ -47,8 +48,16 @@ import {
   ChevronRightSquare,
   Globe,
   Settings,
-  UserPlus
+  UserPlus,
+  Terminal,
+  Copy
 } from 'lucide-react'
+
+const maskToken = (token: string) => {
+  if (!token) return 'N/A'
+  if (token.length <= 8) return '••••••••'
+  return `${token.slice(0, 8)}••••••••${token.slice(-4)}`
+}
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -107,6 +116,10 @@ export default function AdminDashboard() {
   const [waitlistBypassPassword, setWaitlistBypassPasswordState] = useState('')
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false)
   const [waitlistModalPassword, setWaitlistModalPassword] = useState('')
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   useEffect(() => {
     if (currentAdmin && currentAdmin.role !== 'super_admin' && activeTab === 'admins') {
@@ -467,9 +480,10 @@ export default function AdminDashboard() {
            owner.contactEmail.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
-  const filteredDevelopers = developersList.filter((user) => {
-    return user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDevelopers = developersList.filter((dev) => {
+    const query = searchQuery.toLowerCase()
+    return (dev.username?.toLowerCase().includes(query) || 
+            dev.githubId?.toString().includes(query))
   })
 
   const filteredEnquiries = enquiriesList.filter((enq) => {
@@ -488,6 +502,96 @@ export default function AdminDashboard() {
            admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
            (admin.username && admin.username.toLowerCase().includes(searchQuery.toLowerCase()))
   })
+
+  // Pagination logic and slices
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, activeTab])
+
+  const paginatedOwners = filteredOwners.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paginatedDevelopers = filteredDevelopers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paginatedEnquiries = filteredEnquiries.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paginatedSubscribers = filteredSubscribers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const paginatedAdmins = filteredAdmins.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  const getActiveListLength = () => {
+    switch (activeTab) {
+      case 'owner-approval':
+        return filteredOwners.length
+      case 'developer-ban':
+        return filteredDevelopers.length
+      case 'enquiries':
+        return filteredEnquiries.length
+      case 'subscribers':
+        return filteredSubscribers.length
+      case 'admins':
+        return filteredAdmins.length
+      default:
+        return 0
+    }
+  }
+
+  const activeListLength = getActiveListLength()
+  const totalPages = Math.max(1, Math.ceil(activeListLength / pageSize))
+
+  function renderPagination() {
+    if (activeListLength === 0) return null
+
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-white/[0.04] bg-white/[0.005] text-left">
+        {/* Info label */}
+        <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.15em] font-mono">
+          Showing <span className="text-white">{(currentPage - 1) * pageSize + 1}</span> - <span className="text-white">{Math.min(currentPage * pageSize, activeListLength)}</span> of <span className="text-white">{activeListLength}</span> records
+        </p>
+
+        <div className="flex items-center gap-6 self-end sm:self-auto">
+          {/* Rows selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-white/30 font-black uppercase tracking-[0.15em] font-mono">Rows:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setCurrentPage(1)
+              }}
+              className="h-8 bg-white/[0.02] border border-white/10 hover:border-white/20 rounded-lg px-2 text-[10px] font-black tracking-wider text-white font-mono focus:outline-none transition-colors cursor-pointer"
+            >
+              <option value={5} className="bg-[#0c0c0c] text-white">5</option>
+              <option value={10} className="bg-[#0c0c0c] text-white">10</option>
+              <option value={20} className="bg-[#0c0c0c] text-white">20</option>
+              <option value={50} className="bg-[#0c0c0c] text-white">50</option>
+              <option value={100} className="bg-[#0c0c0c] text-white">100</option>
+            </select>
+          </div>
+
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 rounded-lg border border-white/5 bg-white/[0.02] text-white/40 hover:text-white hover:border-white/10 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+              title="Previous Page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
+            <span className="text-[10px] text-white/40 font-mono font-bold tracking-widest px-2 select-none">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 rounded-lg border border-white/5 bg-white/[0.02] text-white/40 hover:text-white hover:border-white/10 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+              title="Next Page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex">
@@ -568,7 +672,7 @@ export default function AdminDashboard() {
                     }`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${activeTab === 'developer-ban' ? 'bg-accent shadow-[0_0_8px_rgba(255,122,0,0.5)]' : 'bg-white/10'}`} />
-                    <span>Developers Ban</span>
+                    <span>Developers</span>
                   </button>
                 </div>
               )}
@@ -699,7 +803,7 @@ export default function AdminDashboard() {
               {activeTab === 'owner-approval' 
                 ? 'Owner Approval' 
                 : activeTab === 'developer-ban' 
-                ? 'Developers Ban' 
+                ? 'Developers' 
                 : activeTab}
             </h1>
             <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-1">
@@ -877,7 +981,7 @@ export default function AdminDashboard() {
                         <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
-                      filteredOwners.map(({ user, owner }) => (
+                      paginatedOwners.map(({ user, owner }) => (
                         <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
                           <td className="px-8 py-3.5">
                             <div className="flex items-center gap-4">
@@ -930,7 +1034,7 @@ export default function AdminDashboard() {
                               )}
                               <button 
                                 onClick={() => handleDecline(user.id)}
-                                className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                  className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
                                 title="Decline & Delete"
                               >
                                 <XCircle className="w-5 h-5" />
@@ -944,10 +1048,12 @@ export default function AdminDashboard() {
                 </table>
               </div>
 
+              {renderPagination()}
+
             </div>
           )}
 
-          {/* ==================== DEVELOPER BAN PANEL ==================== */}
+          {/* ==================== DEVELOPERS PANEL ==================== */}
           {activeTab === 'developer-ban' && (
             <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
               
@@ -957,7 +1063,7 @@ export default function AdminDashboard() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input 
                     type="text" 
-                    placeholder="Search developers by name or email..."
+                    placeholder="Search developers by username or GitHub ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
@@ -970,56 +1076,78 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/[0.04]">
-                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
-                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
-                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Developer</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">GitHub ID</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Access Token</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Joined Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={3} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
                       </tr>
                     ) : filteredDevelopers.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
-                      filteredDevelopers.map((user) => (
-                        <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
+                      paginatedDevelopers.map((dev) => (
+                        <tr key={dev.id} className="group hover:bg-white/[0.01] transition-colors">
                           <td className="px-8 py-3.5">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shrink-0">
-                                {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
+                            <a 
+                              href={`https://github.com/${dev.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 w-fit text-white hover:text-accent transition-colors font-bold group/link"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                                <Terminal className="w-4 h-4 text-white/60 group-hover/link:text-accent transition-colors" />
                               </div>
-                              <div>
-                                <p className="font-bold text-white leading-none">{user.name}</p>
-                                <p className="text-[11px] text-white/30 mt-2 flex items-center gap-1.5 font-mono"><Mail className="w-3.5 h-3.5" /> {user.email}</p>
-                              </div>
+                              <span>{dev.username}</span>
+                            </a>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            <span className="px-2.5 py-1 rounded bg-white/[0.03] border border-white/10 text-white/60 text-xs font-mono">
+                              {dev.githubId}
+                            </span>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-white/40 font-mono">
+                                {maskToken(dev.accessToken)}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(dev.accessToken)
+                                  const btnId = `copied-${dev.id}`
+                                  const el = document.getElementById(btnId)
+                                  if (el) {
+                                    el.classList.remove('opacity-0')
+                                    el.classList.add('opacity-100')
+                                    setTimeout(() => {
+                                      el.classList.remove('opacity-100')
+                                      el.classList.add('opacity-0')
+                                    }, 2000)
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all text-white/40 hover:text-white"
+                                title="Copy Access Token"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                              <span id={`copied-${dev.id}`} className="text-[10px] text-emerald-400 font-mono opacity-0 transition-opacity duration-300">
+                                Copied!
+                              </span>
                             </div>
                           </td>
                           <td className="px-8 py-3.5">
-                            {user.isBanned ? (
-                              <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
-                                <UserX className="w-3 h-3" /> Banned
-                              </span>
-                            ) : (
-                              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
-                                <CheckCircle2 className="w-3 h-3" /> Active
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-8 py-3.5">
-                            <button 
-                              onClick={() => handleToggleBan(user.id, user.isBanned)}
-                              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                user.isBanned 
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]' 
-                                  : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-[0_0_15px_rgba(239,68,68,0.25)]'
-                              }`}
-                            >
-                              {user.isBanned ? 'Unban User' : 'Ban User'}
-                            </button>
+                            <span className="text-xs text-white/40 font-mono">
+                              {new Date(dev.createdAt).toLocaleString('en-IN', {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              })}
+                            </span>
                           </td>
                         </tr>
                       ))
@@ -1027,6 +1155,8 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {renderPagination()}
 
             </div>
           )}
@@ -1070,7 +1200,7 @@ export default function AdminDashboard() {
                         <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
-                      filteredEnquiries.map((enq) => (
+                      paginatedEnquiries.map((enq) => (
                         <tr key={enq.id} className="group hover:bg-white/[0.01] transition-colors">
                           <td className="px-8 py-3.5">
                             <div>
@@ -1109,6 +1239,8 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {renderPagination()}
 
             </div>
           )}
@@ -1160,7 +1292,7 @@ export default function AdminDashboard() {
                         <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
-                      filteredSubscribers.map((sub) => (
+                      paginatedSubscribers.map((sub) => (
                         <tr key={sub.id} className="group hover:bg-white/[0.01] transition-colors">
                           <td className="px-8 py-3.5">
                             <p className="text-xs text-white/40 font-mono font-bold">{sub.id}</p>
@@ -1186,6 +1318,8 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {renderPagination()}
 
             </div>
           )}
@@ -1226,6 +1360,7 @@ export default function AdminDashboard() {
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Administrative Profile</th>
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Email / Credentials</th>
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Access Level</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Last Login</th>
                       <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
                       {currentAdmin?.role === 'super_admin' && (
                         <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
@@ -1235,14 +1370,14 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-white/[0.03]">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                        <td colSpan={6} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
                       </tr>
                     ) : filteredAdmins.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                        <td colSpan={6} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
                       </tr>
                     ) : (
-                      filteredAdmins.map((adm) => (
+                      paginatedAdmins.map((adm) => (
                         <tr key={adm.id} className={`group hover:bg-white/[0.01] transition-colors ${adm.isDisabled ? 'opacity-40' : ''}`}>
                           <td className="px-8 py-3.5">
                             <div>
@@ -1276,6 +1411,17 @@ export default function AdminDashboard() {
                             }`}>
                               {adm.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                             </span>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            {adm.lastLoginAt ? (
+                              <p className="text-[11px] text-white/50 font-mono font-bold">
+                                {new Date(adm.lastLoginAt).toLocaleString()}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-white/20 font-mono italic">
+                                Never logged in
+                              </p>
+                            )}
                           </td>
                           <td className="px-8 py-3.5">
                             {adm.isDisabled ? (
@@ -1341,6 +1487,8 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
               </div>
+
+              {renderPagination()}
 
             </div>
           )}
