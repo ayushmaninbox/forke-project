@@ -141,10 +141,6 @@ export default function FAQ() {
 
   return (
     <section ref={containerRef} className="py-32 bg-bg relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
-      
       <div className="max-w-4xl mx-auto px-4 relative z-10">
         <div className="text-center mb-16 space-y-4">
           <h2 className="gsap-faq-title font-serif text-5xl md:text-7xl text-white opacity-0">
@@ -174,7 +170,7 @@ export default function FAQ() {
                   className="w-full flex items-center justify-between p-6 md:p-8 text-left cursor-pointer"
                 >
                   <span className={cn(
-                    "text-xl md:text-2xl font-medium transition-colors",
+                    "text-xl md:text-2xl font-semibold transition-colors",
                     isActive ? "text-white" : "text-white/70 group-hover:text-white"
                   )}>
                     {faq.question}

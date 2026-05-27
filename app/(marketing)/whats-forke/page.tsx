@@ -330,9 +330,14 @@ export default function WhatsForkePage() {
 
           {/* Left Text / CTAs */}
           <div className="lg:w-7/12 space-y-8 relative z-10 text-left">
-            <h2 className="gsap-wf-element font-serif text-3xl md:text-5xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
-              This is just the beginning. Join the movement and help us build the future of developer work.
-            </h2>
+            <div className="space-y-4">
+              <h2 className="gsap-wf-element font-serif text-4xl md:text-6xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
+                This is just the beginning.
+              </h2>
+              <p className="gsap-wf-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0 max-w-xl">
+                Join the movement and help us build the future of developer work.
+              </p>
+            </div>
             <div className="gsap-wf-element flex flex-col sm:flex-row gap-4 opacity-0">
               <Button 
                 size="lg" 
@@ -353,7 +358,7 @@ export default function WhatsForkePage() {
           </div>
 
           {/* Right Peeking Mascot Illustration (Absolute breakout on desktop, flow on mobile) */}
-          <div className="gsap-wf-element lg:absolute lg:-right-8 lg:-top-90 lg:w-[770px] lg:h-[770px] w-full flex justify-center relative z-10 opacity-0 select-none pointer-events-none">
+          <div className="gsap-wf-element lg:absolute lg:right-6 lg:-top-85 lg:w-[700px] lg:h-[700px] w-full flex justify-center relative z-10 opacity-0 select-none pointer-events-none">
             <div 
               className="relative w-full max-w-[380px] lg:max-w-none lg:w-full lg:h-full aspect-[4/3] lg:aspect-auto"
               style={{

@@ -13,40 +13,45 @@ if (typeof window !== 'undefined') {
 
 const LEVELS = [
   { 
-    lvl: 1, 
-    label: 'Newcomer', 
+    lvl: '1–5', 
+    label: 'Early', 
     tasks: 'HTML/CSS, Basic Bug Fixes', 
     range: '₹200 - ₹500', 
-    image: '/forke-assets/landing-assets/newcomer_forky.png'
+    image: '/forke-assets/landing-assets/newcomer_forky.png',
+    imgClass: 'scale-[0.94] -translate-y-2'
   },
   { 
-    lvl: 2, 
-    label: 'Apprentice', 
+    lvl: '6–10', 
+    label: 'Mid', 
     tasks: 'React Components, CSS Logic', 
     range: '₹500 - ₹1200', 
-    image: '/forke-assets/landing-assets/apprentice_forky.png'
+    image: '/forke-assets/landing-assets/apprentice_forky.png',
+    imgClass: 'scale-[1.08] -translate-y-1'
   },
   { 
-    lvl: 3, 
-    label: 'Builder', 
+    lvl: '11–15', 
+    label: 'Skilled', 
     tasks: 'API Hooks, Full-stack Features', 
     range: '₹1200 - ₹3000', 
     isActive: true,
-    image: '/forke-assets/landing-assets/builder_forky.png'
+    image: '/forke-assets/landing-assets/builder_forky.png',
+    imgClass: 'scale-x-[-0.92] scale-y-[0.92] -translate-y-1 translate-x-2.5'
   },
   { 
-    lvl: 4, 
-    label: 'Expert', 
+    lvl: '16–20', 
+    label: 'Elite', 
     tasks: 'System Architecture, Database Fixes', 
     range: '₹3000 - ₹8000', 
-    image: '/forke-assets/landing-assets/expert_forky.png'
+    image: '/forke-assets/landing-assets/expert_forky.png',
+    imgClass: 'scale-[1.0] -translate-y-1.5'
   },
   { 
-    lvl: 5, 
-    label: 'Architect', 
+    lvl: '21–25', 
+    label: 'Legend', 
     tasks: 'Performance at Scale, Cloud DevOps', 
     range: '₹8000+', 
-    image: '/forke-assets/landing-assets/architect_forky.png'
+    image: '/forke-assets/landing-assets/architect_forky.png',
+    imgClass: 'scale-x-[-0.92] scale-y-[0.92] -translate-y-1 translate-x-2.5'
   },
 ]
 
@@ -151,9 +156,9 @@ export default function LevelSystem() {
             <div 
               key={item.lvl}
               className={cn(
-                "gsap-lvl-node relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all duration-300 opacity-0 scale-50",
+                "gsap-lvl-node relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-mono font-bold text-[10px] tracking-tighter transition-all duration-300 opacity-0 scale-50",
                 item.isActive 
-                  ? "bg-accent text-bg w-14 h-14 shadow-[0_0_30px_rgba(255,122,0,0.6)] border-2 border-accent" 
+                  ? "bg-accent text-bg w-14 h-14 shadow-[0_0_30px_rgba(255,122,0,0.6)] border-2 border-accent text-xs" 
                   : "bg-[#1a1a1a] text-white/40 border border-white/10"
               )}
             >
@@ -187,13 +192,16 @@ export default function LevelSystem() {
               )}
 
               {/* Card Header */}
-              <div className="flex items-center gap-3 mb-4 relative z-10">
-                <h4 className="font-bold text-xl text-white tracking-tight">{item.label}</h4>
-                {item.isActive && (
-                  <span className="text-[9px] border border-accent/50 text-accent px-2.5 py-0.5 rounded-md uppercase font-black tracking-wider bg-accent/10">
-                    Level Up
-                  </span>
-                )}
+              <div className="flex flex-col mb-4 relative z-10 w-full text-left">
+                <div className="flex items-center justify-between w-full">
+                  <h4 className="font-bold text-xl text-white tracking-tight">{item.label}</h4>
+                  {item.isActive && (
+                    <span className="text-[8px] border border-accent/50 text-accent px-2.5 py-0.5 rounded-md uppercase font-black tracking-wider bg-accent/10 shrink-0">
+                      Active Tier
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-accent uppercase tracking-widest mt-1">LVL {item.lvl}</span>
               </div>
 
               {/* Unlocks */}
@@ -212,7 +220,7 @@ export default function LevelSystem() {
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-72 pointer-events-none overflow-visible">
                 <div className={cn(
                   "gsap-lvl-mascot relative w-full h-full transition-transform duration-500",
-                  (index === 2 || index === 4) && "-scale-x-100"
+                  item.imgClass
                 )}>
                   <Image 
                     src={item.image} 
@@ -227,7 +235,7 @@ export default function LevelSystem() {
         </div>
 
         {/* Stats Card */}
-        <div className="gsap-stats-card mt-32 p-12 rounded-[3rem] bg-[#111]/40 border border-white/[0.04] backdrop-blur-xl relative overflow-hidden group">
+        <div className="gsap-stats-card mt-32 p-12 rounded-[3rem] bg-[#0D0D0D] border border-white/[0.06] relative overflow-hidden group">
           <div className="relative z-10 flex flex-wrap justify-center items-center gap-16 md:gap-24">
             {/* Stat 1 */}
             <div className="flex items-center gap-6">

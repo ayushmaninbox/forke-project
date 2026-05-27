@@ -100,7 +100,15 @@ export default function Hero() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-screen flex items-center">
+    <section ref={containerRef} className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-dvh flex items-center">
+      {/* Grain overlay — fixed, pointer-events-none, GPU-safe */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[2] opacity-[0.025]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat',
+        }}
+      />
       {/* Animated Background Components */}
       <div 
         className="absolute inset-0 z-[1] pointer-events-none opacity-50"
@@ -135,12 +143,12 @@ export default function Hero() {
                 Earn XP. <span className="text-accent text-glow">Get paid.</span>
               </h1>
               
-              <p className="gsap-hero-subtitle text-xl md:text-2xl text-muted max-w-xl leading-relaxed font-light opacity-0">
+              <p className="gsap-hero-subtitle text-xl md:text-2xl text-white/50 max-w-xl leading-relaxed font-light opacity-0">
                 Micro-task marketplace for developers. Claim bounties, build reputation and cash out instantly.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+            <div className="flex flex-col sm:flex-row gap-5 pt-6">
               <Button 
                 size="lg" 
                 className="gsap-hero-btn gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0"

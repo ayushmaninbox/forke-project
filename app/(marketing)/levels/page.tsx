@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/shared/Navbar'
@@ -20,7 +20,9 @@ import {
   Coins, 
   RefreshCw,
   TrendingUp,
-  Bookmark
+  Bookmark,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -98,6 +100,16 @@ const TIERS = [
   }
 ]
 
+const ALL_LEVELS = TIERS.flatMap((tier) =>
+  tier.levels.map((lvl) => ({
+    ...lvl,
+    tierId: tier.id,
+    tierLabel: tier.label,
+    tierIcon: tier.icon
+  }))
+)
+
+
 const XP_RULES = [
   {
     title: 'Completing Bounties',
@@ -148,32 +160,60 @@ const PRESTIGE_RANKS = [
   { rank: 'V', title: 'Architect of Chaos', perk: 'Elite Leaderboards + Custom Legend Badge', color: 'from-[#10b981]/20 via-transparent to-transparent' }
 ]
 
+
 export default function LevelsPage() {
-  const [activeTab, setActiveTab] = useState('early')
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
   const pageContainerRef = useRef<HTMLDivElement>(null)
 
+  // 1. Autoplay loop cycling through exactly 25 levels
+  useEffect(() => {
+    if (isPaused) return
+
+    const interval = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % 25)
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [isPaused])
+
+  // 2. Keypress event listener for horizontal keyboard arrow navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setActiveIndex((prev) => (prev - 1 + 25) % 25)
+        setIsPaused(true)
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((prev) => (prev + 1) % 25)
+        setIsPaused(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   useGSAP(() => {
-    // 1. Entrance timeline
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    // 1. Entrance timeline using premium easeOutExpo curves
+    const tl = gsap.timeline({ defaults: { ease: 'expo.out' } })
     
     tl.fromTo('.gsap-lvl-hero-badge', 
       { y: -20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 }
+      { y: 0, opacity: 1, duration: 0.9 }
     )
     .fromTo('.gsap-lvl-hero-title', 
       { y: 40, opacity: 0 }, 
-      { y: 0, opacity: 1, duration: 1 },
-      '-=0.6'
+      { y: 0, opacity: 1, duration: 1.1 },
+      '-=0.75'
     )
     .fromTo('.gsap-lvl-hero-desc',
       { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 },
-      '-=0.6'
+      { y: 0, opacity: 1, duration: 0.9 },
+      '-=0.75'
     )
     .fromTo('.gsap-lvl-selector-wrap',
       { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 },
-      '-=0.5'
+      { y: 0, opacity: 1, duration: 0.9 },
+      '-=0.6'
     )
 
     // 2. Scroll reveals for subsequent sections
@@ -184,9 +224,9 @@ export default function LevelsPage() {
         {
           y: 0,
           opacity: 1,
-          duration: 0.8,
+          duration: 0.9,
           stagger: 0.12,
-          ease: 'power2.out',
+          ease: 'expo.out',
           scrollTrigger: {
             trigger: section,
             start: 'top 78%',
@@ -197,11 +237,65 @@ export default function LevelsPage() {
     })
   }, { scope: pageContainerRef })
 
-  const currentTier = TIERS.find(t => t.id === activeTab) || TIERS[0]
-  const TierIcon = currentTier.icon
+  useGSAP(() => {
+    // Animate active center card smoothly using rapid staggered easeOutExpo curves on swap
+    gsap.fromTo('.gsap-lvl-card',
+      { y: 20, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.6, stagger: 0.05, ease: 'expo.out' }
+    )
+  }, { dependencies: [activeIndex], scope: pageContainerRef })
+
+  // Derived state bindings (derived dynamically from the primary activeIndex)
+  const activeLevel = ALL_LEVELS[activeIndex]
+  const activeTab = activeLevel.tierId
+  const TierIcon = activeLevel.tierIcon
+
+  // Calculate indices for the 5 visible cards in our infinite viewport window
+  const visibleCards = [
+    { index: (activeIndex - 2 + 25) % 25, diff: -2 },
+    { index: (activeIndex - 1 + 25) % 25, diff: -1 },
+    { index: activeIndex, diff: 0 },
+    { index: (activeIndex + 1) % 25, diff: 1 },
+    { index: (activeIndex + 2) % 25, diff: 2 }
+  ]
 
   return (
     <div ref={pageContainerRef} className="min-h-screen bg-[#050505] text-white overflow-hidden font-sans relative selection:bg-accent selection:text-white">
+      {/* Fixed Micro-grain Noise Overlay for high-end tactile screen depth */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-[99] opacity-[0.012]" 
+        style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` 
+        }} 
+      />
+      
+      {/* GPU-Accelerated Tab progress animation keyframe and 3D offset variables */}
+      <style>{`
+        @keyframes tabProgress {
+          0% { transform: scaleX(0); }
+          100% { transform: scaleX(1); }
+        }
+        :root {
+          --carousel-offset-1: 90px;
+          --carousel-offset-2: 180px;
+          --carousel-card-width: 210px;
+        }
+        @media (min-width: 640px) {
+          :root {
+            --carousel-offset-1: 180px;
+            --carousel-offset-2: 360px;
+            --carousel-card-width: 250px;
+          }
+        }
+        @media (min-width: 1024px) {
+          :root {
+            --carousel-offset-1: 220px;
+            --carousel-offset-2: 440px;
+            --carousel-card-width: 275px;
+          }
+        }
+      `}</style>
+
       <Navbar />
 
       {/* --- HERO SECTION WITH SCALED DOTTED BACKGROUND --- */}
@@ -244,7 +338,7 @@ export default function LevelsPage() {
             </h1>
 
             {/* Description */}
-            <p className="gsap-lvl-hero-desc text-muted text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto opacity-0">
+            <p className="gsap-lvl-hero-desc text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto opacity-0">
               Levels measure platform experience, contribution volume, and consistency — not raw domain skill. Accumulate XP by shipping high-quality code, level up your tier, and unlock premium access.
             </p>
           </div>
@@ -257,80 +351,302 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 text-accent font-black tracking-widest text-xs uppercase opacity-0">
+            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
               Progression Ladder
             </div>
             <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-              Choose your <span className="text-accent italic font-normal">tier</span>
+              Choose your <span className="text-accent italic font-normal">level</span>
             </h2>
           </div>
 
-          {/* Tab selectors */}
-          <div className="gsap-lvl-selector-wrap opacity-0 flex flex-wrap justify-center gap-3 p-2 bg-[#0e0e0e] border border-white/[0.04] rounded-full max-w-3xl mx-auto backdrop-blur-xl">
-            {TIERS.map((tier) => {
-              const Icon = tier.icon
-              const isActive = activeTab === tier.id
-              return (
-                <button
-                  key={tier.id}
-                  onClick={() => setActiveTab(tier.id)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                    isActive 
-                      ? 'bg-gradient-to-b from-accent to-[#d97706] text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]' 
-                      : 'text-white/40 hover:text-white/80 hover:bg-white/[0.02]'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tier.label}</span>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ml-1 font-black ${
-                    isActive ? 'bg-black/20 text-bg' : 'bg-white/5 text-white/40'
-                  }`}>
-                    {tier.range}
-                  </span>
-                </button>
-              )
-            })}
+          {/* Typographic Progression Explanation (Replaces the 2nd photo's tabs bar to fill the space beautifully) */}
+          <div className="gsap-lvl-element max-w-3xl mx-auto text-center space-y-5 opacity-0">
+            <p className="text-white/40 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto">
+              Accumulate XP by shipping high-quality code, keeping active daily streaks, and delivering ahead of deadlines. Advance through 25 milestones divided into 5 prestige tiers to unlock exclusive developer badges, custom UI themes, and private enterprise projects.
+            </p>
+            
+            {/* Elegant horizontal legend roadmap (replaces the tab selectors from the 2nd photo with beautiful static copy) */}
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 max-w-4xl mx-auto pt-2 text-[10px] font-mono uppercase tracking-wider text-white/30">
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/60" /> EARLY <span className="text-white/10 font-light">1-5</span></span>
+              <span className="text-white/10 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/70" /> MID <span className="text-white/10 font-light">6-10</span></span>
+              <span className="text-white/10 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/80" /> SKILLED <span className="text-white/10 font-light">11-15</span></span>
+              <span className="text-white/10 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/90" /> ELITE <span className="text-white/10 font-light">16-20</span></span>
+              <span className="text-white/10 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]" /> LEGEND <span className="text-white/10 font-light">21-25</span></span>
+            </div>
           </div>
 
-          {/* Active Level Cards Deck */}
-          <div className="gsap-lvl-element grid grid-cols-1 md:grid-cols-5 gap-4 opacity-0">
-            {currentTier.levels.map((lvl) => (
-              <div 
-                key={lvl.lvl}
-                className="relative rounded-[2rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] p-6 flex flex-col justify-between min-h-[220px] transition-all duration-300 hover:border-accent/40 hover:shadow-[0_10px_20px_-10px_rgba(255,122,0,0.1)] hover:-translate-y-1 group overflow-hidden"
-              >
-                {/* Visual Top Highlight Accent */}
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
+          {/* 3D Perspective Infinite Carousel viewport */}
+          <div className="relative w-full h-[380px] sm:h-[410px] overflow-hidden flex items-center justify-center relative select-none">
+            {/* Left navigation fade overlay */}
+            <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent z-20 pointer-events-none" />
+            {/* Right navigation fade overlay */}
+            <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-32 bg-gradient-to-l from-[#050505] via-[#050505]/80 to-transparent z-20 pointer-events-none" />
+
+            {/* Floating side navigation buttons overlay (Pic 1 chevrons moved to side of carousel) */}
+            <button 
+              onClick={() => {
+                setActiveIndex((prev) => (prev - 1 + 25) % 25)
+                setIsPaused(true)
+              }}
+              className="absolute left-4 sm:left-12 z-40 bg-black/45 border border-white/[0.08] hover:border-[#FF7A00]/40 rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-white/50 hover:text-[#FF7A00] hover:scale-105 active:scale-95 transition-all duration-300 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            <button 
+              onClick={() => {
+                setActiveIndex((prev) => (prev + 1) % 25)
+                setIsPaused(true)
+              }}
+              className="absolute right-4 sm:right-12 z-40 bg-black/45 border border-white/[0.08] hover:border-[#FF7A00]/40 rounded-full w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-white/50 hover:text-[#FF7A00] hover:scale-105 active:scale-95 transition-all duration-300 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            <div className="relative w-full max-w-6xl h-full flex items-center justify-center z-10" style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}>
+              {visibleCards.map(({ index: lvlIdx, diff }) => {
+                const lvl = ALL_LEVELS[lvlIdx]
+                const isActive = diff === 0
                 
-                {/* Ambient Internal Spotlight */}
-                <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                const localIdx = (lvl.lvl - 1) % 5
+                const isFirst = localIdx === 0
+                const isMid = localIdx === 1 || localIdx === 2
+                const isPeak = localIdx === 3
+                const isApex = localIdx === 4
+                
+                let cardClass = ""
+                let statusTag = ""
+                
+                if (isFirst) {
+                  cardClass = "from-[#080808] to-[#040404] border-white/[0.03] hover:border-white/[0.12]"
+                  statusTag = "INITIATION"
+                } else if (isMid) {
+                  cardClass = "from-[#0A0A0A] to-[#050505] border-white/[0.04] hover:border-[#FF7A00]/20"
+                  statusTag = "ASCENT"
+                } else if (isPeak) {
+                  cardClass = "from-[#0C0C0C] to-[#060606] border-white/[0.05] hover:border-[#FF7A00]/30"
+                  statusTag = "SUMMIT"
+                } else if (isApex) {
+                  cardClass = "from-[#140E0A] to-[#080605] border-[#FF7A00]/15 hover:border-[#FF7A00]/50"
+                  statusTag = "APEX GATEWAY"
+                }
 
-                {/* Level Title Node */}
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/25 flex items-center justify-center font-mono font-black text-accent text-sm shadow-[0_0_10px_rgba(255,122,0,0.05)]">
-                    L{lvl.lvl}
-                  </div>
-                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono">
-                    {lvl.xp}
-                  </span>
-                </div>
+                // If active/centered, enforce the stunning Pic 3 glowing active effect
+                let finalCardClass = cardClass
+                if (isActive) {
+                  finalCardClass = "from-[#140E0A] to-[#080605] border-[#FF7A00]"
+                }
 
-                {/* Level Title & Unlock details */}
-                <div className="space-y-3 relative z-10 text-left">
-                  <h3 className="text-white font-bold text-base md:text-lg leading-tight tracking-tight group-hover:text-accent transition-colors duration-300">
-                    {lvl.title}
-                  </h3>
-                  <div className="border-t border-white/[0.04] pt-2.5">
-                    <p className="text-[9px] text-white/30 uppercase font-black tracking-widest mb-1">Unlocks</p>
-                    <p className="text-xs text-white/60 leading-tight font-light group-hover:text-white/80 transition-colors duration-300">
-                      {lvl.unlock}
-                    </p>
+                const paddedNum = String(lvl.lvl).padStart(2, '0')
+
+                // 3D position styling with dynamic calculations using hardware accelerated scale and translateX
+                let cardStyle: React.CSSProperties = {
+                  transform: `translateX(-50%)`,
+                  opacity: 1,
+                  zIndex: 30
+                }
+
+                if (diff === -2) {
+                  cardStyle = {
+                    transform: `translateX(calc(-50% - var(--carousel-offset-2))) scale(0.68)`,
+                    opacity: 0.15,
+                    zIndex: 10,
+                    filter: 'blur(2px)'
+                  }
+                } else if (diff === -1) {
+                  cardStyle = {
+                    transform: `translateX(calc(-50% - var(--carousel-offset-1))) scale(0.86)`,
+                    opacity: 0.52,
+                    zIndex: 20
+                  }
+                } else if (diff === 0) {
+                  cardStyle = {
+                    transform: `translateX(-50%) scale(1.05)`,
+                    opacity: 1,
+                    zIndex: 30
+                  }
+                } else if (diff === 1) {
+                  cardStyle = {
+                    transform: `translateX(calc(-50% + var(--carousel-offset-1))) scale(0.86)`,
+                    opacity: 0.52,
+                    zIndex: 20
+                  }
+                } else if (diff === 2) {
+                  cardStyle = {
+                    transform: `translateX(calc(-50% + var(--carousel-offset-2))) scale(0.68)`,
+                    opacity: 0.15,
+                    zIndex: 10,
+                    filter: 'blur(2px)'
+                  }
+                }
+
+                return (
+                  <div 
+                    key={lvl.lvl}
+                    onClick={() => {
+                      if (diff !== 0) {
+                        setActiveIndex(lvlIdx)
+                        setIsPaused(true)
+                      }
+                    }}
+                    style={cardStyle}
+                    className={`absolute left-1/2 w-[var(--carousel-card-width)] transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${
+                      diff !== 0 ? 'cursor-pointer select-none' : ''
+                    }`}
+                  >
+                    <div 
+                      className={`gsap-lvl-card relative w-full rounded-2xl border bg-gradient-to-b ${finalCardClass} p-6 hover:-translate-y-2 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group flex flex-col justify-between h-[280px] sm:h-[310px] overflow-hidden text-left ${
+                        isActive ? 'shadow-[0_0_30px_rgba(255,122,0,0.18)]' : 'shadow-[0_12px_40px_rgba(0,0,0,0.7)]'
+                      }`}
+                    >
+                      {/* Subtle top light reflection highlight line */}
+                      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
+
+                      {/* Ambient spotlight overlay */}
+                      <div className={`absolute inset-0 transition-opacity duration-700 pointer-events-none opacity-0 group-hover:opacity-100 ${
+                        isActive || isApex 
+                          ? "bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_65%)]"
+                          : "bg-[radial-gradient(circle_at_50%_0%,_rgba(255,255,255,0.015)_0%,_transparent_65%)]"
+                      }`} />
+
+                      {/* Technical Corner Brackets - glowing on the active focused card (Pic 3 visual signature) */}
+                      {(isActive || isApex) && (
+                        <>
+                          <div className={`absolute top-2.5 left-2.5 w-3.5 h-3.5 border-t border-l pointer-events-none transition-colors duration-500 z-20 ${
+                            isActive ? 'border-[#FF7A00] border-t-2 border-l-2' : 'border-[#FF7A00]/30'
+                          }`} />
+                          <div className={`absolute top-2.5 right-2.5 w-3.5 h-3.5 border-t border-r pointer-events-none transition-colors duration-500 z-20 ${
+                            isActive ? 'border-[#FF7A00] border-t-2 border-r-2' : 'border-[#FF7A00]/30'
+                          }`} />
+                          <div className={`absolute bottom-2.5 left-2.5 w-3.5 h-3.5 border-b border-l pointer-events-none transition-colors duration-500 z-20 ${
+                            isActive ? 'border-[#FF7A00] border-b-2 border-l-2' : 'border-[#FF7A00]/30'
+                          }`} />
+                          <div className={`absolute bottom-2.5 right-2.5 w-3.5 h-3.5 border-b border-r pointer-events-none transition-colors duration-500 z-20 ${
+                            isActive ? 'border-[#FF7A00] border-b-2 border-r-2' : 'border-[#FF7A00]/30'
+                          }`} />
+                        </>
+                      )}
+
+                      {/* Custom visual watermark background grids */}
+                      {isFirst && !isActive && (
+                        <div className="absolute right-4 bottom-4 font-mono text-[56px] font-bold text-white/[0.01] group-hover:text-white/[0.02] select-none pointer-events-none leading-none tracking-tighter transition-colors duration-500">
+                          [{paddedNum}]
+                        </div>
+                      )}
+
+                      {isMid && !isActive && (
+                        <svg className="absolute right-4 bottom-4 w-12 h-12 text-white/[0.01] group-hover:text-white/[0.03] transition-colors duration-500 pointer-events-none" viewBox="0 0 40 40">
+                          <circle cx="10" cy="10" r="1" fill="currentColor"/>
+                          <circle cx="20" cy="10" r="1" fill="currentColor"/>
+                          <circle cx="30" cy="10" r="1" fill="currentColor"/>
+                          <circle cx="10" cy="20" r="1" fill="currentColor"/>
+                          <circle cx="20" cy="20" r="1" fill="currentColor"/>
+                          <circle cx="30" cy="20" r="1" fill="currentColor"/>
+                          <circle cx="10" cy="30" r="1" fill="currentColor"/>
+                          <circle cx="20" cy="30" r="1" fill="currentColor"/>
+                          <circle cx="30" cy="30" r="1" fill="currentColor"/>
+                        </svg>
+                      )}
+
+                      {isPeak && !isActive && (
+                        <svg className="absolute -right-4 -bottom-4 w-20 h-20 text-white/[0.01] group-hover:text-[#FF7A00]/[0.02] transition-colors duration-500 pointer-events-none" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="0.75" fill="none"/>
+                          <circle cx="50" cy="50" r="28" stroke="currentColor" strokeWidth="0.75" fill="none" strokeDasharray="3 3"/>
+                          <circle cx="50" cy="50" r="16" stroke="currentColor" strokeWidth="0.75" fill="none"/>
+                        </svg>
+                      )}
+
+                      {isApex && (
+                        <svg className="absolute -right-2 -bottom-2 w-24 h-24 text-[#FF7A00]/[0.015] group-hover:text-[#FF7A00]/[0.04] transition-colors duration-500 pointer-events-none" viewBox="0 0 100 100">
+                          <path d="M 10 10 L 90 90 M 90 10 L 10 90" stroke="currentColor" strokeWidth="0.5"/>
+                          <circle cx="50" cy="50" r="30" stroke="currentColor" strokeWidth="0.5" fill="none"/>
+                          <rect x="35" y="35" width="30" height="30" stroke="currentColor" strokeWidth="0.5" fill="none" transform="rotate(45 50 50)"/>
+                        </svg>
+                      )}
+
+                      {/* Card Header Section */}
+                      <div className="flex justify-between items-start relative z-10 w-full">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            {/* Level Number Badge (Solid bright orange rounded block for active card) */}
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-mono font-black text-sm transition-all duration-500 relative z-20 ${
+                              isActive 
+                                ? 'bg-[#FF7A00] text-black shadow-[0_0_12px_rgba(255,122,0,0.35)] border-transparent' 
+                                : isApex 
+                                  ? 'bg-white/[0.03] border border-[#FF7A00]/30 text-[#FF7A00]' 
+                                  : 'bg-white/[0.03] border border-white/[0.08] text-white/70 group-hover:bg-[#FF7A00] group-hover:text-black group-hover:border-[#FF7A00]'
+                            }`}>
+                              {paddedNum}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`text-[9px] font-mono tracking-widest font-black uppercase transition-colors duration-500 ${
+                                isActive ? 'text-[#FF7A00]' : isApex ? 'text-[#FF7A00]/80' : 'text-white/30'
+                              }`}>
+                                {statusTag}
+                              </span>
+                              <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.15em] font-semibold">STAGE</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {(isActive || isApex) && (
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[7px] font-mono uppercase tracking-wider animate-pulse transition-all duration-500 ${
+                            isActive 
+                              ? 'bg-[#FF7A00]/20 border border-[#FF7A00]/40 text-[#FF7A00]'
+                              : 'bg-[#FF7A00]/10 border border-[#FF7A00]/20 text-[#FF7A00]'
+                          }`}>
+                            <span className="w-1 h-1 rounded-full bg-[#FF7A00]" />
+                            TIER LOCK
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Middle Section: Title & XP */}
+                      <div className="relative z-10 mt-6 flex justify-between items-baseline gap-2 w-full">
+                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug group-hover:text-[#FF7A00] transition-colors duration-300">
+                          {lvl.title}
+                        </h3>
+                        <span className="text-xs sm:text-sm font-mono font-bold text-[#FF7A00] shrink-0">
+                          {lvl.xp}
+                        </span>
+                      </div>
+
+                      {/* Dashed Separator */}
+                      <div className="border-t border-dashed border-white/10 my-4 relative z-10 w-full" />
+
+                      {/* Footer Section: Unlocks */}
+                      <div className="relative z-10 w-full mb-3 flex-grow flex flex-col justify-end">
+                        <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest font-black block mb-1">
+                          Unlocks Access
+                        </span>
+                        <p className="text-xs sm:text-sm text-white/60 font-light leading-snug transition-colors duration-300 group-hover:text-white/80">
+                          {lvl.unlock}
+                        </p>
+                      </div>
+
+                      {/* Dynamic loop indicator progress bar inside active center card */}
+                      {isActive && !isPaused && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/15 overflow-hidden rounded-b-2xl z-20">
+                          <div 
+                            key={activeIndex}
+                            className="h-full bg-[#FF7A00] w-full origin-left"
+                            style={{
+                              animation: 'tabProgress 4000ms linear forwards',
+                              transformOrigin: 'left'
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                )
+              })}
+            </div>
           </div>
-
         </div>
       </section>
 
@@ -340,39 +656,84 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 text-accent font-black tracking-widest text-xs uppercase opacity-0">
+            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
               The Rules
             </div>
             <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
               How to earn <span className="text-accent italic font-normal">XP</span>
             </h2>
-            <p className="gsap-lvl-element text-muted text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
               XP rewards consistency, high execution speed, and immaculate client review scores.
             </p>
           </div>
 
           {/* XP Rules Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {XP_RULES.map((rule, idx) => {
               const Icon = rule.icon
+              const isFirst = idx === 0
+              
+              if (isFirst) {
+                return (
+                  <div 
+                    key={idx}
+                    className="gsap-lvl-element md:col-span-2 relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 hover:border-[#FF7A00]/30 hover:scale-[1.015] active:scale-[0.99] group opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  >
+                    {/* Spotlight Overlay */}
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+                    <div className="h-full flex flex-col md:flex-row gap-8 justify-between relative z-10">
+                      {/* Left Column: Icon and Info */}
+                      <div className="flex flex-col justify-between space-y-6 md:w-1/2">
+                        <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0">
+                          <Icon className="w-6 h-6" strokeWidth={1.2} />
+                        </div>
+                        <div className="space-y-4">
+                          <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
+                            {rule.title}
+                          </h3>
+                          <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
+                            {rule.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Receipt Payout Table */}
+                      <div className="md:w-1/2 bg-[#050505] border border-white/[0.03] p-6 rounded-2xl shadow-[inset_0_1.5px_1px_rgba(255,255,255,0.02)] flex flex-col justify-center">
+                        <p className="text-[9px] text-white/30 uppercase font-mono font-bold tracking-widest mb-4 border-b border-white/[0.04] pb-2">XP Reward Scale</p>
+                        <div className="space-y-3 font-mono">
+                          {rule.details?.map((detail, dIdx) => (
+                            <div key={dIdx} className="flex justify-between items-center text-xs">
+                              <span className="text-white/40 font-light">{detail.label}</span>
+                              <span className="text-[#FF7A00] font-bold">{detail.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              // Standard Cards (Cards 2, 3, 4, 5)
               return (
                 <div 
-                  key={idx} 
-                  className="gsap-lvl-element relative p-8 rounded-[2rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] hover:border-accent/30 hover:shadow-[0_15px_35px_-15px_rgba(255,122,0,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden"
+                  key={idx}
+                  className="gsap-lvl-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col justify-between min-h-[280px] overflow-hidden text-left opacity-0 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
                 >
                   {/* Spotlight Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
                   {/* Icon and Value Badge */}
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="w-11 h-11 rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-bg group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0">
-                      <Icon className="w-5 h-5" />
+                  <div className="flex justify-between items-center mb-8 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0">
+                      <Icon className="w-6 h-6" strokeWidth={1.2} />
                     </div>
                     {rule.value && (
-                      <span className={`text-xs font-mono font-black uppercase tracking-widest px-3 py-1 rounded-md ${
+                      <span className={`text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-md ${
                         rule.isPenalty 
-                          ? 'bg-red-500/10 text-red-400 border border-red-500/20' 
-                          : 'bg-accent/10 text-accent border border-accent/20'
+                          ? 'bg-red-500/10 text-red-400 border border-red-500/15' 
+                          : 'bg-accent/10 text-accent border border-accent/15'
                       }`}>
                         {rule.value}
                       </span>
@@ -380,8 +741,8 @@ export default function LevelsPage() {
                   </div>
 
                   {/* Copy content */}
-                  <div className="space-y-4 relative z-10 text-left">
-                    <h3 className="text-white font-bold text-lg md:text-xl tracking-tight group-hover:text-accent transition-colors duration-300">
+                  <div className="space-y-4 relative z-10 mt-auto">
+                    <h3 className="text-white font-bold text-lg md:text-xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
                       {rule.title}
                     </h3>
                     <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
@@ -390,7 +751,7 @@ export default function LevelsPage() {
 
                     {/* Optional detailed values */}
                     {rule.details && (
-                      <div className="border-t border-white/[0.04] pt-3 mt-3 space-y-2 font-mono">
+                      <div className="border-t border-white/[0.04] pt-4 mt-4 space-y-2.5 font-mono">
                         {rule.details.map((detail, dIdx) => (
                           <div key={dIdx} className="flex justify-between items-center text-xs">
                             <span className="text-white/40 font-light">{detail.label}</span>
@@ -400,7 +761,6 @@ export default function LevelsPage() {
                       </div>
                     )}
                   </div>
-
                 </div>
               )
             })}
@@ -415,13 +775,13 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 text-accent font-black tracking-widest text-xs uppercase opacity-0">
+            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
               End Game Content
             </div>
             <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
               The Prestige <span className="text-accent italic font-normal">ranks</span>
             </h2>
-            <p className="gsap-lvl-element text-muted text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
               Reaching Level 25 unlocks the option to Prestige. Reset your level progression to claim permanent cosmetic titles and high-value platform perks.
             </p>
           </div>
@@ -431,24 +791,24 @@ export default function LevelsPage() {
             {PRESTIGE_RANKS.map((pres, pIdx) => (
               <div 
                 key={pIdx}
-                className="gsap-lvl-element relative p-6 rounded-[2rem] bg-[#0e0e0e] border border-white/[0.04] hover:border-accent/40 transition-all duration-300 text-left min-h-[220px] flex flex-col justify-between overflow-hidden group opacity-0"
+                className="gsap-lvl-element relative rounded-2xl border border-white/[0.04] bg-[#0A0A0A] p-6 hover:border-[#FF7A00]/30 hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] group flex flex-col justify-between min-h-[220px] overflow-hidden text-left opacity-0"
               >
                 {/* Background Ambient Spotlights matching prestige color */}
-                <div className={`absolute inset-0 bg-gradient-to-tr ${pres.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+                <div className={`absolute inset-0 bg-gradient-to-tr ${pres.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
 
-                {/* Giant Roman Numeral */}
-                <div className="font-serif text-5xl font-black text-white/[0.02] group-hover:text-accent/5 transition-colors duration-500 tracking-tighter leading-none select-none">
+                {/* Giant Roman Numeral Watermark */}
+                <div className="font-serif text-6xl md:text-8xl font-semibold text-white/[0.015] group-hover:text-[#FF7A00]/[0.03] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 select-none absolute right-4 top-2 leading-none">
                   {pres.rank}
                 </div>
 
-                <div className="space-y-3 relative z-10">
-                  <h4 className="text-white font-bold text-base md:text-lg tracking-tight group-hover:text-accent transition-colors duration-300">
+                <div className="space-y-3 relative z-10 mt-auto">
+                  <h4 className="text-white font-bold text-base md:text-lg tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
                     Prestige {pres.rank}
                   </h4>
-                  <p className="text-[11px] text-accent font-bold uppercase tracking-wider">
+                  <p className="text-[11px] text-[#FF7A00] font-bold uppercase tracking-wider">
                     {pres.title}
                   </p>
-                  <p className="text-xs text-white/40 leading-tight font-light group-hover:text-white/60 transition-colors duration-300 border-t border-white/[0.04] pt-2 mt-2">
+                  <p className="text-xs text-white/40 leading-snug font-light group-hover:text-white/60 transition-colors duration-300 border-t border-white/[0.03] pt-3 mt-3">
                     {pres.perk}
                   </p>
                 </div>
@@ -462,27 +822,30 @@ export default function LevelsPage() {
       {/* --- CALL TO ACTION --- */}
       <section className="gsap-lvl-section relative z-10 py-16 px-6 max-w-7xl mx-auto">
         <div className="p-8 md:p-14 rounded-[3.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center max-w-4xl mx-auto group">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.05)_0%,_transparent_60%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           
           <div className="max-w-2xl mx-auto space-y-8 relative z-10">
             <h2 className="gsap-lvl-element font-serif text-3xl md:text-5xl text-white leading-tight tracking-tight opacity-0">
               Earn your XP. Forge your path.
             </h2>
-            <p className="gsap-lvl-element text-sm md:text-base text-white/50 leading-relaxed font-light opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-sm md:text-base leading-relaxed font-light opacity-0">
               Claim real tasks, ship verified code, level up, and cash out instantly. Ready to start grinding?
             </p>
-            <div className="gsap-lvl-element flex flex-col sm:flex-row justify-center gap-4 opacity-0">
+            <div className="gsap-lvl-element flex flex-col sm:flex-row justify-center items-center gap-4 opacity-0">
               <Button 
                 size="lg" 
-                className="rounded-xl px-8 py-3.5 h-auto text-xs font-bold uppercase tracking-wider bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg flex items-center justify-center gap-2"
+                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
                 onClick={() => window.location.href = '/register'}
               >
-                Join the movement <ArrowRight className="w-4 h-4" />
+                Join the movement 
+                <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-500 group-hover/btn:translate-x-0.5 shrink-0">
+                  <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+                </span>
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="rounded-xl px-8 py-3.5 h-auto text-xs font-bold uppercase tracking-wider border border-white/10 text-white hover:bg-white/5 transition-all flex items-center justify-center bg-transparent"
+                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider border border-white/10 text-white hover:bg-white/5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center bg-transparent"
                 onClick={() => window.location.href = '/bounties'}
               >
                 Browse Bounties

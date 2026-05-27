@@ -49,34 +49,34 @@ export default function HowItWorks() {
       { y: 30, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out' }
     )
-    .fromTo('.gsap-how-underline',
-      { strokeDashoffset: 100 },
-      { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out' },
-      '-=0.4'
-    )
-    // 2. Stagger in step cards
-    .fromTo('.gsap-how-step',
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, stagger: 0.25, ease: 'power3.out' },
-      '-=0.4'
-    )
-    // 3. Stagger in mascots inside steps with elastic bounce
-    .fromTo('.gsap-how-mascot',
-      { scale: 0.6, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1.2, stagger: 0.25, ease: 'elastic.out(1, 0.65)' },
-      '-=0.8'
-    )
-    // 4. Draw connecting arrows
-    .fromTo('.gsap-how-arrow-path',
-      { strokeDashoffset: 160 },
-      { strokeDashoffset: 0, duration: 1, ease: 'power1.inOut' },
-      '-=1.2'
-    )
-    .fromTo('.gsap-how-arrow-head',
-      { scale: 0, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
-      '-=0.4'
-    )
+      .fromTo('.gsap-how-underline',
+        { strokeDashoffset: 100 },
+        { strokeDashoffset: 0, duration: 0.8, ease: 'power2.out' },
+        '-=0.4'
+      )
+      // 2. Stagger in step cards
+      .fromTo('.gsap-how-step',
+        { y: 50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, stagger: 0.25, ease: 'power3.out' },
+        '-=0.4'
+      )
+      // 3. Stagger in mascots inside steps with elastic bounce
+      .fromTo('.gsap-how-mascot',
+        { scale: 0.6, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1.2, stagger: 0.25, ease: 'elastic.out(1, 0.65)' },
+        '-=0.8'
+      )
+      // 4. Draw connecting arrows
+      .fromTo('.gsap-how-arrow-path',
+        { strokeDashoffset: 160 },
+        { strokeDashoffset: 0, duration: 1, ease: 'power1.inOut' },
+        '-=1.2'
+      )
+      .fromTo('.gsap-how-arrow-head',
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' },
+        '-=0.4'
+      )
   }, { scope: containerRef })
 
   return (
@@ -89,11 +89,11 @@ export default function HowItWorks() {
             </h2>
             <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-24 h-3 text-accent opacity-80">
               <svg width="100%" height="100%" viewBox="0 0 100 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                  d="M2 10C15 4 45 2 98 6" 
-                  stroke="currentColor" 
-                  strokeWidth="4" 
-                  strokeLinecap="round" 
+                <path
+                  d="M2 10C15 4 45 2 98 6"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
                   className="gsap-how-underline"
                   strokeDasharray="100"
                   strokeDashoffset="100"
@@ -113,9 +113,9 @@ export default function HowItWorks() {
 
               {/* Mascot Image */}
               <div className="gsap-how-mascot relative w-64 h-64 mb-6 z-10 opacity-0 scale-75">
-                <Image 
-                  src={step.image} 
-                  alt={step.title} 
+                <Image
+                  src={step.image}
+                  alt={step.title}
                   fill
                   className="object-contain transition-transform duration-500 group-hover:scale-110"
                 />
@@ -130,25 +130,25 @@ export default function HowItWorks() {
                   {step.description}
                 </p>
               </div>
-              
+
               {/* Curved Dashed Arrow (desktop only) */}
               {index < 2 && (
                 <div className="hidden md:block absolute top-28 -right-24 w-48 h-12 z-0">
                   <svg width="100%" height="100%" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-accent/30 overflow-visible">
-                    <path 
-                      d="M10 24C40 4 120 4 150 24" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeDasharray="8" 
+                    <path
+                      d="M10 24C40 4 120 4 150 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeDasharray="8"
                       strokeDashoffset="160"
-                      className="gsap-how-arrow-path" 
+                      className="gsap-how-arrow-path"
                     />
-                    <path 
-                      d="M142 12L152 24L136 28" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
+                    <path
+                      d="M142 12L152 24L136 28"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="gsap-how-arrow-head opacity-0"
                     />
                   </svg>

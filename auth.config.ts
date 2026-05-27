@@ -15,7 +15,7 @@ export const authConfig = {
       allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
-          scope: 'read:user user:email repo',
+          scope: 'read:user user:email repo workflow',
         },
       },
     }),

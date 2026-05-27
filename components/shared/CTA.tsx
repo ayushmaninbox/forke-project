@@ -124,9 +124,7 @@ export default function CTA() {
           {/* Floating particles */}
           <div className="gsap-cta-particle absolute top-[20%] right-[30%] w-1.5 h-1.5 rounded-full bg-accent/40 animate-pulse" />
           <div className="gsap-cta-particle absolute top-[35%] right-[48%] w-1 h-1 rounded-full bg-accent/30 animate-pulse [animation-delay:1s]" />
-          <div className="gsap-cta-particle absolute top-[15%] right-[22%] w-1 h-1 rounded-full bg-accent/25 animate-pulse [animation-delay:2s]" />
           <div className="gsap-cta-particle absolute bottom-[30%] right-[40%] w-1.5 h-1.5 rounded-full bg-accent/20 animate-pulse [animation-delay:0.5s]" />
-          <div className="gsap-cta-particle absolute top-[60%] right-[55%] w-1 h-1 rounded-full bg-accent/15 animate-pulse [animation-delay:1.5s]" />
 
           <div className="relative z-10 flex items-center min-h-[320px]">
             {/* Left side — Text + CTA */}
@@ -141,7 +139,7 @@ export default function CTA() {
                 ref={buttonRef}
                 size="lg" 
                 variant="primary"
-                className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0"
+                className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0 active:scale-[0.98] transition-transform"
                 onClick={() => router.push('/register')}
               >
                 Get Started Free <Zap className="w-5 h-5 fill-current" />
