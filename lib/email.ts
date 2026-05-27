@@ -192,3 +192,60 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
     return false
   }
 }
+
+export async function sendBroadcastEmail(
+  toEmails: string[],
+  subject: string,
+  htmlContent: string
+): Promise<{ success: boolean; sentCount: number }> {
+  let apiKey = process.env.RESEND_API_KEY || ''
+  if (apiKey.startsWith('"') && apiKey.endsWith('"')) {
+    apiKey = apiKey.slice(1, -1)
+  }
+  if (apiKey.startsWith("'") && apiKey.endsWith("'")) {
+    apiKey = apiKey.slice(1, -1)
+  }
+
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping broadcast email.')
+    return { success: false, sentCount: 0 }
+  }
+
+  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
+  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) {
+    fromEmail = fromEmail.slice(1, -1)
+  }
+  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) {
+    fromEmail = fromEmail.slice(1, -1)
+  }
+
+  let sentCount = 0
+  for (const email of toEmails) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: email,
+          subject: subject,
+          html: htmlContent,
+        }),
+      })
+
+      if (res.ok) {
+        sentCount++
+      } else {
+        const errText = await res.text()
+        console.error(`Failed to send broadcast email to ${email} via Resend:`, errText)
+      }
+    } catch (err) {
+      console.error(`Error dispatching broadcast email to ${email}:`, err)
+    }
+  }
+
+  return { success: sentCount > 0, sentCount }
+}

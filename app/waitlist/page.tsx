@@ -13,6 +13,22 @@ export default function WaitlistPage() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    async function fetchCount() {
+      try {
+        const res = await fetch('/api/waitlist/count')
+        const data = await res.json()
+        if (data.success) {
+          setSubscriberCount(data.count)
+        }
+      } catch (err) {
+        console.error('Failed to fetch subscriber count:', err)
+      }
+    }
+    fetchCount()
+  }, [])
 
   // Bulletproof lock to completely remove page/body scrollability
   useEffect(() => {
@@ -151,6 +167,7 @@ export default function WaitlistPage() {
       if (data.success) {
         setStatus('success')
         setMessage(data.message)
+        setSubscriberCount((prev) => (prev !== null ? prev + 1 : 1))
         // Animate success
         gsap.fromTo('.gsap-wl-success',
           { scale: 0.9, opacity: 0 },
@@ -244,6 +261,17 @@ export default function WaitlistPage() {
                     <div className="flex flex-col gap-1">
                       <h2 className="text-base font-serif text-white tracking-wide">Be the first to know</h2>
                       <p className="text-xs text-white/40">Drop your email to join early access and product updates.</p>
+                      {subscriberCount !== null && (
+                        <div className="flex items-center gap-2 mt-1 animate-in fade-in slide-in-from-top-1 duration-500">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-orange-500"></span>
+                          </span>
+                          <span className="text-[10px] text-white/60 font-semibold uppercase tracking-wider font-mono">
+                            {subscriberCount > 0 ? `Join ${subscriberCount} others in the waitlist` : 'Be the first in the waitlist'}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-3">

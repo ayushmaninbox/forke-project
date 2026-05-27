@@ -10,7 +10,10 @@ import {
   declineOwner, 
   toggleDeveloperBan,
   getWaitlistConfig,
-  updateWaitlistConfig
+  updateWaitlistConfig,
+  getSubscribers,
+  deleteSubscriber,
+  broadcastEmail
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -44,7 +47,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'profile' | 'change-password' | 'admins'
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'profile' | 'change-password' | 'admins' | 'subscribers'
   >('dashboard')
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
 
@@ -52,10 +55,17 @@ export default function AdminDashboard() {
   const [ownersList, setOwnersList] = useState<any[]>([])
   const [developersList, setDevelopersList] = useState<any[]>([])
   const [enquiriesList, setEnquiriesList] = useState<any[]>([])
+  const [subscribersList, setSubscribersList] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
   const [isTogglingWaitlist, setIsTogglingWaitlist] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Broadcast Email Modal state
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false)
+  const [broadcastSubject, setBroadcastSubject] = useState('')
+  const [broadcastBody, setBroadcastBody] = useState('')
+  const [isBroadcasting, setIsBroadcasting] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -86,6 +96,10 @@ export default function AdminDashboard() {
       if (activeTab === 'dashboard' || activeTab === 'enquiries') {
         const res = await getEnquiries()
         if (res.success) setEnquiriesList(res.data || [])
+      }
+      if (activeTab === 'dashboard' || activeTab === 'subscribers') {
+        const res = await getSubscribers()
+        if (res.success) setSubscribersList(res.data || [])
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
@@ -147,6 +161,71 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleDeleteSubscriber(id: string) {
+    if (confirm('Are you sure you want to delete this subscriber?')) {
+      try {
+        const res = await deleteSubscriber(id)
+        if (res.success) {
+          fetchData()
+        } else {
+          alert('Failed to delete subscriber')
+        }
+      } catch (err) {
+        console.error('Failed to delete subscriber:', err)
+      }
+    }
+  }
+
+  async function handleBroadcastEmail(e: React.FormEvent) {
+    e.preventDefault()
+    if (!broadcastSubject.trim() || !broadcastBody.trim()) {
+      alert('Please fill in both subject and body')
+      return
+    }
+    setIsBroadcasting(true)
+    try {
+      const res = await broadcastEmail(broadcastSubject, broadcastBody)
+      if (res.success) {
+        alert(`Successfully sent broadcast email to ${res.sentCount} subscribers!`)
+        setIsBroadcastModalOpen(false)
+        setBroadcastSubject('')
+        setBroadcastBody('')
+        fetchData()
+      } else {
+        alert(res.error || 'Failed to send broadcast email')
+      }
+    } catch (err) {
+      console.error('Failed to broadcast email:', err)
+      alert('Something went wrong')
+    } finally {
+      setIsBroadcasting(false)
+    }
+  }
+
+  function handleExportCSV() {
+    const headers = ['ID', 'Email', 'Created At']
+    const rows = filteredSubscribers.map((sub) => [
+      sub.id,
+      sub.email,
+      new Date(sub.createdAt).toLocaleString()
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((e) => e.map((val) => `"${val}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `forke_subscribers_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   // Real-time filtering logic
   const filteredOwners = ownersList.filter(({ owner, user }) => {
     const fullName = `${owner.firstName} ${owner.lastName}`.toLowerCase()
@@ -165,6 +244,10 @@ export default function AdminDashboard() {
     return fullName.includes(searchQuery.toLowerCase()) || 
            enq.contactEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
            enq.message.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  const filteredSubscribers = subscribersList.filter((sub) => {
+    return sub.email.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
   return (
@@ -265,6 +348,28 @@ export default function AdminDashboard() {
                   activeTab === 'enquiries' ? 'bg-bg text-accent' : 'bg-accent/10 text-accent border border-accent/20'
                 }`}>
                   {enquiriesList.length}
+                </span>
+              )}
+            </button>
+
+            {/* Subscribers */}
+            <button
+              onClick={() => setActiveTab('subscribers')}
+              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                activeTab === 'subscribers'
+                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <Mail className="w-4 h-4" />
+                <span>Subscribers</span>
+              </div>
+              {subscribersList.length > 0 && (
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                  activeTab === 'subscribers' ? 'bg-bg text-accent' : 'bg-accent/10 text-accent border border-accent/20'
+                }`}>
+                  {subscribersList.length}
                 </span>
               )}
             </button>
@@ -404,7 +509,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Stats Summary Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 {/* Total Owners */}
                 <div className="p-6 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
@@ -439,6 +544,18 @@ export default function AdminDashboard() {
                   <div className="text-left mt-4">
                     <h3 className="text-4xl font-serif">{isLoading ? '...' : enquiriesList.length}</h3>
                     <p className="text-[9px] text-white/20 font-black uppercase tracking-wider mt-1">Support & Conflict Enquiries</p>
+                  </div>
+                </div>
+
+                {/* Total Subscribers */}
+                <div className="p-6 rounded-[2rem] bg-[#0c0c0c] border border-white/[0.04] flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Total Subscribers</span>
+                    <Mail className="w-4 h-4 text-accent/60" />
+                  </div>
+                  <div className="text-left mt-4">
+                    <h3 className="text-4xl font-serif">{isLoading ? '...' : subscribersList.length}</h3>
+                    <p className="text-[9px] text-white/20 font-black uppercase tracking-wider mt-1">Waitlist Signups</p>
                   </div>
                 </div>
 
@@ -726,6 +843,89 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* ==================== SUBSCRIBERS PANEL ==================== */}
+          {activeTab === 'subscribers' && (
+            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+              
+              {/* Search & Action Buttons */}
+              <div className="p-6 border-b border-white/[0.04] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.01] gap-4">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="Search subscribers by email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsBroadcastModalOpen(true)}
+                    className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] hover:translate-y-[1px] hover:shadow-[0_0_15px_rgba(255,122,0,0.25)] active:translate-y-[2px] transition-all text-[#050505] flex items-center gap-2 cursor-pointer font-bold h-11"
+                  >
+                    <Mail className="w-4 h-4 text-black" /> Broadcast Email
+                  </button>
+                  <button 
+                    onClick={handleExportCSV}
+                    className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white hover:bg-white/[0.05] hover:border-white/10 hover:translate-y-[1px] active:translate-y-[2px] transition-all flex items-center gap-2 cursor-pointer font-bold h-11"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Subscriber ID</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Email Address</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Date & Time Joined</th>
+                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                      </tr>
+                    ) : filteredSubscribers.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                      </tr>
+                    ) : (
+                      filteredSubscribers.map((sub) => (
+                        <tr key={sub.id} className="group hover:bg-white/[0.01] transition-colors">
+                          <td className="px-8 py-6">
+                            <p className="text-xs text-white/40 font-mono font-bold">{sub.id}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="font-bold text-white font-sans">{sub.email}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="text-[11px] text-white/50 font-mono">{new Date(sub.createdAt).toLocaleString()}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <button 
+                              onClick={() => handleDeleteSubscriber(sub.id)}
+                              className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer"
+                              title="Delete Subscriber"
+                            >
+                              <UserX className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          )}
+
           {/* ==================== ADMINS PANEL (Placeholder) ==================== */}
           {activeTab === 'admins' && (
             <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
@@ -762,6 +962,83 @@ export default function AdminDashboard() {
         </div>
 
       </main>
+
+      {/* --- BROADCAST EMAIL GLASS MODAL --- */}
+      {isBroadcastModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-2xl bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+            {/* Ambient top border glow */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 space-y-6 text-left">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-serif text-white tracking-wide">Broadcast Message</h3>
+                <p className="text-xs text-white/40 leading-relaxed font-light">
+                  Send a beautiful wrapped HTML announcement to all waitlist subscribers. Use standard paragraphs and spacing.
+                </p>
+              </div>
+
+              <form onSubmit={handleBroadcastEmail} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Subject Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={broadcastSubject}
+                    onChange={(e) => setBroadcastSubject(e.target.value)}
+                    placeholder="E.g., Early Access Invites or Big Product Update!"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Email Body Content</label>
+                  <textarea
+                    required
+                    rows={8}
+                    value={broadcastBody}
+                    onChange={(e) => setBroadcastBody(e.target.value)}
+                    placeholder="Type your message content here. New lines will automatically convert to line breaks in the HTML format..."
+                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl p-4 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-accent/40 transition-all font-sans resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsBroadcastModalOpen(false)
+                      setBroadcastSubject('')
+                      setBroadcastBody('')
+                    }}
+                    className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isBroadcasting}
+                    className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isBroadcasting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Broadcasting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 text-black fill-current" />
+                        <span>Send Broadcast</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
