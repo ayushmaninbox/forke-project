@@ -45,3 +45,32 @@ export async function setWaitlistEnabled(enabled: boolean): Promise<void> {
     console.error('Failed to update waitlist_enabled setting:', error)
   }
 }
+
+export async function getWaitlistBypassPassword(): Promise<string | null> {
+  await ensureSettingsTable()
+  try {
+    const result = await db.execute(sql`
+      SELECT value FROM "system_settings" WHERE key = 'waitlist_bypass_password' LIMIT 1;
+    `)
+    if (result.length === 0) {
+      return null
+    }
+    return result[0].value as string
+  } catch (error) {
+    console.error('Failed to query waitlist_bypass_password setting:', error)
+    return null
+  }
+}
+
+export async function setWaitlistBypassPassword(password: string): Promise<void> {
+  await ensureSettingsTable()
+  try {
+    await db.execute(sql`
+      INSERT INTO "system_settings" (key, value, updated_at)
+      VALUES ('waitlist_bypass_password', ${password}, NOW())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    `)
+  } catch (error) {
+    console.error('Failed to update waitlist_bypass_password setting:', error)
+  }
+}

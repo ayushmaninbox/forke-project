@@ -52,13 +52,13 @@ export default function AdminLoginPage() {
         
         {/* Logo and Terminal Identity */}
         <div className="text-center space-y-3">
-          <div className="flex items-center justify-center h-14 relative mb-2">
-            <div className="w-12 h-12 relative">
+          <div className="flex items-center justify-center h-20 relative mb-2">
+            <div className="w-20 h-20 relative">
               <Image 
                 src="/forke-assets/forke_logo.png" 
                 alt="Logo" 
                 fill
-                className="object-contain drop-shadow-[0_0_15px_rgba(255,122,0,0.25)] select-none pointer-events-none"
+                className="object-contain drop-shadow-[0_0_18px_rgba(255,122,0,0.3)] select-none pointer-events-none"
                 draggable={false}
               />
             </div>
@@ -110,7 +110,7 @@ export default function AdminLoginPage() {
                   type="text" 
                   autoComplete="off"
                   className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
-                  placeholder="username" 
+                  placeholder="username or email" 
                 />
               </div>
             </div>

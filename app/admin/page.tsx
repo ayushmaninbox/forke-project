@@ -13,7 +13,14 @@ import {
   updateWaitlistConfig,
   getSubscribers,
   deleteSubscriber,
-  broadcastEmail
+  getCurrentAdminAction,
+  getAdmins,
+  inviteAdmin,
+  deleteAdmin,
+  updateAdminProfile,
+  toggleAdminDisabledAction,
+  resetAdminPasswordAction,
+  changeAdminPasswordAction
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -39,7 +46,8 @@ import {
   Briefcase,
   ChevronRightSquare,
   Globe,
-  Settings
+  Settings,
+  UserPlus
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -47,9 +55,13 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'profile' | 'change-password' | 'admins' | 'subscribers'
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers'
   >('dashboard')
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
+
+  // Modal open states
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false)
 
   // Data states
   const [ownersList, setOwnersList] = useState<any[]>([])
@@ -61,15 +73,48 @@ export default function AdminDashboard() {
   const [isTogglingWaitlist, setIsTogglingWaitlist] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Broadcast Email Modal state
-  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false)
-  const [broadcastSubject, setBroadcastSubject] = useState('')
-  const [broadcastBody, setBroadcastBody] = useState('')
-  const [isBroadcasting, setIsBroadcasting] = useState(false)
+  // Current admin session info
+  const [currentAdmin, setCurrentAdmin] = useState<any>(null)
+  
+  // Profile settings state
+  const [profileName, setProfileName] = useState('')
+  const [profileUsername, setProfileUsername] = useState('')
+  const [profileAltEmail, setProfileAltEmail] = useState('')
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false)
+
+  // Admins state
+  const [adminsList, setAdminsList] = useState<any[]>([])
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [inviteName, setInviteName] = useState('')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteAltEmail, setInviteAltEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<'super_admin' | 'admin'>('admin')
+  const [isInviting, setIsInviting] = useState(false)
+
+  // Password reset modal states
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [resetTargetAdmin, setResetTargetAdmin] = useState<any>(null)
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
+
+  // Change Password states
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Waitlist bypass password states
+  const [waitlistBypassPassword, setWaitlistBypassPasswordState] = useState('')
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false)
+  const [waitlistModalPassword, setWaitlistModalPassword] = useState('')
 
   useEffect(() => {
+    if (currentAdmin && currentAdmin.role !== 'super_admin' && activeTab === 'admins') {
+      setActiveTab('dashboard')
+      return
+    }
     fetchData()
-  }, [activeTab])
+  }, [activeTab, currentAdmin])
 
   async function fetchData() {
     setIsLoading(true)
@@ -78,6 +123,7 @@ export default function AdminDashboard() {
     try {
       const config = await getWaitlistConfig()
       setWaitlistEnabled(config.enabled)
+      setWaitlistBypassPasswordState(config.bypassPassword || '')
     } catch (e) {
       console.error('Failed to fetch waitlist status:', e)
     }
@@ -101,6 +147,10 @@ export default function AdminDashboard() {
         const res = await getSubscribers()
         if (res.success) setSubscribersList(res.data || [])
       }
+      if (activeTab === 'dashboard' || activeTab === 'admins') {
+        const res = await getAdmins()
+        if (res.success) setAdminsList(res.data || [])
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
     }
@@ -108,16 +158,66 @@ export default function AdminDashboard() {
     setIsLoading(false)
   }
 
+  async function fetchCurrentAdmin() {
+    try {
+      const res = await getCurrentAdminAction()
+      if (res.success) {
+        setCurrentAdmin(res.admin)
+      }
+    } catch (err) {
+      console.error('Failed to fetch current admin:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchCurrentAdmin()
+  }, [])
+
+  useEffect(() => {
+    if (currentAdmin) {
+      setProfileName(currentAdmin.name || '')
+      setProfileAltEmail(currentAdmin.alternativeEmail || '')
+      setProfileUsername(currentAdmin.username || '')
+    }
+  }, [currentAdmin])
+
   async function handleToggleWaitlist() {
+    if (waitlistEnabled) {
+      if (confirm('Are you sure you want to disable the waitlist? This will allow open access to the site.')) {
+        setIsTogglingWaitlist(true)
+        try {
+          const res = await updateWaitlistConfig(false)
+          if (res.success) {
+            setWaitlistEnabled(false)
+          }
+        } catch (error) {
+          console.error('Failed to toggle waitlist:', error)
+        } finally {
+          setIsTogglingWaitlist(false)
+        }
+      }
+    } else {
+      setWaitlistModalPassword(waitlistBypassPassword || 'bypass123')
+      setIsWaitlistModalOpen(true)
+    }
+  }
+
+  async function handleSaveWaitlistConfig(e: React.FormEvent) {
+    e.preventDefault()
+    if (!waitlistModalPassword.trim()) {
+      alert('Bypass password is required.')
+      return
+    }
     setIsTogglingWaitlist(true)
     try {
-      const newStatus = !waitlistEnabled
-      const res = await updateWaitlistConfig(newStatus)
+      const res = await updateWaitlistConfig(true, waitlistModalPassword.trim())
       if (res.success) {
-        setWaitlistEnabled(newStatus)
+        setWaitlistEnabled(true)
+        setWaitlistBypassPasswordState(waitlistModalPassword.trim())
+        setIsWaitlistModalOpen(false)
       }
     } catch (error) {
-      console.error('Failed to toggle waitlist:', error)
+      console.error('Failed to enable waitlist:', error)
     } finally {
       setIsTogglingWaitlist(false)
     }
@@ -176,29 +276,162 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleBroadcastEmail(e: React.FormEvent) {
+  async function handleInviteAdmin(e: React.FormEvent) {
     e.preventDefault()
-    if (!broadcastSubject.trim() || !broadcastBody.trim()) {
-      alert('Please fill in both subject and body')
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      alert('Please fill in Name and Email address.')
       return
     }
-    setIsBroadcasting(true)
+    setIsInviting(true)
     try {
-      const res = await broadcastEmail(broadcastSubject, broadcastBody)
+      const res = await inviteAdmin(
+        inviteName.trim(),
+        inviteEmail.trim().toLowerCase(),
+        inviteRole,
+        inviteAltEmail.trim() || undefined
+      )
       if (res.success) {
-        alert(`Successfully sent broadcast email to ${res.sentCount} subscribers!`)
-        setIsBroadcastModalOpen(false)
-        setBroadcastSubject('')
-        setBroadcastBody('')
+        alert('Invitation dispatched successfully!')
+        setIsInviteModalOpen(false)
+        setInviteName('')
+        setInviteEmail('')
+        setInviteAltEmail('')
+        setInviteRole('admin')
         fetchData()
       } else {
-        alert(res.error || 'Failed to send broadcast email')
+        alert(res.error || 'Failed to send administrative invitation.')
       }
     } catch (err) {
-      console.error('Failed to broadcast email:', err)
-      alert('Something went wrong')
+      console.error('Invite error:', err)
+      alert('Something went wrong. Please try again.')
     } finally {
-      setIsBroadcasting(false)
+      setIsInviting(false)
+    }
+  }
+
+  async function handleDeleteAdmin(id: string) {
+    if (confirm('Are you sure you want to decline and DELETE this administrator?')) {
+      try {
+        const res = await deleteAdmin(id)
+        if (res.success) {
+          fetchData()
+        } else {
+          alert(res.error || 'Failed to delete admin account.')
+        }
+      } catch (err) {
+        console.error('Failed to delete admin:', err)
+      }
+    }
+  }
+
+  async function handleUpdateProfile(e: React.FormEvent) {
+    e.preventDefault()
+    if (!profileName.trim()) {
+      alert('Name field cannot be left blank.')
+      return
+    }
+    if (!profileUsername.trim()) {
+      alert('Username field cannot be left blank.')
+      return
+    }
+    setIsUpdatingProfile(true)
+    try {
+      const res = await updateAdminProfile(
+        profileName.trim(),
+        profileUsername.trim(),
+        profileAltEmail.trim() || undefined
+      )
+      if (res.success) {
+        alert('Administrative profile successfully updated!')
+        fetchCurrentAdmin()
+        setIsProfileModalOpen(false)
+      } else {
+        alert(res.error || 'Failed to update administrative profile.')
+      }
+    } catch (err) {
+      console.error('Profile update error:', err)
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setIsUpdatingProfile(false)
+    }
+  }
+
+  async function handleToggleDisabled(adminId: string, currentStatus: boolean) {
+    const newStatus = !currentStatus
+    const actionLabel = newStatus ? 'DISABLE' : 'ENABLE'
+    if (confirm(`Are you sure you want to ${actionLabel} this administrator?`)) {
+      try {
+        const res = await toggleAdminDisabledAction(adminId, newStatus)
+        if (res.success) {
+          alert(`Administrator has been successfully ${newStatus ? 'disabled' : 'enabled'}.`)
+          fetchData()
+        } else {
+          alert(res.error || 'Failed to update administrator status.')
+        }
+      } catch (err) {
+        console.error('Toggle status error:', err)
+        alert('Something went wrong.')
+      }
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!resetTargetAdmin) return
+    if (!resetNewPassword || resetNewPassword.trim().length < 6) {
+      alert('Password must be at least 6 characters long.')
+      return
+    }
+    setIsResetting(true)
+    try {
+      const res = await resetAdminPasswordAction(resetTargetAdmin.id, resetNewPassword.trim())
+      if (res.success) {
+        alert(`Password for ${resetTargetAdmin.name} has been successfully reset!`)
+        setIsResetModalOpen(false)
+        setResetTargetAdmin(null)
+        setResetNewPassword('')
+      } else {
+        alert(res.error || 'Failed to reset administrator password.')
+      }
+    } catch (err) {
+      console.error('Password reset error:', err)
+      alert('Something went wrong.')
+    } finally {
+      setIsResetting(false)
+    }
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      alert('Please fill in all password fields.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      alert('New password and password confirmation do not match.')
+      return
+    }
+    if (newPassword.length < 6) {
+      alert('New password must be at least 6 characters long.')
+      return
+    }
+    setIsChangingPassword(true)
+    try {
+      const res = await changeAdminPasswordAction(oldPassword, newPassword)
+      if (res.success) {
+        alert('Your password has been successfully changed!')
+        setOldPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setIsChangePasswordModalOpen(false)
+      } else {
+        alert(res.error || 'Failed to change your password.')
+      }
+    } catch (err) {
+      console.error('Change password error:', err)
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -250,6 +483,12 @@ export default function AdminDashboard() {
     return sub.email.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
+  const filteredAdmins = adminsList.filter((admin) => {
+    return admin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (admin.username && admin.username.toLowerCase().includes(searchQuery.toLowerCase()))
+  })
+
   return (
     <div className="min-h-screen bg-[#050505] text-white flex">
       
@@ -259,11 +498,16 @@ export default function AdminDashboard() {
           
           {/* Logo & Header */}
           <div className="flex items-center gap-3.5 px-3 pt-2">
-            <div className="w-10 h-10 bg-accent/10 border border-accent/20 rounded-2xl flex items-center justify-center text-accent shadow-[0_0_15px_rgba(255,122,0,0.1)]">
-              <Shield className="w-5 h-5" />
+            <div className="w-10 h-10 relative flex items-center justify-center shrink-0">
+              <img 
+                src="/forke-assets/forke_logo.png" 
+                alt="Forke Logo" 
+                className="absolute -left-3 w-14 h-14 max-w-none object-contain drop-shadow-[0_0_12px_rgba(255,122,0,0.3)] select-none pointer-events-none"
+                draggable={false}
+              />
             </div>
             <div className="text-left">
-              <h2 className="font-serif text-xl font-bold leading-none tracking-tight">Forke Nexus</h2>
+              <h2 className="font-serif text-lg font-bold leading-none tracking-tight">Forke Admin Panel</h2>
               <p className="text-[9px] text-white/20 font-black uppercase tracking-[0.2em] mt-1.5">Control Terminal</p>
             </div>
           </div>
@@ -375,26 +619,33 @@ export default function AdminDashboard() {
             </button>
 
             {/* Admins */}
-            <button
-              onClick={() => setActiveTab('admins')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
-                activeTab === 'admins'
-                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
-                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
-              }`}
-            >
-              <Shield className="w-4 h-4" />
-              <span>Admins</span>
-            </button>
+            {currentAdmin?.role === 'super_admin' && (
+              <button
+                onClick={() => setActiveTab('admins')}
+                className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
+                  activeTab === 'admins'
+                    ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
+                    : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <Shield className="w-4 h-4" />
+                  <span>Admins</span>
+                </div>
+                {adminsList.length > 0 && (
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                    activeTab === 'admins' ? 'bg-bg text-accent' : 'bg-accent/10 text-accent border border-accent/20'
+                  }`}>
+                    {adminsList.length}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Profile */}
             <button
-              onClick={() => setActiveTab('profile')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
-                activeTab === 'profile'
-                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
-                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
-              }`}
+              onClick={() => setIsProfileModalOpen(true)}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white hover:bg-white/[0.02] transition-all duration-200 text-left cursor-pointer"
             >
               <User className="w-4 h-4" />
               <span>Profile</span>
@@ -402,12 +653,8 @@ export default function AdminDashboard() {
 
             {/* Change Password */}
             <button
-              onClick={() => setActiveTab('change-password')}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 text-left ${
-                activeTab === 'change-password'
-                  ? 'bg-accent text-bg shadow-[0_4px_12px_rgba(217,119,6,0.3)]'
-                  : 'text-white/40 hover:text-white hover:bg-white/[0.02]'
-              }`}
+              onClick={() => setIsChangePasswordModalOpen(true)}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-xs font-bold uppercase tracking-wider text-white/40 hover:text-white hover:bg-white/[0.02] transition-all duration-200 text-left cursor-pointer"
             >
               <KeyRound className="w-4 h-4" />
               <span>Change Password</span>
@@ -419,11 +666,17 @@ export default function AdminDashboard() {
         {/* User Card & Logout at bottom */}
         <div className="p-3.5 rounded-3xl bg-white/[0.02] border border-white/[0.04] flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent text-xs">
-            SA
+            {currentAdmin?.name
+              ? currentAdmin.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+              : 'SA'}
           </div>
           <div className="flex-grow text-left">
-            <h4 className="text-xs font-bold text-white tracking-tight leading-none">Super Admin</h4>
-            <p className="text-[9px] text-white/40 uppercase tracking-[0.1em] font-black mt-1">Nexus Access</p>
+            <h4 className="text-xs font-bold text-white tracking-tight leading-none">
+              {currentAdmin?.name || 'Super Admin'}
+            </h4>
+            <p className="text-[9px] text-white/40 uppercase tracking-[0.1em] font-black mt-1">
+              {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'} Access
+            </p>
           </div>
           <button 
             onClick={handleLogout} 
@@ -490,9 +743,25 @@ export default function AdminDashboard() {
                     <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.15em] font-mono">
                       {waitlistEnabled ? 'Redirecting all guests' : 'Open access active'}
                     </p>
+                    {waitlistEnabled && waitlistBypassPassword && (
+                      <p className="text-xs text-accent/80 font-mono mt-3">
+                        Bypass Key: <span className="text-white border border-accent/20 bg-accent/5 px-2 py-0.5 rounded font-bold">{waitlistBypassPassword}</span>
+                      </p>
+                    )}
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex items-center gap-3">
+                    {waitlistEnabled && (
+                      <button
+                        onClick={() => {
+                          setWaitlistModalPassword(waitlistBypassPassword)
+                          setIsWaitlistModalOpen(true)
+                        }}
+                        className="px-6 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl border border-white/5 bg-white/[0.02] text-white hover:bg-white/[0.05] transition-all duration-300 cursor-pointer active:scale-[0.97]"
+                      >
+                        Change Bypass Key
+                      </button>
+                    )}
                     <button
                       onClick={handleToggleWaitlist}
                       disabled={isTogglingWaitlist}
@@ -566,7 +835,7 @@ export default function AdminDashboard() {
 
           {/* ==================== OWNER APPROVAL PANEL ==================== */}
           {activeTab === 'owner-approval' && (
-            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+            <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
               
               {/* Search & filters */}
               <div className="p-6 border-b border-white/[0.04] flex items-center justify-between bg-white/[0.01]">
@@ -577,7 +846,7 @@ export default function AdminDashboard() {
                     placeholder="Search owners by name, company, or email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
                   />
                 </div>
                 <div className="flex items-center gap-3">
@@ -592,10 +861,10 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/[0.04]">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Company / Designation</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Company / Designation</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
@@ -610,7 +879,7 @@ export default function AdminDashboard() {
                     ) : (
                       filteredOwners.map(({ user, owner }) => (
                         <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shrink-0">
                                 {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
@@ -624,7 +893,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <div className="text-left">
                               <p className="text-sm font-semibold text-white/80 leading-none">{owner.companyName}</p>
                               <p className="text-[10px] text-accent/70 font-black uppercase tracking-widest mt-2 flex items-center gap-1.5 font-mono">
@@ -636,7 +905,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             {user.isApproved ? (
                               <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
                                 <CheckCircle2 className="w-3 h-3" /> Approved
@@ -647,7 +916,8 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
+                              {/* Action buttons render here */}
                             <div className="flex items-center gap-2">
                               {!user.isApproved && (
                                 <button 
@@ -679,7 +949,7 @@ export default function AdminDashboard() {
 
           {/* ==================== DEVELOPER BAN PANEL ==================== */}
           {activeTab === 'developer-ban' && (
-            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+            <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
               
               {/* Search */}
               <div className="p-6 border-b border-white/[0.04] bg-white/[0.01]">
@@ -690,7 +960,7 @@ export default function AdminDashboard() {
                     placeholder="Search developers by name or email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
                   />
                 </div>
               </div>
@@ -700,9 +970,9 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/[0.04]">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">User Details</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
@@ -717,7 +987,7 @@ export default function AdminDashboard() {
                     ) : (
                       filteredDevelopers.map((user) => (
                         <tr key={user.id} className="group hover:bg-white/[0.01] transition-colors">
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shrink-0">
                                 {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
@@ -728,7 +998,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             {user.isBanned ? (
                               <span className="px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
                                 <UserX className="w-3 h-3" /> Banned
@@ -739,7 +1009,7 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <button 
                               onClick={() => handleToggleBan(user.id, user.isBanned)}
                               className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
@@ -763,7 +1033,7 @@ export default function AdminDashboard() {
 
           {/* ==================== ENQUIRIES PANEL ==================== */}
           {activeTab === 'enquiries' && (
-            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+            <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
               
               {/* Search */}
               <div className="p-6 border-b border-white/[0.04] bg-white/[0.01]">
@@ -774,7 +1044,7 @@ export default function AdminDashboard() {
                     placeholder="Search enquiries..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
                   />
                 </div>
               </div>
@@ -784,10 +1054,10 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/[0.04]">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Contact Info</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Message Details</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Issue Category</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Timestamp</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Contact Info</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Message Details</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Issue Category</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Timestamp</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
@@ -802,7 +1072,7 @@ export default function AdminDashboard() {
                     ) : (
                       filteredEnquiries.map((enq) => (
                         <tr key={enq.id} className="group hover:bg-white/[0.01] transition-colors">
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <div>
                               <p className="font-bold text-white leading-none">{enq.firstName} {enq.lastName}</p>
                               <div className="flex items-center gap-3 text-[11px] text-white/30 mt-2 font-mono">
@@ -811,7 +1081,7 @@ export default function AdminDashboard() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-6 max-w-sm">
+                          <td className="px-8 py-3.5 max-w-sm">
                             <p className="text-sm text-white/70 line-clamp-3 leading-relaxed font-sans" title={enq.message}>
                               {enq.message}
                             </p>
@@ -821,7 +1091,7 @@ export default function AdminDashboard() {
                               </a>
                             )}
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-[9px] font-black uppercase font-mono">
                               {enq.errorType === 'AccessDenied' 
                                 ? 'USER BAN' 
@@ -830,7 +1100,7 @@ export default function AdminDashboard() {
                                 : enq.errorType || 'GENERAL'}
                             </span>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <p className="text-[11px] text-white/40 font-mono">{new Date(enq.createdAt).toLocaleDateString()}</p>
                           </td>
                         </tr>
@@ -845,7 +1115,7 @@ export default function AdminDashboard() {
 
           {/* ==================== SUBSCRIBERS PANEL ==================== */}
           {activeTab === 'subscribers' && (
-            <div className="rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+            <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
               
               {/* Search & Action Buttons */}
               <div className="p-6 border-b border-white/[0.04] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.01] gap-4">
@@ -856,16 +1126,10 @@ export default function AdminDashboard() {
                     placeholder="Search subscribers by email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-2xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setIsBroadcastModalOpen(true)}
-                    className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] hover:translate-y-[1px] hover:shadow-[0_0_15px_rgba(255,122,0,0.25)] active:translate-y-[2px] transition-all text-[#050505] flex items-center gap-2 cursor-pointer font-bold h-11"
-                  >
-                    <Mail className="w-4 h-4 text-black" /> Broadcast Email
-                  </button>
                   <button 
                     onClick={handleExportCSV}
                     className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white hover:bg-white/[0.05] hover:border-white/10 hover:translate-y-[1px] active:translate-y-[2px] transition-all flex items-center gap-2 cursor-pointer font-bold h-11"
@@ -880,10 +1144,10 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/[0.04]">
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Subscriber ID</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Email Address</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Date & Time Joined</th>
-                      <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Subscriber ID</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Email Address</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Date & Time Joined</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.03]">
@@ -898,16 +1162,16 @@ export default function AdminDashboard() {
                     ) : (
                       filteredSubscribers.map((sub) => (
                         <tr key={sub.id} className="group hover:bg-white/[0.01] transition-colors">
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <p className="text-xs text-white/40 font-mono font-bold">{sub.id}</p>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <p className="font-bold text-white font-sans">{sub.email}</p>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <p className="text-[11px] text-white/50 font-mono">{new Date(sub.createdAt).toLocaleString()}</p>
                           </td>
-                          <td className="px-8 py-6">
+                          <td className="px-8 py-3.5">
                             <button 
                               onClick={() => handleDeleteSubscriber(sub.id)}
                               className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer"
@@ -926,90 +1190,243 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ==================== ADMINS PANEL (Placeholder) ==================== */}
+          {/* ==================== ADMINS PANEL ==================== */}
           {activeTab === 'admins' && (
-            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
-              <Shield className="w-12 h-12 text-white/15 mb-4" />
-              <h3 className="text-xl font-serif text-white tracking-tight">Nexus Admins Control</h3>
-              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
-                This section manages administrative credentials, security roles, and system permission overrides.
-              </p>
+            <div className="rounded-xl bg-[#0c0c0c] border border-white/[0.04] overflow-hidden">
+              
+              {/* Search & Action Buttons */}
+              <div className="p-6 border-b border-white/[0.04] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.01] gap-4">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input 
+                    type="text" 
+                    placeholder="Search administrators by name, email or username..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-11 bg-white/[0.02] border border-white/5 rounded-xl pl-12 pr-6 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  {currentAdmin?.role === 'super_admin' && (
+                    <button 
+                      onClick={() => setIsInviteModalOpen(true)}
+                      className="px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] hover:translate-y-[1px] hover:shadow-[0_0_15px_rgba(255,122,0,0.25)] active:translate-y-[2px] transition-all text-[#050505] flex items-center gap-2 cursor-pointer font-bold h-11"
+                    >
+                      <UserPlus className="w-4 h-4 text-black" /> Invite Admin
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/[0.04]">
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Administrative Profile</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Email / Credentials</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Access Level</th>
+                      <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Status</th>
+                      {currentAdmin?.role === 'super_admin' && (
+                        <th className="px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white/20 font-mono">Actions</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.03]">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">Loading Records...</td>
+                      </tr>
+                    ) : filteredAdmins.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-20 text-center text-white/20 uppercase font-black tracking-widest font-mono">No matching records found</td>
+                      </tr>
+                    ) : (
+                      filteredAdmins.map((adm) => (
+                        <tr key={adm.id} className={`group hover:bg-white/[0.01] transition-colors ${adm.isDisabled ? 'opacity-40' : ''}`}>
+                          <td className="px-8 py-3.5">
+                            <div>
+                              <p className="font-bold text-white font-sans">{adm.name}</p>
+                              {adm.alternativeEmail && (
+                                <p className="text-[10px] text-white/30 mt-1 font-sans">
+                                  Alt: {adm.alternativeEmail}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            <div>
+                              <p className="font-medium text-white/80 text-xs font-mono">{adm.email}</p>
+                              {adm.username ? (
+                                <p className="text-[10px] text-accent/70 mt-1 font-mono uppercase tracking-wider font-bold">
+                                  @{adm.username}
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-white/20 mt-1 font-mono italic">
+                                  No username set yet
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase font-mono ${
+                              adm.role === 'super_admin' 
+                                ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' 
+                                : 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                            }`}>
+                              {adm.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                            </span>
+                          </td>
+                          <td className="px-8 py-3.5">
+                            {adm.isDisabled ? (
+                              <span className="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <UserX className="w-3 h-3" /> Disabled
+                              </span>
+                            ) : adm.username ? (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono">
+                                <CheckCircle2 className="w-3 h-3" /> Active
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[9px] font-black uppercase flex items-center gap-1.5 w-fit font-mono animate-pulse">
+                                <ShieldCheck className="w-3 h-3" /> Pending Setup
+                              </span>
+                            )}
+                          </td>
+                          {currentAdmin?.role === 'super_admin' && (
+                            <td className="px-8 py-3.5">
+                              {currentAdmin.id !== adm.id ? (
+                                <div className="flex items-center gap-2">
+                                  {/* Toggle Disable/Enable */}
+                                  <button
+                                    onClick={() => handleToggleDisabled(adm.id, adm.isDisabled)}
+                                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm cursor-pointer ${
+                                      adm.isDisabled 
+                                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white' 
+                                        : 'bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500 hover:text-white'
+                                    }`}
+                                    title={adm.isDisabled ? 'Enable Account' : 'Disable Account'}
+                                  >
+                                    {adm.isDisabled ? <CheckCircle2 className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
+                                  </button>
+
+                                  {/* Reset Password */}
+                                  <button
+                                    onClick={() => {
+                                      setResetTargetAdmin(adm)
+                                      setIsResetModalOpen(true)
+                                    }}
+                                    className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all shadow-sm cursor-pointer"
+                                    title="Reset Password Override"
+                                  >
+                                    <KeyRound className="w-4 h-4" />
+                                  </button>
+
+                                  {/* Delete Account */}
+                                  <button 
+                                    onClick={() => handleDeleteAdmin(adm.id)}
+                                    className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm cursor-pointer"
+                                    title="Delete Account"
+                                  >
+                                    <UserX className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-white/25 font-mono italic">Logged In</span>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
             </div>
           )}
 
-          {/* ==================== PROFILE PANEL (Placeholder) ==================== */}
-          {activeTab === 'profile' && (
-            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
-              <User className="w-12 h-12 text-white/15 mb-4" />
-              <h3 className="text-xl font-serif text-white tracking-tight">Admin Profile Settings</h3>
-              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
-                Configure your system nickname, profile avatar, support signature, and administrative notification email here.
-              </p>
-            </div>
-          )}
-
-          {/* ==================== CHANGE PASSWORD PANEL (Placeholder) ==================== */}
-          {activeTab === 'change-password' && (
-            <div className="p-12 rounded-[2.5rem] bg-[#0c0c0c] border border-white/[0.04] text-center min-h-[300px] flex flex-col items-center justify-center">
-              <KeyRound className="w-12 h-12 text-white/15 mb-4" />
-              <h3 className="text-xl font-serif text-white tracking-tight">Change Password Credentials</h3>
-              <p className="text-xs text-white/40 leading-relaxed font-light max-w-sm mt-2">
-                Securely update your terminal access password. Double factor validation will be requested to proceed.
-              </p>
-            </div>
-          )}
+          {/* Panels removed from here as they are now premium overlay modals */}
 
         </div>
 
       </main>
 
-      {/* --- BROADCAST EMAIL GLASS MODAL --- */}
-      {isBroadcastModalOpen && (
+      {/* --- INVITE ADMIN GLASS MODAL --- */}
+      {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-full max-w-2xl bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+          <div className="w-full max-w-xl bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
             {/* Ambient top border glow */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
 
             <div className="relative z-10 space-y-6 text-left">
               <div className="space-y-1.5">
-                <h3 className="text-2xl font-serif text-white tracking-wide">Broadcast Message</h3>
+                <h3 className="text-2xl font-serif text-white tracking-wide">Invite Administrator</h3>
                 <p className="text-xs text-white/40 leading-relaxed font-light">
-                  Send a beautiful wrapped HTML announcement to all waitlist subscribers. Use standard paragraphs and spacing.
+                  Grant administrative console entry. An invitation email will request them to complete onboarding and select credentials.
                 </p>
               </div>
 
-              <form onSubmit={handleBroadcastEmail} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Subject Title</label>
-                  <input
-                    type="text"
-                    required
-                    value={broadcastSubject}
-                    onChange={(e) => setBroadcastSubject(e.target.value)}
-                    placeholder="E.g., Early Access Invites or Big Product Update!"
-                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-accent/40 transition-all font-sans"
-                  />
+              <form onSubmit={handleInviteAdmin} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      placeholder="E.g., John Doe"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="e.g. john@forke.space"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Email Body Content</label>
-                  <textarea
-                    required
-                    rows={8}
-                    value={broadcastBody}
-                    onChange={(e) => setBroadcastBody(e.target.value)}
-                    placeholder="Type your message content here. New lines will automatically convert to line breaks in the HTML format..."
-                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl p-4 text-sm text-white placeholder:text-white/15 focus:outline-none focus:border-accent/40 transition-all font-sans resize-none"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Alternative Email (Optional)</label>
+                    <input
+                      type="email"
+                      value={inviteAltEmail}
+                      onChange={(e) => setInviteAltEmail(e.target.value)}
+                      placeholder="Alternate email"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Access Role Level</label>
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as 'super_admin' | 'admin')}
+                      className="w-full h-12 bg-[#050505] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    >
+                      <option value="admin">Admin (Standard)</option>
+                      <option value="super_admin">Super Admin (All Privileges)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
-                      setIsBroadcastModalOpen(false)
-                      setBroadcastSubject('')
-                      setBroadcastBody('')
+                      setIsInviteModalOpen(false)
+                      setInviteName('')
+                      setInviteEmail('')
+                      setInviteAltEmail('')
+                      setInviteRole('admin')
                     }}
                     className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
                   >
@@ -1017,19 +1434,329 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     type="submit"
-                    disabled={isBroadcasting}
+                    disabled={isInviting}
                     className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isBroadcasting ? (
+                    {isInviting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                        <span>Broadcasting...</span>
+                        <span>Inviting...</span>
                       </>
                     ) : (
                       <>
-                        <Mail className="w-4 h-4 text-black fill-current" />
-                        <span>Send Broadcast</span>
+                        <UserPlus className="w-4 h-4 text-black fill-current" />
+                        <span>Send Invitation</span>
                       </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- RESET PASSWORD GLASS MODAL --- */}
+      {isResetModalOpen && resetTargetAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+            {/* Ambient top border glow */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 space-y-6 text-left">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-serif text-white tracking-wide">Reset Password</h3>
+                <p className="text-xs text-white/40 leading-relaxed font-light">
+                  Directly override the password for <strong>{resetTargetAdmin.name}</strong> (@{resetTargetAdmin.username || resetTargetAdmin.email}).
+                </p>
+              </div>
+
+              <form onSubmit={handleResetPassword} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={resetNewPassword}
+                    onChange={(e) => setResetNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsResetModalOpen(false)
+                      setResetTargetAdmin(null)
+                      setResetNewPassword('')
+                    }}
+                    className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isResetting}
+                    className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResetting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Resetting...</span>
+                      </>
+                    ) : (
+                      <span>Reset Password</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- WAITLIST BYPASS PASSWORD GLASS MODAL --- */}
+      {isWaitlistModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+            {/* Ambient top border glow */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 space-y-6 text-left">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-serif text-white tracking-wide">
+                  {waitlistEnabled ? 'Change Waitlist Bypass Key' : 'Enable Waitlist Gate'}
+                </h3>
+                <p className="text-xs text-white/40 leading-relaxed font-light">
+                  Set the shared secret key that users can input to bypass the waitlist and access the signup/checkout panel directly.
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveWaitlistConfig} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Bypass Secret Key</label>
+                  <input
+                    type="text"
+                    required
+                    value={waitlistModalPassword}
+                    onChange={(e) => setWaitlistModalPassword(e.target.value)}
+                    placeholder="e.g., beta_secret_key"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans font-medium"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsWaitlistModalOpen(false)
+                      setWaitlistModalPassword('')
+                    }}
+                    className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isTogglingWaitlist}
+                    className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isTogglingWaitlist ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>{waitlistEnabled ? 'Save Key' : 'Enable Gate'}</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- EDIT PROFILE GLASS MODAL --- */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-xl bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+            {/* Ambient top border glow */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 space-y-6 text-left">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-serif text-white tracking-wide">Edit Profile</h3>
+                <p className="text-xs text-white/40 leading-relaxed font-light">
+                  Manage your administrator details. You can configure your name, username, and optional alternative communication email below.
+                </p>
+              </div>
+
+              <form onSubmit={handleUpdateProfile} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      placeholder="Your full name"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Alternative Email (Optional)</label>
+                    <input
+                      type="email"
+                      value={profileAltEmail}
+                      onChange={(e) => setProfileAltEmail(e.target.value)}
+                      placeholder="alternate@email.com"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/25 font-black uppercase tracking-widest font-mono">Primary Email (Read-Only)</label>
+                    <input
+                      type="text"
+                      disabled
+                      value={currentAdmin?.email || ''}
+                      className="w-full h-12 bg-white/[0.01] border border-white/[0.03] rounded-xl px-4 text-sm text-white/40 font-mono select-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Username</label>
+                    <input
+                      type="text"
+                      required
+                      value={profileUsername}
+                      onChange={(e) => setProfileUsername(e.target.value)}
+                      placeholder="Your username"
+                      className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileModalOpen(false)
+                      if (currentAdmin) {
+                        setProfileName(currentAdmin.name || '')
+                        setProfileAltEmail(currentAdmin.alternativeEmail || '')
+                        setProfileUsername(currentAdmin.username || '')
+                      }
+                    }}
+                    className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingProfile}
+                    className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdatingProfile ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CHANGE PASSWORD GLASS MODAL --- */}
+      {isChangePasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#0c0c0c]/90 border border-white/10 rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_80px_-16px_rgba(0,0,0,0.85)] relative overflow-hidden group">
+            {/* Ambient top border glow */}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent pointer-events-none" />
+
+            <div className="relative z-10 space-y-6 text-left">
+              <div className="space-y-1.5">
+                <h3 className="text-2xl font-serif text-white tracking-wide">Change Password</h3>
+                <p className="text-xs text-white/40 leading-relaxed font-light">
+                  Securely update your administrative password credentials.
+                </p>
+              </div>
+
+              <form onSubmit={handleChangePassword} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Current Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/30 font-black uppercase tracking-widest font-mono">Confirm New Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-sm text-white focus:outline-none focus:border-accent/40 transition-all font-sans"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsChangePasswordModalOpen(false)
+                      setOldPassword('')
+                      setNewPassword('')
+                      setConfirmPassword('')
+                    }}
+                    className="px-6 h-12 text-xs font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="px-8 h-12 text-xs font-black uppercase tracking-widest rounded-xl bg-gradient-to-b from-accent to-[#d97706] text-[#050505] flex items-center justify-center gap-2 cursor-pointer font-bold hover:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Update Password</span>
                     )}
                   </button>
                 </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
+import { getWaitlistBypassPassword } from '@/lib/db/settings'
 
 const DEFAULT_BYPASS_HASH = '$2b$10$JEQiYsDtj2tUN2SXWMsYBu6g/cXZfWa5fDcYg0t32TSUx5NQklJpy'
 
@@ -9,8 +10,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { password } = body
 
-    // Allow overriding bypass password via environment variable (git-ignored)
-    let customBypass = process.env.WAITLIST_BYPASS_PASSWORD
+    // Fetch bypass password from DB (set by Admin in dashboard)
+    const dbBypass = await getWaitlistBypassPassword()
+
+    // Allow overriding bypass password via environment variable (git-ignored) or DB settings
+    let customBypass = dbBypass || process.env.WAITLIST_BYPASS_PASSWORD
     if (customBypass && customBypass.startsWith('"') && customBypass.endsWith('"')) {
       customBypass = customBypass.slice(1, -1)
     }

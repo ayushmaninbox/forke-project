@@ -67,8 +67,15 @@ export const owners = pgTable('owners', {
 
 export const admins = pgTable('admins', {
   id: uuid('id').primaryKey().defaultRandom(),
-  username: text('username').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  email: text('email').notNull().unique(),
+  name: text('name').notNull(),
+  username: text('username').unique(),
+  passwordHash: text('password_hash'),
+  role: text('role').default('admin').notNull(),
+  alternativeEmail: text('alternative_email'),
+  inviteToken: text('invite_token').unique(),
+  inviteExpiresAt: timestamp('invite_expires_at'),
+  isDisabled: boolean('is_disabled').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

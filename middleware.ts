@@ -66,6 +66,7 @@ export default auth(async (req) => {
   
   const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
   const isAdminLogin = req.nextUrl.pathname === '/admin/login'
+  const isAdminSetup = req.nextUrl.pathname === '/admin/setup'
 
   // Block banned users
   if (isLoggedIn && isBanned && !isAdminPage && !req.nextUrl.pathname.startsWith('/auth-error')) {
@@ -74,9 +75,9 @@ export default auth(async (req) => {
   }
 
   // Admin protection
-  if (isAdminPage && !isAdminLogin) {
+  if (isAdminPage && !isAdminLogin && !isAdminSetup) {
     const adminToken = req.cookies.get('admin_token')?.value
-    if (adminToken !== 'forke_admin_session') {
+    if (!adminToken || !adminToken.startsWith('forke_admin_session:')) {
       return NextResponse.redirect(new URL('/admin/login', req.nextUrl.origin))
     }
   }
