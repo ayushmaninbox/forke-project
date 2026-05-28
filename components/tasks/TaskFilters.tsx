@@ -45,22 +45,22 @@ export default function TaskFilters() {
   const hasFilters = currentTags.length > 0 || currentMaxBudget !== ''
 
   return (
-    <div className="space-y-6 bg-white p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+    <div className="space-y-6 bg-[#0b0b0e] p-6 rounded-2xl border border-white/[0.04] shadow-xl text-left select-none">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Skill Tags */}
         <div className="flex-grow space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Filter by Skill</h4>
+            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Filter by Skill</h4>
             {hasFilters && (
               <button
                 onClick={clearFilters}
-                className="lg:hidden flex items-center gap-1 text-[10px] font-bold text-accent hover:underline mb-1"
+                className="lg:hidden flex items-center gap-1 text-[10px] font-black text-accent hover:underline mb-1"
               >
                 Clear all
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5 cursor-pointer">
+          <div className="flex flex-wrap gap-2">
             {SKILL_TAGS.map((tag) => {
               const isActive = currentTags.includes(tag)
               return (
@@ -68,10 +68,10 @@ export default function TaskFilters() {
                   key={tag}
                   onClick={() => toggleTag(tag)}
                   className={cn(
-                    "px-3 py-1 rounded-full text-[11px] font-bold border transition-all duration-200",
+                    "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all duration-200 cursor-pointer font-mono",
                     isActive
-                      ? "bg-accent border-accent text-white shadow-md shadow-accent/20"
-                      : "bg-[var(--color-bg-surface)] border-[var(--color-border)] text-muted hover:border-accent/40 hover:text-[var(--color-text-primary)]"
+                      ? "bg-accent border-accent text-[#050505] shadow-[0_0_12px_rgba(255,122,0,0.2)]"
+                      : "bg-white/[0.01] border-white/5 text-white/40 hover:border-accent/40 hover:text-white"
                   )}
                 >
                   {tag}
@@ -84,22 +84,22 @@ export default function TaskFilters() {
         {/* Budget & Clear */}
         <div className="flex items-end gap-3 shrink-0">
           <div className="space-y-3 w-full sm:w-48">
-            <h4 className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Max Budget</h4>
+            <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] font-mono">Max Budget</h4>
             <div className="relative">
               <select
                 value={currentMaxBudget}
                 onChange={(e) => updateFilters(currentTags, e.target.value)}
-                className="w-full h-10 pl-3 pr-8 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg text-xs font-bold outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all appearance-none cursor-pointer"
+                className="w-full h-11 pl-3 pr-8 bg-white/[0.01] border border-white/5 rounded-xl text-[10px] font-black tracking-wider uppercase text-white/60 outline-none focus:border-accent transition-all appearance-none cursor-pointer"
               >
                 {BUDGET_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <option key={opt.value} value={opt.value} className="bg-[#0b0b0e] text-white">
                     {opt.label}
                   </option>
                 ))}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
@@ -108,9 +108,9 @@ export default function TaskFilters() {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="hidden lg:flex items-center gap-1.5 text-[10px] font-bold text-accent hover:text-amber-700 transition-colors h-10 px-2"
+              className="hidden lg:flex items-center gap-1.5 text-[9px] font-black text-accent hover:text-white transition-colors h-11 px-3 border border-accent/20 rounded-xl bg-accent/5 hover:bg-accent/10 cursor-pointer tracking-widest uppercase font-mono"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5 stroke-[3px]" />
               CLEAR
             </button>
           )}
