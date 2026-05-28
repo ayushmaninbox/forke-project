@@ -28,10 +28,10 @@ export default function Footer() {
           <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Navigate</h4>
           <ul className="space-y-4 columns-2 gap-x-12">
             <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">What&apos;s Forke?</a></li>
-            <li><a href="/bounties" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>
+            <li><a href="/tasks" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>
             <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Levels</a></li>
-            <li><a href="/leaderboard" className="text-muted hover:text-white transition-colors text-sm font-light">Leaderboards</a></li>
-            <li><a href="/blog" className="text-muted hover:text-white transition-colors text-sm font-light">Blog</a></li>
+            <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Leaderboards</a></li>
+            <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">Blog</a></li>
           </ul>
         </div>
 
