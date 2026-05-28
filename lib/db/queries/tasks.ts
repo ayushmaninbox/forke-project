@@ -13,9 +13,9 @@ export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: 
   }
 
   if (skillTags && skillTags.length > 0) {
-    // Correctly format the array overlap operator for PostgreSQL
-    // We pass the tags as a parameter to avoid malformed array literals
-    conditions.push(sql`${tasks.skillTags} && ${skillTags}::text[]`)
+    // Correctly format the array overlap operator for PostgreSQL using native ARRAY[...] syntax
+    const arrayElements = skillTags.map(t => sql`${t}`)
+    conditions.push(sql`${tasks.skillTags} && ARRAY[${sql.join(arrayElements, sql`, `)}]::text[]`)
   }
 
   const result = await db
