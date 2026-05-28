@@ -227,3 +227,12 @@ export const developers = pgTable('developers', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const messages = pgTable('messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  senderId: uuid('sender_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  receiverId: uuid('receiver_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+
