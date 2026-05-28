@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { SKILL_TAGS } from '@/constants'
 
 export const createTaskSchema = z.object({
   title: z
@@ -13,7 +12,7 @@ export const createTaskSchema = z.object({
   budget: z
     .number()
     .min(10000, 'Budget must be at least ₹100')
-    .max(500000, 'Budget cannot exceed ₹5,000'),
+    .max(10000000, 'Budget cannot exceed ₹1,00,000'),
   deadline: z
     .date()
     .optional()
@@ -22,7 +21,7 @@ export const createTaskSchema = z.object({
       message: 'Deadline must be in the future',
     }),
   skillTags: z
-    .array(z.enum(SKILL_TAGS as unknown as [string, ...string[]]))
+    .array(z.string().min(1).max(30))
     .min(1, 'Select at least one tag')
     .max(5, 'Maximum 5 tags allowed'),
 })

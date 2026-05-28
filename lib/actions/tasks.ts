@@ -89,8 +89,9 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
     return { message: 'Something went wrong while posting the task. Please try again.' }
   }
 
+  revalidatePath('/tasks')
   revalidatePath('/dashboard')
-  redirect('/dashboard?success=task-posted')
+  redirect('/tasks')
 }
 
 export async function claimTask(taskId: string) {
