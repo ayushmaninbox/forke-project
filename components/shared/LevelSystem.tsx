@@ -127,9 +127,8 @@ export default function LevelSystem() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} id="levels" className="py-32 px-4 bg-bg relative overflow-hidden border-t border-white/[0.05]">
+    <section ref={containerRef} id="levels" className="py-32 px-4 bg-bg relative overflow-hidden">
       {/* Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto text-center relative z-10">

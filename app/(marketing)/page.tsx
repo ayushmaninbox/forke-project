@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Navbar from '@/components/shared/Navbar'
 import Hero from '@/components/shared/Hero'
 import HowItWorks from '@/components/shared/HowItWorks'
+import FirstMerge from '@/components/shared/FirstMerge'
 import LevelSystem from '@/components/shared/LevelSystem'
 import FAQ from '@/components/shared/FAQ'
 import CTA from '@/components/shared/CTA'
@@ -19,6 +20,7 @@ export default function MarketingPage() {
       <main className="flex-grow">
         <Hero />
         <HowItWorks />
+        <FirstMerge />
         <LevelSystem />
         <FAQ />
         <CTA />
