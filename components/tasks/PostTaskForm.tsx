@@ -20,17 +20,17 @@ function SubmitButton() {
       type="submit" 
       disabled={pending}
       className={cn(
-        "w-full md:w-auto min-w-[200px] h-12 text-lg font-serif",
+        "w-full md:w-auto min-w-[200px] h-12 text-[10px] font-black uppercase tracking-widest bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_15px_rgba(255,122,0,0.2)] active:translate-y-[1px] rounded-xl font-bold cursor-pointer transition-all",
         pending && "opacity-80"
       )}
     >
       {pending ? (
-        <span className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        <span className="flex items-center gap-2 justify-center">
+          <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
           Posting...
         </span>
       ) : (
-        'Post Task'
+        'Launch Mission'
       )}
     </Button>
   )
@@ -66,24 +66,24 @@ export default function PostTaskForm() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-      <form action={formAction} className="lg:col-span-2 space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12 select-none">
+      <form action={formAction} className="lg:col-span-2 space-y-8 text-left">
         {state.message && (
-          <div className="p-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 bg-red-50 text-red-700 border border-red-100">
+          <div className="p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300 bg-red-500/10 text-red-400 border border-red-500/20 font-medium text-xs">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="font-medium text-sm">{state.message}</p>
+            <p>{state.message}</p>
           </div>
         )}
 
         {/* Task Title */}
         <div className="space-y-2">
           <div className="flex justify-between items-end">
-            <label htmlFor="title" className="text-sm font-bold text-[var(--color-text-primary)]">
+            <label htmlFor="title" className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
               Task Title
             </label>
             <span className={cn(
-              "text-[10px] tabular-nums font-mono",
-              title.length > 90 ? "text-red-500" : "text-muted"
+              "text-[9px] tabular-nums font-mono font-black",
+              title.length > 90 ? "text-red-400" : "text-white/20"
             )}>
               {title.length}/100
             </span>
@@ -97,13 +97,13 @@ export default function PostTaskForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className={cn(
-              "w-full h-12 px-4 rounded-lg bg-white border transition-all outline-none",
-              state.errors?.title ? "border-red-300 focus:ring-1 focus:ring-red-500" : "border-[var(--color-border)] focus:border-accent focus:ring-1 focus:ring-accent"
+              "w-full h-12 px-4 rounded-xl bg-white/[0.01] border transition-all outline-none text-xs text-white placeholder-white/20",
+              state.errors?.title ? "border-red-500/30 focus:border-red-500" : "border-white/5 focus:border-accent"
             )}
           />
           {state.errors?.title && (
-            <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {state.errors.title[0]}
+            <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" /> {state.errors.title[0]}
             </p>
           )}
         </div>
@@ -111,12 +111,12 @@ export default function PostTaskForm() {
         {/* Description */}
         <div className="space-y-2">
           <div className="flex justify-between items-end">
-            <label htmlFor="description" className="text-sm font-bold text-[var(--color-text-primary)]">
+            <label htmlFor="description" className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
               Description
             </label>
             <span className={cn(
-              "text-[10px] tabular-nums font-mono",
-              description.length > 900 ? "text-red-500" : "text-muted"
+              "text-[9px] tabular-nums font-mono font-black",
+              description.length > 900 ? "text-red-400" : "text-white/20"
             )}>
               {description.length}/1000
             </span>
@@ -130,13 +130,13 @@ export default function PostTaskForm() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={cn(
-              "w-full px-4 py-3 rounded-lg bg-white border transition-all outline-none resize-none min-h-[120px]",
-              state.errors?.description ? "border-red-300 focus:ring-1 focus:ring-red-500" : "border-[var(--color-border)] focus:border-accent focus:ring-1 focus:ring-accent"
+              "w-full px-4 py-3 rounded-xl bg-white/[0.01] border transition-all outline-none text-xs text-white placeholder-white/20 resize-none min-h-[120px]",
+              state.errors?.description ? "border-red-500/30 focus:border-red-500" : "border-white/5 focus:border-accent"
             )}
           />
           {state.errors?.description && (
-            <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {state.errors.description[0]}
+            <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" /> {state.errors.description[0]}
             </p>
           )}
         </div>
@@ -145,7 +145,7 @@ export default function PostTaskForm() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Tag className="w-4 h-4 text-accent" />
-            <label className="text-sm font-bold text-[var(--color-text-primary)]">
+            <label className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
               Skill Tags (1-5)
             </label>
           </div>
@@ -157,10 +157,10 @@ export default function PostTaskForm() {
                 type="button"
                 onClick={() => toggleTag(tag)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-mono border transition-all',
+                  'px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider font-mono border transition-all cursor-pointer',
                   selectedTags.includes(tag)
-                    ? 'bg-accent text-white border-accent shadow-sm'
-                    : 'bg-white border-[var(--color-border)] text-muted hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed'
+                    ? 'bg-accent text-[#050505] border-accent shadow-[0_0_12px_rgba(255,122,0,0.2)]'
+                    : 'bg-white/[0.01] border-white/5 text-white/40 hover:border-accent hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed'
                 )}
                 disabled={!selectedTags.includes(tag) && selectedTags.length >= 5}
               >
@@ -174,13 +174,13 @@ export default function PostTaskForm() {
               .map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-mono bg-accent text-white border border-accent shadow-sm"
+                  className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider font-mono bg-accent text-[#050505] border border-accent shadow-[0_0_12px_rgba(255,122,0,0.2)]"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="ml-1 hover:opacity-70 text-lg leading-none"
+                    className="ml-1 hover:opacity-75 text-lg leading-none cursor-pointer"
                     aria-label={`Remove ${tag}`}
                   >
                     ×
@@ -194,7 +194,7 @@ export default function PostTaskForm() {
                 key="custom-add-btn"
                 type="button"
                 onClick={() => setShowCustomInput(true)}
-                className="px-3 py-1.5 rounded-full text-xs font-mono border border-dashed border-[var(--color-border)] text-muted hover:border-accent hover:text-accent transition-colors"
+                className="px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider font-mono border border-dashed border-white/10 text-white/40 hover:border-accent hover:text-accent transition-colors cursor-pointer"
               >
                 + custom
               </button>
@@ -217,23 +217,23 @@ export default function PostTaskForm() {
                       setCustomTagInput('')
                     }
                   }}
-                  placeholder="e.g. Prisma, Stripe..."
+                  placeholder="e.g. Prisma..."
                   autoFocus
-                  className="w-32 h-8 px-3 text-xs font-mono border border-accent rounded-full outline-none bg-white shadow-sm ring-1 ring-accent/20"
+                  className="w-32 h-9 px-3.5 text-xs font-mono border border-accent rounded-xl outline-none bg-[#0b0b0e] text-white shadow-sm ring-1 ring-accent/20 placeholder-white/10"
                   maxLength={20}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 font-mono text-[9px] font-black tracking-widest">
                   <button
                     type="button"
                     onClick={addCustomTag}
-                    className="text-[10px] font-bold text-accent uppercase tracking-wider hover:underline"
+                    className="text-accent hover:underline cursor-pointer"
                   >
                     ADD
                   </button>
                   <button
                     type="button"
                     onClick={() => { setShowCustomInput(false); setCustomTagInput('') }}
-                    className="text-[10px] font-bold text-muted uppercase tracking-wider hover:underline"
+                    className="text-white/30 hover:underline cursor-pointer"
                   >
                     CANCEL
                   </button>
@@ -247,8 +247,8 @@ export default function PostTaskForm() {
             <input key={tag} type="hidden" name="skillTags" value={tag} />
           ))}
           {state.errors?.skillTags && (
-            <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {state.errors.skillTags[0]}
+            <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+              <AlertCircle className="w-3.5 h-3.5" /> {state.errors.skillTags[0]}
             </p>
           )}
         </div>
@@ -256,11 +256,11 @@ export default function PostTaskForm() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Budget */}
           <div className="space-y-2">
-            <label htmlFor="budget" className="text-sm font-bold text-[var(--color-text-primary)]">
+            <label htmlFor="budget" className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
               Budget (Rupees)
             </label>
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">
                 <IndianRupee className="w-4 h-4" />
               </div>
               <input
@@ -274,95 +274,95 @@ export default function PostTaskForm() {
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 className={cn(
-                  "w-full h-12 pl-10 pr-4 rounded-lg bg-white border transition-all outline-none",
-                  state.errors?.budget ? "border-red-300 focus:ring-1 focus:ring-red-500" : "border-[var(--color-border)] focus:border-accent focus:ring-1 focus:ring-accent"
+                  "w-full h-12 pl-10 pr-4 rounded-xl bg-white/[0.01] border transition-all outline-none text-xs text-white placeholder-white/20",
+                  state.errors?.budget ? "border-red-500/30 focus:border-red-500" : "border-white/5 focus:border-accent"
                 )}
               />
             </div>
-            <p className="text-[10px] text-muted">Minimum ₹100 · Maximum ₹5,000</p>
+            <p className="text-[9px] font-mono text-white/20 font-black uppercase tracking-wide">Minimum ₹100 · Maximum ₹5,000</p>
             {state.errors?.budget && (
-              <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {state.errors.budget[0]}
+              <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5" /> {state.errors.budget[0]}
               </p>
             )}
           </div>
 
           {/* Deadline */}
           <div className="space-y-2">
-            <label htmlFor="deadline" className="text-sm font-bold text-[var(--color-text-primary)]">
+            <label htmlFor="deadline" className="text-[10px] font-black uppercase tracking-wider text-white/40 font-mono">
               Deadline (Optional)
             </label>
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">
                 <Calendar className="w-4 h-4" />
               </div>
               <input
                 id="deadline"
                 name="deadline"
                 type="date"
-                className="w-full h-12 pl-10 pr-4 rounded-lg bg-white border border-[var(--color-border)] focus:border-accent focus:ring-1 focus:ring-accent outline-none"
+                className="w-full h-12 pl-10 pr-4 rounded-xl bg-white/[0.01] border border-white/5 focus:border-accent transition-all outline-none text-xs text-white/70 appearance-none cursor-pointer"
               />
             </div>
             {state.errors?.deadline && (
-              <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {state.errors.deadline[0]}
+              <p className="text-[10px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+                <AlertCircle className="w-3.5 h-3.5" /> {state.errors.deadline[0]}
               </p>
             )}
           </div>
         </div>
 
-        <div className="pt-6 border-t border-[var(--color-border)]">
+        <div className="pt-6 border-t border-white/[0.04]">
           <SubmitButton />
         </div>
       </form>
 
       {/* Live Preview */}
-      <div className="lg:col-span-1">
+      <div className="lg:col-span-1 text-left">
         <div className="sticky top-24 space-y-4">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-widest pl-1">Live Preview</h3>
-          <div className="bg-white border-2 border-accent/20 rounded-xl p-6 shadow-sm space-y-4 relative overflow-hidden group">
+          <h3 className="text-[9px] font-black text-white/30 uppercase tracking-widest font-mono pl-1">Live Preview</h3>
+          <div className="bg-[#0b0b0e] border border-accent/20 rounded-3xl p-6 shadow-2xl space-y-5 relative overflow-hidden group">
             {/* Gloss Effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent pointer-events-none" />
             
             <div className="flex justify-between items-start gap-4 relative">
-              <h4 className="font-serif text-xl text-[var(--color-text-primary)] break-words min-h-[1.5em] leading-tight">
+              <h4 className="font-serif text-lg text-white break-words min-h-[1.5em] leading-tight">
                 {title || 'Your Task Title'}
               </h4>
-              <div className="bg-accent-light px-3 py-1 rounded text-accent font-mono font-bold text-sm whitespace-nowrap shadow-sm">
-                ₹{budget || '0'}
+              <div className="bg-accent/10 border border-accent/25 px-2.5 py-0.5 rounded text-accent font-mono font-bold text-xs whitespace-nowrap shadow-sm shrink-0">
+                ₹{(budget ? Number(budget) : 0).toLocaleString()}
               </div>
             </div>
             
-            <p className="text-sm text-muted line-clamp-3 min-h-[4.5em] relative">
+            <p className="text-xs text-white/40 line-clamp-3 min-h-[4.5em] relative leading-relaxed font-light">
               {description || 'Your task description will appear here as you type...'}
             </p>
 
             <div className="flex flex-wrap gap-1.5 relative">
               {selectedTags.length > 0 ? (
                 selectedTags.map(tag => (
-                  <span key={tag} className="px-2 py-0.5 bg-[var(--color-bg-surface)] text-[10px] font-bold text-[var(--color-text-primary)] rounded uppercase tracking-tight border border-[var(--color-border)]">
+                  <span key={tag} className="px-2 py-0.5 bg-accent/10 border border-accent/15 text-accent text-[9px] font-bold rounded uppercase tracking-wider font-mono">
                     {tag}
                   </span>
                 ))
               ) : (
-                <span className="text-[10px] text-muted italic">No tags selected yet</span>
+                <span className="text-[9px] font-mono text-white/20 uppercase tracking-wider">No tags selected</span>
               )}
             </div>
 
-            <div className="pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-[10px] relative">
-              <span className="text-muted uppercase font-bold tabular-nums tracking-widest leading-none">STATUS: OPEN</span>
-              <div className="flex items-center gap-1 text-muted">
-                <Calendar className="w-3 h-3" />
+            <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between text-[8px] font-mono font-black uppercase tracking-wider relative text-white/30">
+              <span>STATUS: OPEN</span>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" />
                 <span>Expires soon</span>
               </div>
             </div>
           </div>
           
-          <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg">
+          <div className="p-4 bg-accent/5 border border-accent/10 rounded-2xl">
             <div className="flex gap-3">
-              <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                <span className="font-bold">Pro Tip:</span> Clear instructions attract better quality workers. Be specific about your deliverables.
+              <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <p className="text-[10px] text-white/60 leading-relaxed">
+                <span className="font-bold text-white">Pro Tip:</span> Clear instructions attract better quality workers. Be specific about your deliverables.
               </p>
             </div>
           </div>

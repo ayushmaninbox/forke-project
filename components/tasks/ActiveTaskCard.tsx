@@ -16,42 +16,44 @@ interface ActiveTaskCardProps {
 
 export default function ActiveTaskCard({ task }: ActiveTaskCardProps) {
   const statusConfig = {
-    claimed: { label: 'CLAIMED', color: 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]' },
-    submitted: { label: 'SUBMITTED', color: 'bg-[var(--color-accent-light)] text-[var(--color-accent-text)] border-[var(--color-accent)]/20' },
-    approved: { label: 'APPROVED', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    claimed: { label: 'CLAIMED', color: 'bg-white/[0.01] text-white/45 border-white/5' },
+    submitted: { label: 'SUBMITTED', color: 'bg-accent/10 text-accent border-accent/20' },
+    approved: { label: 'APPROVED', color: 'bg-emerald-500/10 text-emerald-450 border-emerald-500/20' },
   }
 
-  const config = statusConfig[task.status as keyof typeof statusConfig] || { label: task.status.toUpperCase(), color: 'bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]' }
+  const config = statusConfig[task.status as keyof typeof statusConfig] || { label: task.status.toUpperCase(), color: 'bg-white/[0.01] text-white/45 border-white/5' }
 
   return (
     <Link 
       href={`/tasks/${task.id}`}
-      className="block bg-white border border-[var(--color-border)] rounded-2xl p-6 hover:border-accent/40 hover:bg-accent/[0.02] transition-all group glass shadow-sm"
+      className="block bg-[#0b0b0e] border border-white/[0.04] rounded-2xl p-6 hover:border-accent/30 hover:shadow-2xl hover:shadow-accent/[0.005] transition-all group relative overflow-hidden select-none text-left"
     >
-      <div className="flex items-center justify-between gap-4">
+      <div className="absolute inset-0 bg-gradient-to-r from-accent/[0.005] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+      <div className="flex items-center justify-between gap-4 relative z-10">
         <div className="flex-1 min-w-0 space-y-3">
           <div className="flex items-center gap-3">
             <span className={cn(
-              "px-2 py-0.5 rounded text-[9px] font-bold border font-mono tracking-widest",
+              "px-2 py-0.5 rounded text-[8.5px] font-black border font-mono tracking-widest leading-none",
               config.color
             )}>
               {config.label}
             </span>
           </div>
           
-          <h4 className="text-lg font-serif text-[var(--color-text-primary)] truncate group-hover:text-accent transition-colors">
+          <h4 className="text-lg font-serif text-white truncate group-hover:text-accent transition-colors">
             {task.title}
           </h4>
 
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5 text-accent font-mono font-bold">
-               ₹ {Math.floor(task.budget / 100)}
+          <div className="flex items-center gap-4 text-[10px] font-mono font-black uppercase tracking-wider text-white/40">
+            <div className="flex items-center gap-1.5 text-accent font-bold">
+               ₹ {Math.floor(task.budget / 100).toLocaleString()}
             </div>
           </div>
         </div>
 
-        <div className="w-10 h-10 rounded-full border border-[var(--color-border)] flex items-center justify-center group-hover:bg-accent group-hover:border-accent group-hover:text-white transition-all">
-          <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-white transition-colors" />
+        <div className="w-9 h-9 rounded-full border border-white/5 bg-white/[0.01] text-white/40 flex items-center justify-center group-hover:bg-accent group-hover:border-accent group-hover:text-[#050505] transition-all shrink-0">
+          <ChevronRight className="w-4 h-4 stroke-[3px]" />
         </div>
       </div>
     </Link>
