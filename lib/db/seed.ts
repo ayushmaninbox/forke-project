@@ -19,7 +19,7 @@ async function main() {
     const bcrypt = await import('bcryptjs')
 
     const defaultUsername = 'admin'
-    const defaultPassword = 'adminpassword' // Dev password
+    const defaultPassword = 'admin123' // Dev password
     const passwordHash = await bcrypt.default.hash(defaultPassword, 10)
 
     console.log(`Creating default admin user: "${defaultUsername}"`)
@@ -28,8 +28,11 @@ async function main() {
     await db
       .insert(admins)
       .values({
+        name: 'Demo Admin',
+        email: 'admin@forke.space',
         username: defaultUsername,
         passwordHash: passwordHash,
+        role: 'super_admin',
       })
       .onConflictDoUpdate({
         target: admins.username,
