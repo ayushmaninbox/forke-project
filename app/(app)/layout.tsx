@@ -48,7 +48,8 @@ export default async function AppLayout({
           image: user.image, 
           level: userLevel,
           xp: user.xp,
-          currentStreak: user.currentStreak
+          currentStreak: user.currentStreak,
+          role: user.role
         }} />
         <main className="flex-grow flex flex-col min-w-0 overflow-hidden">
           {children}

@@ -37,23 +37,23 @@
   --color-muted: #888888;
 }
 
-/* Premium Light Notion/Stripe Brand Design System (Ember) */
+/* Premium Dark Notion/Stripe Brand Design System (Ember - Redesigned) */
 .theme-ember {
-  --color-accent: #D97706;
-  --color-accent-hover: #B45309;
-  --color-accent-muted: rgba(217, 119, 6, 0.1);
-  --color-accent-light: #FEF3C7;
-  --color-accent-text: #92400E;
-  --color-bg: #FFFFFF;
-  --color-bg-surface: #FAFAFA;
-  --color-text-primary: #111111;
-  --color-text-muted: #6B7280;
-  --color-border: #E5E7EB;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F9FAFB;
-  --color-muted: #6B7280;
+  --color-accent: #FF7A00;
+  --color-accent-hover: #E66E00;
+  --color-accent-muted: rgba(255, 122, 0, 0.08);
+  --color-accent-light: rgba(255, 122, 0, 0.04);
+  --color-accent-text: #FFA347;
+  --color-bg: #060608;
+  --color-bg-surface: #0a0a0c;
+  --color-text-primary: #F4F4F5;
+  --color-text-muted: #8E8E93;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-surface: #111114;
+  --color-surface-hover: #161619;
+  --color-muted: #8E8E93;
 
-  color-scheme: light;
+  color-scheme: dark;
   color: var(--color-text-primary);
   background-color: var(--color-bg-surface);
 }
@@ -87,15 +87,17 @@ img {
   }
 
   .theme-ember .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(18, 18, 20, 0.6);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   .theme-ember .glass-orange {
-    background: rgba(217, 119, 6, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(217, 119, 6, 0.15);
+    background: rgba(255, 122, 0, 0.03);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 122, 0, 0.15);
+    box-shadow: inset 0 1px 0 rgba(255, 122, 0, 0.05), 0 8px 32px rgba(255, 122, 0, 0.05);
   }
 
   .text-glow {
@@ -103,7 +105,7 @@ img {
   }
 
   .theme-ember .text-glow {
-    text-shadow: 0 0 20px rgba(217, 119, 6, 0.15);
+    text-shadow: 0 0 20px rgba(255, 122, 0, 0.4);
   }
 
   .shadow-glow {
@@ -111,7 +113,7 @@ img {
   }
 
   .theme-ember .shadow-glow {
-    box-shadow: 0 0 30px rgba(217, 119, 6, 0.05);
+    box-shadow: 0 0 30px rgba(255, 122, 0, 0.15);
   }
 }
 

@@ -4,6 +4,21 @@ import { NextResponse } from 'next/server'
 
 const { auth } = NextAuth(authConfig)
 
+async function fetchWaitlistStatus(origin: string): Promise<boolean> {
+  const url = new URL('/api/waitlist/status', origin)
+  if (url.hostname === 'localhost') {
+    url.hostname = '127.0.0.1'
+  }
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    const data = await res.json()
+    return data.enabled
+  } catch (e) {
+    console.error('Failed to fetch waitlist status in middleware:', e)
+    return true // Safe fallback
+  }
+}
+
 export default auth(async (req) => {
   // ===== WAITLIST GATE =====
   // Block all routes unless the user has the site_access cookie.
@@ -21,17 +36,7 @@ export default auth(async (req) => {
 
   if (!siteAccess && !isWaitlistAllowed) {
     // Dynamically check if the waitlist is enabled (force fresh state check)
-    let waitlistEnabled = true
-    try {
-      const statusRes = await fetch(
-        new URL('/api/waitlist/status', req.nextUrl.origin),
-        { cache: 'no-store' }
-      )
-      const statusData = await statusRes.json()
-      waitlistEnabled = statusData.enabled
-    } catch (e) {
-      console.error('Failed to fetch waitlist status in middleware:', e)
-    }
+    const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
 
     if (waitlistEnabled) {
       return NextResponse.redirect(new URL('/waitlist', req.nextUrl.origin))
@@ -40,15 +45,7 @@ export default auth(async (req) => {
 
   // If user HAS access (or waitlist is disabled) and tries to visit /waitlist, redirect them
   if (pathname === '/waitlist') {
-    let waitlistEnabled = true
-    try {
-      const statusRes = await fetch(
-        new URL('/api/waitlist/status', req.nextUrl.origin),
-        { cache: 'no-store' }
-      )
-      const statusData = await statusRes.json()
-      waitlistEnabled = statusData.enabled
-    } catch {}
+    const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
 
     if (!waitlistEnabled || siteAccess) {
       return NextResponse.redirect(new URL('/', req.nextUrl.origin))

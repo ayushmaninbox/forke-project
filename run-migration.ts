@@ -24,7 +24,7 @@ async function run() {
   }
 
   const sqlContent = fs.readFileSync(sqlFile, 'utf8')
-  const client = postgres(connectionString, { max: 1 })
+  const client = postgres(connectionString as string, { max: 1 })
 
   try {
     // Run the migration statements
