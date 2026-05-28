@@ -17,26 +17,31 @@ interface TaskFeedProps {
     clientName: string
   }[]
   userLevel: number
+  isOwner?: boolean
 }
 
-export default function TaskFeed({ tasks, userLevel }: TaskFeedProps) {
+export default function TaskFeed({ tasks, userLevel, isOwner = false }: TaskFeedProps) {
   const router = useRouter()
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-2xl border-2 border-dashed border-[var(--color-border)] shadow-sm">
-        <div className="w-16 h-16 bg-[var(--color-bg-surface)] rounded-full flex items-center justify-center mb-6">
-          <PlusCircle className="w-8 h-8 text-muted/20" />
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-[#0b0b0e] rounded-2xl border border-white/[0.04] shadow-sm">
+        <div className="w-16 h-16 bg-white/[0.01] rounded-full flex items-center justify-center mb-6">
+          <PlusCircle className="w-8 h-8 text-white/20" />
         </div>
-        <h3 className="text-xl font-serif text-[var(--color-text-primary)] mb-2">No tasks match your filters right now</h3>
-        <p className="text-muted text-sm max-w-sm mx-auto mb-6 leading-relaxed">
-          New tasks are posted every day — check back soon or try clearing your filters to see more opportunities.
+        <h3 className="text-lg font-serif text-white mb-2">
+          {isOwner ? 'No open missions on the feed' : 'No tasks match your filters right now'}
+        </h3>
+        <p className="text-white/40 text-xs max-w-sm mx-auto mb-6 leading-relaxed font-light">
+          {isOwner
+            ? 'Post a new mission to attract talented developers to your project.'
+            : 'New tasks are posted every day — check back soon or try clearing your filters.'}
         </p>
-        <button 
-          onClick={() => router.push('/tasks')}
-          className="text-[10px] font-bold text-accent hover:text-amber-700 tracking-widest uppercase border-b-2 border-accent transition-colors pb-0.5"
+        <button
+          onClick={() => router.push(isOwner ? '/post-task' : '/tasks')}
+          className="text-[10px] font-bold text-accent hover:text-amber-400 tracking-widest uppercase border-b border-accent transition-colors pb-0.5"
         >
-          Clear all filters
+          {isOwner ? 'Post a Mission' : 'Clear all filters'}
         </button>
       </div>
     )
@@ -45,11 +50,12 @@ export default function TaskFeed({ tasks, userLevel }: TaskFeedProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {tasks.map(({ task, clientName }) => (
-        <TaskCard 
-          key={task.id} 
-          task={task} 
-          clientName={clientName} 
-          userLevel={userLevel} 
+        <TaskCard
+          key={task.id}
+          task={task}
+          clientName={clientName}
+          userLevel={userLevel}
+          isOwner={isOwner}
         />
       ))}
     </div>
