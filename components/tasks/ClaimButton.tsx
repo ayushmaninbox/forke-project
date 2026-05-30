@@ -30,19 +30,19 @@ export default function ClaimButton({ taskId, isLocked, requiredLevel }: ClaimBu
 
   if (isLocked) {
     return (
-      <Button disabled className="w-full h-12 text-[10px] font-black uppercase tracking-widest bg-white/[0.01] text-white/20 border border-white/5 cursor-not-allowed shadow-none flex items-center justify-center gap-2">
-        <Lock className="w-4 h-4 text-white/20" />
-        Unlock at LVL {requiredLevel}
+      <Button disabled className="w-full h-10 text-[13px] font-medium bg-white/[0.02] text-white/30 border border-[var(--color-border)] cursor-not-allowed rounded-lg flex items-center justify-center gap-2">
+        <Lock className="w-4 h-4" />
+        Unlock at Lvl {requiredLevel}
       </Button>
     )
   }
 
   return (
     <div className="space-y-3">
-      <Button 
-        onClick={handleClaim} 
+      <Button
+        onClick={handleClaim}
         disabled={isPending}
-        className="w-full h-12 text-[10px] font-black uppercase tracking-widest bg-gradient-to-b from-accent to-[#d97706] text-[#050505] hover:shadow-[0_0_12px_rgba(255,122,0,0.2)] active:translate-y-[1px] transition-all cursor-pointer rounded-xl font-bold"
+        className="w-full h-10 text-[13px] font-medium ui-btn-primary transition-colors cursor-pointer rounded-lg"
       >
         {isPending ? (
           <span className="flex items-center gap-2 justify-center">
@@ -51,20 +51,20 @@ export default function ClaimButton({ taskId, isLocked, requiredLevel }: ClaimBu
           </span>
         ) : (
           <span className="flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 stroke-[2.5px]" />
-            Claim This Task
+            <CheckCircle2 className="w-4 h-4" />
+            Claim this task
           </span>
         )}
       </Button>
-      
+
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+        <div className="p-3 bg-red-500/[0.07] border border-red-500/20 text-red-400 rounded-lg flex items-center gap-2 text-[13px] animate-in fade-in slide-in-from-top-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       )}
-      
-      <p className="text-[8px] text-white/20 font-black uppercase tracking-wider text-center font-mono">
+
+      <p className="text-[11px] text-[var(--color-text-muted)] text-center">
         By claiming, you commit to delivering quality work by the deadline.
       </p>
     </div>

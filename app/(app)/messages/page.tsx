@@ -34,11 +34,11 @@ export default async function MessagesPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title="Communications Channel" />
-      
-      <div className="flex-grow p-6 md:p-8 select-none max-w-5xl mx-auto w-full">
-        <ChatConsole 
+    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <TopBar title="Messages" />
+
+      <div className="flex-grow p-5 md:p-8 select-none max-w-5xl mx-auto w-full min-h-0">
+        <ChatConsole
           contacts={contacts} 
           currentUserId={sessionUser.id}
           initialMessages={initialMessages}

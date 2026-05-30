@@ -6,7 +6,16 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set')
 }
 
-const connectionString = process.env.DATABASE_URL
-const client = postgres(connectionString)
+let client: postgres.Sql;
+
+if (process.env.NODE_ENV === 'production') {
+  client = postgres(process.env.DATABASE_URL)
+} else {
+  if (!(global as any).postgresClient) {
+    (global as any).postgresClient = postgres(process.env.DATABASE_URL)
+  }
+  client = (global as any).postgresClient
+}
 
 export const db = drizzle(client, { schema })
+

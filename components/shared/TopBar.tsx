@@ -1,4 +1,5 @@
 import { auth } from '@/auth'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Bell, Wallet, Zap } from 'lucide-react'
 import MobileMenuTrigger from '../dashboard/MobileMenuTrigger'
@@ -25,9 +26,17 @@ function formatRelativeTime(value: Date | null | undefined) {
 
 export default async function TopBar({ title }: TopBarProps) {
   const session = await auth()
-  const user = session?.user as { id: string; name: string; role: 'developer' | 'owner' } | undefined
+  const user = session?.user as { id: string; name: string; role: 'developer' | 'owner'; image?: string } | undefined
 
   if (!user) return null
+
+  const initials = user.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+    : '?'
 
   const isOwner = user.role === 'owner'
 
@@ -135,59 +144,38 @@ export default async function TopBar({ title }: TopBarProps) {
   }
 
   return (
-    <header className="h-20 border-b border-white/[0.04] bg-[#070709]/85 backdrop-blur-md px-6 md:px-8 flex items-center justify-between sticky top-0 z-30 select-none">
-      
-      {/* Left Title & Mobile Menu */}
-      <div className="flex items-center gap-4">
-        <MobileMenuTrigger />
-        <div className="text-left">
-          <h1 className="font-serif text-lg md:text-xl text-white tracking-wide leading-none">{title}</h1>
-          <p className="text-[9px] text-white/35 font-semibold uppercase tracking-[0.16em] mt-1.5">
-            {isOwner ? 'Console Node: Owner' : 'Console Node: Developer'}
-          </p>
-        </div>
-      </div>
-      
-      {/* Right Stats & Profile */}
-      <div className="flex items-center gap-4 md:gap-6">
-        
-        {/* Live Stats Box (Financials & Missions) */}
-        <div className="hidden sm:flex items-center gap-3 py-1.5 px-3 rounded-2xl bg-white/[0.01] border border-white/[0.04] shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
-          
-          {/* Escrow/Earnings metric */}
-          <div className="flex items-center gap-2 px-2.5 py-1 border-r border-white/[0.05]">
-            <Wallet className="w-3.5 h-3.5 text-accent" />
-            <div className="text-left leading-none">
-              <span className="text-[8px] font-semibold uppercase text-white/40 tracking-[0.12em] block">
-                {isOwner ? 'Escrow Capital' : 'Claimed Value'}
-              </span>
-              <span className="text-sm font-semibold text-white mt-1 block">
-                ₹{financialMetric.toLocaleString()}
-              </span>
-            </div>
-          </div>
+    <header className="h-14 border-b border-[var(--color-border)] bg-[var(--color-bg)]/80 backdrop-blur-md px-5 md:px-8 flex items-center justify-between sticky top-0 z-30 select-none">
 
-          {/* Active Missions */}
-          <div className="flex items-center gap-2 px-2.5 py-1">
+      {/* Left Title & Mobile Menu */}
+      <div className="flex items-center gap-3">
+        <MobileMenuTrigger />
+        <h1 className="text-[15px] font-semibold text-white tracking-tight leading-none">{title}</h1>
+      </div>
+
+      {/* Right Stats & Profile */}
+      <div className="flex items-center gap-3 md:gap-4">
+
+        {/* Live Stats (Financials & Active) */}
+        <div className="hidden sm:flex items-center gap-4 text-[13px]">
+          <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
+            <Wallet className="w-3.5 h-3.5 text-accent" />
+            <span className="text-white font-medium tabular-nums">₹{financialMetric.toLocaleString()}</span>
+            <span className="hidden md:inline">{isOwner ? 'in escrow' : 'claimed'}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-[var(--color-text-muted)]">
             <Zap className="w-3.5 h-3.5 text-accent" />
-            <div className="text-left leading-none">
-              <span className="text-[8px] font-semibold uppercase text-white/40 tracking-[0.12em] block">
-                Missions
-              </span>
-              <span className="text-sm font-semibold text-white mt-1 block">
-                {activeCount} Active
-              </span>
-            </div>
-          </div>
+            <span className="text-white font-medium tabular-nums">{activeCount}</span>
+            <span className="hidden md:inline">active</span>
+          </span>
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-[1px] bg-white/[0.04]" />
+        <div className="hidden sm:block h-5 w-[1px] bg-[var(--color-border)]" />
 
         {/* Notification Bell */}
         <details className="relative group">
-          <summary className="list-none text-white/45 hover:text-white transition-colors relative p-2 rounded-xl bg-white/[0.01] border border-white/[0.04] cursor-pointer">
-            <Bell className="w-4 h-4" />
+          <summary className="list-none text-[var(--color-text-muted)] hover:text-white transition-colors relative p-1.5 rounded-lg hover:bg-white/[0.04] cursor-pointer">
+            <Bell className="w-[18px] h-[18px]" />
             {actionRequiredCount > 0 && (
               <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-ping" />
             )}
@@ -220,6 +208,20 @@ export default async function TopBar({ title }: TopBarProps) {
             </div>
           </div>
         </details>
+        {/* User Avatar */}
+        <div className="relative w-8 h-8 rounded-full overflow-hidden border border-[var(--color-border)] bg-accent/10 flex items-center justify-center shrink-0">
+          {user.image ? (
+            <Image
+              src={user.image}
+              alt={user.name || 'User'}
+              fill
+              className="object-cover select-none pointer-events-none"
+              draggable={false}
+            />
+          ) : (
+            <span className="text-accent font-semibold text-xs uppercase">{initials}</span>
+          )}
+        </div>
       </div>
     </header>
   )

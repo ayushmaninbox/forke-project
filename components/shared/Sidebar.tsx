@@ -106,25 +106,22 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
         )}
       >
         {/* Top: Logo & Mobile Close */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-white/[0.04] relative">
+        <div className="h-14 flex items-center justify-between px-5 border-b border-[var(--color-border)]">
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-            <span className="font-serif text-2xl text-white tracking-wide">
+            <span className="font-serif text-xl text-white tracking-wide">
               F<span className={cn("transition-all duration-300", isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]")}>ork<span className="text-accent italic pr-1">e</span></span>
             </span>
           </Link>
-          <button 
+          <button
             className="md:hidden p-1.5 text-white/40 hover:text-white transition-colors"
             onClick={() => setIsMobileOpen(false)}
           >
             <X className="w-5 h-5" />
           </button>
-
-          {/* Premium top subtle accent line */}
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
         </div>
 
         {/* Middle: Navigation */}
-        <nav className="flex-grow py-6 px-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-grow py-4 px-3 space-y-0.5 overflow-y-auto">
           {links.map((link) => {
             const isActive = pathname === link.href
             const Icon = link.icon
@@ -134,15 +131,15 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
                 href={link.href}
                 onClick={() => setIsMobileOpen(false)}
                 className={cn(
-                  "flex items-center justify-between px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden text-xs font-semibold uppercase tracking-[0.12em]",
-                  isActive 
-                    ? "bg-gradient-to-r from-accent/20 to-accent/[0.03] text-[#ffb06a] border border-accent/25 shadow-[0_4px_20px_rgba(255,122,0,0.09)] pl-4 before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:bg-accent before:rounded-r-full" 
-                    : "text-white/40 hover:bg-white/[0.02] hover:text-white pl-4",
+                  "flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors group relative text-[13px] font-medium",
+                  isActive
+                    ? "bg-white/[0.05] text-white"
+                    : "text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white",
                   isCollapsed ? "md:justify-center" : "justify-between"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <Icon className={cn("w-4.5 h-4.5 shrink-0 transition-transform duration-300 group-hover:scale-105", isActive ? "text-accent" : "text-white/30 group-hover:text-accent")} />
+                <div className="flex items-center gap-2.5">
+                  <Icon className={cn("w-[18px] h-[18px] shrink-0 transition-colors", isActive ? "text-accent" : "text-[var(--color-text-muted)] group-hover:text-white")} />
                   <span className={cn(
                     "transition-all duration-300",
                     isCollapsed ? "md:opacity-0 md:w-0" : "opacity-100"
@@ -153,14 +150,14 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
 
                 {/* Badge if present */}
                 {link.badge !== undefined && link.badge > 0 && !isCollapsed && (
-                  <span className="px-2 py-0.5 text-[8.5px] font-black font-mono rounded-full bg-accent/20 border border-accent/30 text-accent leading-none">
+                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none tabular-nums">
                     {link.badge}
                   </span>
                 )}
 
                 {/* Desktop Tooltip when collapsed */}
                 {isCollapsed && (
-                  <div className="hidden md:block absolute left-16 bg-[#0c0c0e] border border-white/10 text-white text-[9px] font-black tracking-widest uppercase px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0 pointer-events-none z-50 shadow-xl">
+                  <div className="hidden md:block absolute left-14 bg-[#0c0c0e] border border-white/10 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-1 group-hover:translate-x-0 pointer-events-none z-50 shadow-xl whitespace-nowrap">
                     {link.label}
                   </div>
                 )}
@@ -172,54 +169,54 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
 
         {/* Support Section */}
         {!isCollapsed && (
-          <div className="px-4 mb-4">
-            <div className="p-4 rounded-2xl ui-surface-soft text-left">
-              <h5 className="text-[10px] font-semibold text-white uppercase tracking-[0.12em]">Need help?</h5>
-              <p className="text-[9px] text-white/40 mt-1 leading-relaxed">Our support team is available 24/7</p>
-              <Link 
-                href="/support" 
-                className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg ui-btn-secondary transition-all text-[9px] font-semibold uppercase tracking-[0.12em]"
+          <div className="px-3 mb-3">
+            <div className="p-3.5 rounded-lg ui-surface-soft text-left">
+              <h5 className="text-[13px] font-medium text-white">Need help?</h5>
+              <p className="text-xs text-[var(--color-text-muted)] mt-0.5 leading-relaxed">Our support team is available 24/7.</p>
+              <Link
+                href="/support"
+                className="mt-2.5 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg ui-btn-secondary transition-colors text-[13px] font-medium"
               >
-                <Headphones className="w-3.5 h-3.5" /> Contact Support
+                <Headphones className="w-3.5 h-3.5" /> Contact support
               </Link>
             </div>
           </div>
         )}
 
         {/* Bottom: User Card & Toggle */}
-        <div className="p-4 border-t border-white/[0.04] bg-white/[0.005] relative">
-          <div className="flex items-center gap-3.5 mb-3 min-h-[40px] p-2 rounded-2xl ui-surface-soft">
+        <div className="p-3 border-t border-[var(--color-border)] relative">
+          <div className="flex items-center gap-3 mb-3 min-h-[40px] p-2 rounded-lg ui-surface-soft">
             {/* Avatar */}
             <div className={cn(
-              "w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-accent/10 flex items-center justify-center border border-accent/20 relative shadow-[0_0_12px_rgba(255,122,0,0.08)]",
-              isOwner ? "ring-2 ring-accent/30 ring-offset-2 ring-offset-[#070709]" : ""
+              "w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-accent/10 flex items-center justify-center border border-accent/20 relative",
+              isOwner ? "ring-1 ring-accent/30" : ""
             )}>
               {user.image ? (
                 <Image src={user.image} alt={user.name || ''} fill className="object-cover" />
               ) : (
-                <span className="text-xs font-mono text-accent font-bold">
+                <span className="text-xs font-mono text-accent font-semibold">
                   {user.name?.[0]?.toUpperCase()}
                 </span>
               )}
             </div>
-          
+
             {/* Name + level (only show when expanded) */}
             {!isCollapsed && (
               <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300 text-left">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-black text-white truncate leading-none">
+                  <p className="text-[13px] font-medium text-white truncate leading-none">
                     {isOwner ? (user.companyName || 'Acme Labs') : user.name?.split(' ')[0]}
                   </p>
                   {isOwner && (
-                    <span className="inline-block w-3.5 h-3.5 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[7px] text-accent font-bold">✓</span>
+                    <span className="inline-flex w-3.5 h-3.5 rounded-full bg-accent/20 border border-accent/30 items-center justify-center text-[7px] text-accent font-bold">✓</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-1">
-                  <span className="text-[8.5px] text-white/40 truncate font-black uppercase tracking-wider">
-                    {isOwner ? 'Starter Plan' : levelTitle}
+                  <span className="text-[11px] text-[var(--color-text-muted)] truncate">
+                    {isOwner ? 'Starter plan' : levelTitle}
                   </span>
                   {!isOwner && (
-                    <span className="text-[8px] font-mono font-black px-1.5 py-0.5 rounded bg-accent text-[#050505] leading-none uppercase">
+                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-accent text-[#0a0a0a] leading-none">
                       Lvl {user.level}
                     </span>
                   )}

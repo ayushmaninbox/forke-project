@@ -93,26 +93,26 @@ function SetupFormContent() {
 
   if (isValidating) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
-        <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-        <p className="text-xs text-white/40 font-mono tracking-widest uppercase">Verifying Invitation Token...</p>
+      <div className="flex flex-col items-center justify-center p-12 text-center space-y-3">
+        <div className="w-6 h-6 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+        <p className="text-xs text-[var(--color-text-muted)]">Verifying invitation token...</p>
       </div>
     )
   }
 
   if (validationError) {
     return (
-      <div className="p-8 rounded-3xl bg-[#0a0a0a]/80 border border-red-500/10 space-y-6 text-center shadow-[0_24px_64px_rgba(0,0,0,0.85)] max-w-md w-full">
-        <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
-          <ShieldAlert className="w-6 h-6" />
+      <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-center max-w-md w-full">
+        <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
+          <ShieldAlert className="w-5 h-5" />
         </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-serif text-white tracking-wide">Verification Failed</h2>
-          <p className="text-xs text-white/40 leading-relaxed font-light font-sans">{validationError}</p>
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold text-white tracking-tight">Verification Failed</h2>
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">{validationError}</p>
         </div>
         <Button 
           onClick={() => router.push('/admin/login')}
-          className="w-full h-11 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 bg-white/[0.02] text-white/60 hover:text-white hover:bg-white/[0.05] transition-all cursor-pointer font-bold"
+          className="w-full h-10 text-[13px] font-medium rounded-lg ui-btn-secondary transition-colors"
         >
           Return to Login
         </Button>
@@ -122,14 +122,14 @@ function SetupFormContent() {
 
   if (isSuccess) {
     return (
-      <div className="p-8 rounded-3xl bg-[#0a0a0a]/80 border border-emerald-500/15 space-y-6 text-center shadow-[0_24px_64px_rgba(0,0,0,0.85)] max-w-md w-full animate-in zoom-in-95 duration-500">
-        <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
-          <Check className="w-6 h-6" />
+      <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-center max-w-md w-full animate-in zoom-in-95 duration-500">
+        <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+          <Check className="w-5 h-5" />
         </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-serif text-emerald-400 tracking-wide font-bold">Setup Completed!</h2>
-          <p className="text-xs text-white/50 leading-relaxed font-light font-sans">
-            Your administrator account credentials have been successfully configured. Redirecting you to the control login terminal...
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold text-emerald-400 tracking-tight">Setup Completed</h2>
+          <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
+            Your administrator account credentials have been successfully configured. Redirecting to login...
           </p>
         </div>
       </div>
@@ -139,38 +139,33 @@ function SetupFormContent() {
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="p-8 rounded-3xl bg-[#0a0a0a]/80 border border-white/[0.06] space-y-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-3xl relative overflow-hidden group text-left max-w-md w-full"
+      className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-left max-w-md w-full"
     >
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
-
-      <div className="flex items-center justify-between border-b border-white/[0.04] pb-4">
-        <div>
-          <span className="text-[8px] text-accent font-black uppercase tracking-[0.18em] font-mono block">Setup Terminal</span>
-          <h2 className="text-lg font-serif text-white tracking-wide mt-1">Activate Admin Credentials</h2>
-        </div>
-        <Terminal className="w-5 h-5 text-accent/60" />
+      <div className="border-b border-[var(--color-border)] pb-3">
+        <h2 className="text-lg font-semibold text-white tracking-tight">Activate Admin Credentials</h2>
+        <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Choose your username and password</p>
       </div>
 
-      <div className="p-3.5 rounded-xl bg-accent/[0.02] border border-accent/10 space-y-1">
-        <p className="text-[10px] text-white/40 font-mono uppercase tracking-widest font-bold">Invited User</p>
-        <p className="text-sm font-semibold text-white leading-tight">{inviteDetails?.name}</p>
-        <p className="text-xs text-white/30 font-mono leading-none">{inviteDetails?.email}</p>
+      <div className="p-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)] space-y-0.5">
+        <p className="text-[11px] text-[var(--color-text-muted)] font-medium">Invited User</p>
+        <p className="text-[13px] font-medium text-white leading-tight">{inviteDetails?.name}</p>
+        <p className="text-xs text-[var(--color-text-muted)]">{inviteDetails?.email}</p>
       </div>
 
       {submitError && (
-        <div className="p-3.5 rounded-xl bg-red-500/5 border border-red-500/15 text-red-400 text-[10px] font-bold font-mono text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1">
-          <AlertCircle className="w-4 h-4 shrink-0 opacity-70" />
+        <div className="p-3 rounded-lg bg-red-500/[0.07] border border-red-500/20 text-red-400 text-[13px] text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{submitError}</span>
         </div>
       )}
 
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <label className="text-[9px] text-white/40 font-bold uppercase tracking-widest ml-1 font-mono">
-            Choose Username
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">
+            Username
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
               <User className="w-4 h-4" />
             </span>
             <input 
@@ -179,18 +174,18 @@ function SetupFormContent() {
               value={username}
               onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
               autoComplete="off"
-              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
+              className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-3 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors" 
               placeholder="e.g. your_name_123" 
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[9px] text-white/40 font-bold uppercase tracking-widest ml-1 font-mono">
-            Choose Password (min 8 chars)
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">
+            Password (min 8 chars)
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
               <KeyRound className="w-4 h-4" />
             </span>
             <input 
@@ -198,25 +193,25 @@ function SetupFormContent() {
               type={showPassword ? "text" : "password"} 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
+              className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-10 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors" 
               placeholder="••••••••" 
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white transition-colors p-1"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-[9px] text-white/40 font-bold uppercase tracking-widest ml-1 font-mono">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">
             Confirm Password
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
               <KeyRound className="w-4 h-4" />
             </span>
             <input 
@@ -224,13 +219,13 @@ function SetupFormContent() {
               type={showConfirmPassword ? "text" : "password"} 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
+              className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-10 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors" 
               placeholder="••••••••" 
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white transition-colors p-1"
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -240,15 +235,15 @@ function SetupFormContent() {
 
       <Button 
         disabled={isSubmitting}
-        className="w-full h-12 text-[11px] font-black uppercase tracking-[0.18em] rounded-xl bg-accent hover:bg-accent-hover text-white shadow-xl shadow-accent/5 transition-all duration-300 active:scale-[0.98] relative z-10"
+        className="w-full h-10 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors"
       >
         {isSubmitting ? (
           <div className="flex items-center justify-center gap-2">
-            <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            <span>Hashing & Syncing...</span>
+            <div className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+            <span>Activating...</span>
           </div>
         ) : (
-          'Activate Admin Account'
+          'Activate Account'
         )}
       </Button>
     </form>
@@ -257,48 +252,35 @@ function SetupFormContent() {
 
 export default function AdminSetupPage() {
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden select-none">
-      {/* High-End Technical Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:48px_48px] opacity-70" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent/[0.03] rounded-full blur-[140px]" />
-        
-        {/* Technical HUD borders */}
-        <div className="absolute left-8 top-8 bottom-8 w-[1px] bg-gradient-to-b from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute right-8 top-8 bottom-8 w-[1px] bg-gradient-to-b from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute top-8 left-8 right-8 h-[1px] bg-gradient-to-r from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute bottom-8 left-8 right-8 h-[1px] bg-gradient-to-r from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-      </div>
-
-      <div className="w-full max-w-[440px] space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-1000 flex flex-col items-center">
-        
-        {/* Logo and Terminal Identity */}
-        <div className="text-center space-y-3">
-          <div className="flex items-center justify-center h-20 relative mb-2">
-            <div className="w-20 h-20 relative">
+    <div className="min-h-screen bg-[#070709] flex items-center justify-center p-6 relative overflow-hidden select-none">
+      <div className="w-full max-w-[440px] space-y-6 relative z-10 animate-in fade-in zoom-in-95 duration-1000 flex flex-col items-center">
+        {/* Logo and Identity */}
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center h-12 relative mb-2">
+            <div className="w-12 h-12 relative">
               <Image 
                 src="/forke-assets/forke_logo.png" 
                 alt="Logo" 
                 fill
-                className="object-contain drop-shadow-[0_0_18px_rgba(255,122,0,0.3)] select-none pointer-events-none"
+                className="object-contain select-none pointer-events-none"
                 draggable={false}
               />
             </div>
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl font-serif text-white tracking-wide leading-tight">
-              Forke <span className="text-accent italic font-normal">Onboarding</span>
+            <h1 className="text-xl font-semibold text-white tracking-tight">
+              Forke admin setup
             </h1>
-            <p className="text-[9px] text-white/30 font-black uppercase tracking-[0.3em] font-mono">
-              Secure Operations Access System
+            <p className="text-[13px] text-[var(--color-text-muted)]">
+              Complete administrator account configuration
             </p>
           </div>
         </div>
 
         <Suspense fallback={
-          <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
-            <div className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
-            <p className="text-xs text-white/40 font-mono tracking-widest uppercase">Loading Setup Form...</p>
+          <div className="flex flex-col items-center justify-center p-12 text-center space-y-3">
+            <div className="w-6 h-6 border-2 border-accent/20 border-t-accent rounded-full animate-spin" />
+            <p className="text-xs text-[var(--color-text-muted)]">Loading setup form...</p>
           </div>
         }>
           <SetupFormContent />

@@ -3,10 +3,10 @@ import SupportForm from '@/components/support/SupportForm'
 
 export default function SupportPage() {
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title="Contact Support" />
-      
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-3xl mx-auto w-full flex flex-col justify-center">
+    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <TopBar title="Support" />
+
+      <div className="flex-grow px-5 md:px-8 py-6 md:py-8 overflow-y-auto select-none max-w-2xl mx-auto w-full flex flex-col justify-center">
         <SupportForm />
       </div>
     </div>

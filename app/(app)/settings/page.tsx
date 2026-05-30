@@ -55,21 +55,22 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#060608] text-white font-sans">
-      <TopBar title="Settings Console" />
-      
-      <div className="flex-grow p-6 md:p-8 overflow-y-auto space-y-8 select-none max-w-4xl mx-auto w-full">
+    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <TopBar title="Settings" />
+
+      <div className="flex-grow overflow-y-auto">
+       <div className="mx-auto max-w-4xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header Title */}
-        <div className="space-y-3 text-left">
-          <h2 className="font-serif text-3xl md:text-5xl text-white tracking-tight">
-            System <span className="text-accent italic">Settings</span>
+        <div className="space-y-1 text-left">
+          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+            Settings
           </h2>
-          <p className="text-white/50 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-            Configure authorization tokens, customize notification nodes, and update company profile settings.
+          <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
+            Update your profile, notification preferences, and account details.
           </p>
         </div>
 
-        <SettingsForm 
+        <SettingsForm
           userId={dbUser.id}
           role={dbUser.role}
           initialName={dbUser.name}
@@ -85,6 +86,7 @@ export default async function SettingsPage() {
           initialSlackWebhooks={dbUser.slackWebhooks ?? false}
           systemSpecs={systemSpecs}
         />
+       </div>
       </div>
     </div>
   )

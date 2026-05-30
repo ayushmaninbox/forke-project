@@ -44,3 +44,5 @@ next-env.d.ts
 # Package lock
 package-lock.json
 
+# Personal Files & Folders
+/IDEATION

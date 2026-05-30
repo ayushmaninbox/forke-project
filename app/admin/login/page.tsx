@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { adminLogin } from '@/lib/admin-actions'
 import { useRouter } from 'next/navigation'
-import { Lock, User, Terminal, ShieldAlert, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { User, ShieldAlert, KeyRound, Eye, EyeOff, Terminal } from 'lucide-react'
 import Image from 'next/image'
 
 export default function AdminLoginPage() {
@@ -31,33 +31,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 relative overflow-hidden select-none">
-      {/* High-End Technical Background */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Subtle grid lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:48px_48px] opacity-70" />
-        
-        {/* Premium ambient orange glows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent/[0.03] rounded-full blur-[140px]" />
-        <div className="absolute -top-[10%] -left-[10%] w-[500px] h-[500px] bg-accent/[0.015] rounded-full blur-[100px]" />
-        <div className="absolute -bottom-[10%] -right-[10%] w-[500px] h-[500px] bg-accent/[0.015] rounded-full blur-[100px]" />
+    <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center p-6 select-none">
+      <div className="w-full max-w-[380px] space-y-6 animate-in fade-in zoom-in-95 duration-500">
 
-        {/* Technical HUD borders */}
-        <div className="absolute left-8 top-8 bottom-8 w-[1px] bg-gradient-to-b from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute right-8 top-8 bottom-8 w-[1px] bg-gradient-to-b from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute top-8 left-8 right-8 h-[1px] bg-gradient-to-r from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-        <div className="absolute bottom-8 left-8 right-8 h-[1px] bg-gradient-to-r from-white/[0.03] via-white/[0.01] to-white/[0.03]" />
-      </div>
-
-      <div className="w-full max-w-[390px] space-y-8 relative z-10 animate-in fade-in zoom-in-95 duration-1000">
-        
-        {/* Logo and Terminal Identity */}
+        {/* Logo and Identity */}
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center h-20 relative mb-2">
             <div className="w-20 h-20 relative">
-              <Image 
-                src="/forke-assets/forke_logo.png" 
-                alt="Logo" 
+              <Image
+                src="/forke-assets/forke_logo.png"
+                alt="Logo"
                 fill
                 className="object-contain drop-shadow-[0_0_18px_rgba(255,122,0,0.3)] select-none pointer-events-none"
                 draggable={false}
@@ -75,8 +58,8 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Auth Console Card */}
-        <form 
-          onSubmit={handleSubmit} 
+        <form
+          onSubmit={handleSubmit}
           className="p-8 rounded-3xl bg-[#0a0a0a]/80 border border-white/[0.06] space-y-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-3xl relative overflow-hidden group text-left"
         >
           {/* Subtle top edge glow border */}
@@ -89,53 +72,53 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="p-3.5 rounded-xl bg-red-500/5 border border-red-500/15 text-red-400 text-[10px] font-bold font-mono text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1">
-              <ShieldAlert className="w-4 h-4 shrink-0 opacity-70" />
+            <div className="p-3 rounded-lg bg-red-500/[0.07] border border-red-500/20 text-red-400 text-[13px] text-center flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Username Input */}
-            <div className="space-y-2">
-              <label className="text-[9px] text-white/40 font-bold uppercase tracking-widest ml-1 font-mono">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5 font-sans">
                 Username
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
                   <User className="w-4 h-4" />
                 </span>
-                <input 
+                <input
                   name="username"
-                  required 
-                  type="text" 
+                  required
+                  type="text"
                   autoComplete="off"
-                  className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-5 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
-                  placeholder="username or email" 
+                  className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-3 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors font-sans"
+                  placeholder="username or email"
                 />
               </div>
             </div>
 
             {/* Password Input */}
-            <div className="space-y-2">
-              <label className="text-[9px] text-white/40 font-bold uppercase tracking-widest ml-1 font-mono">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5 font-sans">
                 Password
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
                   <KeyRound className="w-4 h-4" />
                 </span>
-                <input 
+                <input
                   name="password"
-                  required 
-                  type={showPassword ? "text" : "password"} 
-                  className="w-full h-11 bg-[#050505] border border-white/[0.08] rounded-xl pl-11 pr-12 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] focus:ring-1 focus:ring-accent/20 transition-all font-sans font-medium" 
-                  placeholder="password" 
+                  required
+                  type={showPassword ? "text" : "password"}
+                  className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-10 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors font-sans"
+                  placeholder="password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white transition-colors p-1"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -144,17 +127,17 @@ export default function AdminLoginPage() {
           </div>
 
           {/* Authenticate Button */}
-          <Button 
+          <Button
             disabled={isLoading}
-            className="w-full h-12 text-[11px] font-black uppercase tracking-[0.18em] rounded-xl bg-accent hover:bg-accent-hover text-white shadow-xl shadow-accent/5 transition-all duration-300 active:scale-[0.98] relative z-10"
+            className="w-full h-10 text-[13px] font-medium rounded-lg ui-btn-primary transition-colors font-sans"
           >
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
-                <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                <span>Decrypting Token...</span>
+                <div className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                <span>Signing in…</span>
               </div>
             ) : (
-              'Authenticate Access'
+              'Sign in'
             )}
           </Button>
 
@@ -169,10 +152,8 @@ export default function AdminLoginPage() {
           </div>
 
         </form>
-
-
-
       </div>
     </div>
   )
 }
+

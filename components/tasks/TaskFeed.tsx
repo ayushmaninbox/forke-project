@@ -25,30 +25,30 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false }: TaskFeed
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-6 text-center ui-surface rounded-2xl">
-        <div className="w-16 h-16 bg-white/[0.01] rounded-full border border-white/[0.06] flex items-center justify-center mb-6">
-          <PlusCircle className="w-8 h-8 text-white/25" />
+      <div className="flex flex-col items-center justify-center py-16 px-6 text-center rounded-xl border border-dashed border-[var(--color-border)] bg-white/[0.01]">
+        <div className="w-10 h-10 bg-white/[0.02] rounded-full border border-[var(--color-border)] flex items-center justify-center mb-4">
+          <PlusCircle className="w-5 h-5 text-[var(--color-text-muted)]" />
         </div>
-        <h3 className="text-lg font-serif text-white mb-2">
-          {isOwner ? 'No open missions on the feed' : 'No tasks match your filters right now'}
+        <h3 className="text-sm font-medium text-white mb-1.5">
+          {isOwner ? 'No open tasks on the feed' : 'No tasks match your filters'}
         </h3>
-        <p className="text-[var(--color-text-muted)] text-xs max-w-sm mx-auto mb-6 leading-relaxed font-light">
+        <p className="text-[13px] text-[var(--color-text-muted)] max-w-sm mx-auto mb-4 leading-relaxed">
           {isOwner
-            ? 'Post a new mission to attract talented developers to your project.'
+            ? 'Post a new task to attract talented developers to your project.'
             : 'New tasks are posted every day — check back soon or try clearing your filters.'}
         </p>
         <button
           onClick={() => router.push(isOwner ? '/post-task' : '/tasks')}
-          className="text-[10px] font-semibold text-accent hover:text-accent/80 tracking-[0.12em] uppercase border-b border-accent/70 transition-colors pb-0.5"
+          className="inline-flex items-center h-8 px-3.5 rounded-lg text-[13px] font-medium ui-btn-secondary transition-colors"
         >
-          {isOwner ? 'Post a Mission' : 'Clear all filters'}
+          {isOwner ? 'Post a task' : 'Clear filters'}
         </button>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
       {tasks.map(({ task, clientName }) => (
         <TaskCard
           key={task.id}
