@@ -57,11 +57,14 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
 
   // Pagination & Sorting & Filters
   const [currentPage, setCurrentPage] = useState<number>(1)
-  const [pageSize, setPageSize] = useState<number>(10)
+  const [pageSize, setPageSize] = useState<number>(15)
   const [sortBy, setSortBy] = useState<string>('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [filterColumn, setFilterColumn] = useState<string>('')
   const [filterValue, setFilterValue] = useState<string>('')
+
+  const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 1024
+  const shouldScrollVertically = isMobileViewport ? pageSize > 10 : pageSize > 15
 
   // Row Selection
   const [selectedRowKeys, setSelectedRowKeys] = useState<any[]>([])
@@ -81,7 +84,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   useEffect(() => {
     fetchTables()
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setPageSize(5)
+      setPageSize(10)
+    } else {
+      setPageSize(15)
     }
   }, [])
 
@@ -458,7 +463,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
           ) : (
             
             /* ==================== TABLE DATA VIEW ==================== */
-            <div className="flex flex-col gap-4 h-full">
+            <div className={cn("flex flex-col gap-4", shouldScrollVertically ? "h-full" : "h-auto min-h-full")}>
               
               {/* Row filters bar */}
               <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.005] shrink-0 text-xs">
@@ -498,7 +503,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               </form>
 
               {/* Grid block */}
-              <div className="border border-white/[0.06] rounded-xl overflow-auto bg-white/[0.005] flex-grow min-h-0">
+              <div className={cn(
+                "border border-white/[0.06] rounded-xl bg-white/[0.005] flex-grow min-h-0",
+                shouldScrollVertically ? "overflow-auto" : "overflow-x-auto overflow-y-visible"
+              )}>
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none">
@@ -668,7 +676,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                       align="right"
                       placement="top"
                       className="w-16"
-                      options={[5, 10, 20, 50].map((n) => ({ value: String(n), label: String(n) }))}
+                      options={[5, 10, 15, 20, 50].map((n) => ({ value: String(n), label: String(n) }))}
                     />
                   </div>
 
