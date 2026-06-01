@@ -93,10 +93,11 @@ export default async function AppLayout({
   return (
     <DashboardProvider>
       <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember">
-        <Sidebar 
-          user={{ 
-            name: user.name, 
-            image: user.image, 
+        <Sidebar
+          user={{
+            name: user.name,
+            image: user.image,
+            username: user.username,
             level: userLevel,
             xp: user.xp,
             currentStreak: user.currentStreak,

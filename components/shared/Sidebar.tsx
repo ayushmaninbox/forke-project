@@ -32,6 +32,7 @@ interface SidebarProps {
   user: {
     name?: string | null
     email?: string | null
+    username?: string | null
     image?: string | null
     level?: number
     xp?: number
@@ -63,9 +64,12 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed)
   const isOwner = user.role === 'owner'
-  const levelTitle = isOwner 
-    ? (OWNER_LEVEL_TITLES[user.level || 1] ?? 'Owner') 
+  const levelTitle = isOwner
+    ? (OWNER_LEVEL_TITLES[user.level || 1] ?? 'Owner')
     : getLevelTitle(user.level || 1)
+
+  // Profile lives at the public username URL (e.g. /ayushman); fall back to /profile
+  const profileHref = user.username ? `/${user.username}` : '/profile'
 
   const links = isOwner ? [
     { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -75,7 +79,7 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
     { label: 'Escrow', href: '/escrow', icon: ShieldCheck },
     { label: 'Analytics', href: '/analytics', icon: BarChart3 },
     { label: 'Messages', href: '/messages', icon: Mail, badge: unreadMessagesCount },
-    { label: 'Company Profile', href: '/profile', icon: Building2 },
+    { label: 'Company Profile', href: profileHref, icon: Building2 },
     { label: 'Settings', href: '/settings', icon: Settings },
   ] : [
     { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -83,7 +87,7 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
     { label: 'Submissions', href: '/submissions', icon: FileCheck },
     { label: 'Earnings', href: '/earnings', icon: Wallet },
     { label: 'Messages', href: '/messages', icon: Mail, badge: unreadMessagesCount },
-    { label: 'Profile', href: '/profile', icon: User },
+    { label: 'Profile', href: profileHref, icon: User },
     { label: 'Settings', href: '/settings', icon: Settings },
   ]
 

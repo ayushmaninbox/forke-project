@@ -63,10 +63,11 @@ export default async function SettingsPage() {
         {/* Header Title */}
         <div className="space-y-1 text-left">
           <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
-            Settings
+            Site Settings
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
-            Update your profile, notification preferences, and account details.
+            Notifications, integrations, and system preferences. Looking to edit your
+            profile? Head to <span className="text-accent">your profile page</span>.
           </p>
         </div>
 

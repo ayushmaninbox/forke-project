@@ -6,6 +6,12 @@ import Footer from '@/components/shared/Footer'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Read the Forke Privacy Policy to understand how we collect, use, and protect your data.',
+  alternates: { canonical: '/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | Forke',
+    description: 'How Forke collects, uses, and protects your data.',
+    url: 'https://www.forke.space/privacy',
+  },
 }
 
 export default function PrivacyPage() {

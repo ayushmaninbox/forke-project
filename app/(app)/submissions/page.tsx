@@ -116,7 +116,7 @@ function DevSubmissionRow({ item }: { item: DevSubmissionItem }) {
 // ─── Section wrappers ───────────────────────────────────────────────────────
 
 function OwnerSection({ title, items, icon: Icon, colorClass, statusLabel, badgeColor }: {
-  title: string; items: OwnerSubmissionItem[]; icon: React.ElementType; colorClass: string; statusLabel: string; badgeColor: string
+  title: string; items: OwnerSubmissionItem[]; icon: React.ComponentType<any>; colorClass: string; statusLabel: string; badgeColor: string
 }) {
   return (
     <section className="space-y-3 text-left">
@@ -146,7 +146,7 @@ function OwnerSection({ title, items, icon: Icon, colorClass, statusLabel, badge
 }
 
 function DevSection({ title, items, icon: Icon, colorClass, statusLabel, badgeColor }: {
-  title: string; items: DevSubmissionItem[]; icon: React.ElementType; colorClass: string; statusLabel: string; badgeColor: string
+  title: string; items: DevSubmissionItem[]; icon: React.ComponentType<any>; colorClass: string; statusLabel: string; badgeColor: string
 }) {
   return (
     <section className="space-y-3 text-left">

@@ -9,8 +9,9 @@ import CTA from '@/components/shared/CTA'
 import Footer from '@/components/shared/Footer'
 
 export const metadata: Metadata = {
-  title: 'Forke — Ship Real Work, Get Paid',
+  title: { absolute: 'Forke — Ship Real Work, Get Paid' },
   description: 'The premier micro-task marketplace for developers. Complete coding bounties, level up your engineering skills, and earn rewards for your contributions.',
+  alternates: { canonical: '/' },
 }
 
 export default function MarketingPage() {

@@ -4,8 +4,14 @@ import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
 
 export const metadata: Metadata = {
-  title: 'Terms of Services',
-  description: 'Read the Terms of Services for using the Forke platform. Understand our rules for task posting, completion, and community conduct.',
+  title: 'Terms of Service',
+  description: 'Read the Terms of Service for using the Forke platform. Understand our rules for task posting, completion, and community conduct.',
+  alternates: { canonical: '/terms' },
+  openGraph: {
+    title: 'Terms of Service | Forke',
+    description: 'The rules for task posting, completion, payouts, and community conduct on Forke.',
+    url: 'https://www.forke.space/terms',
+  },
 }
 
 export default function TermsPage() {
