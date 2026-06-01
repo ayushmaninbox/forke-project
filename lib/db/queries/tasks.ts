@@ -1,12 +1,12 @@
 import { db } from '@/lib/db'
 import { tasks, users, submissions, revisionRequests } from '@/lib/db/schema'
-import { eq, and, desc, lte, sql } from 'drizzle-orm'
+import { eq, and, or, desc, lte, ilike, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
-export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: number } = {}) {
-  const { skillTags, maxBudget } = filters
+export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: number; q?: string; includeClaimed?: boolean } = {}) {
+  const { skillTags, maxBudget, q, includeClaimed } = filters
 
-  const conditions = [eq(tasks.status, 'open')]
+  const conditions = includeClaimed ? [] : [eq(tasks.status, 'open')]
 
   if (maxBudget) {
     conditions.push(lte(tasks.budget, maxBudget))
@@ -18,13 +18,29 @@ export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: 
     conditions.push(sql`${tasks.skillTags} && ARRAY[${sql.join(arrayElements, sql`, `)}]::text[]`)
   }
 
+  if (q) {
+    const searchPattern = `%${q}%`
+    const searchCondition = or(
+      ilike(tasks.title, searchPattern),
+      ilike(tasks.description, searchPattern)
+    )
+    if (searchCondition) {
+      conditions.push(searchCondition)
+    }
+  }
+
+  const claimantAlias = alias(users, 'claimant')
+
   const result = await db
     .select({
       task: tasks,
       clientName: users.name,
+      claimantName: claimantAlias.name,
+      claimantUsername: claimantAlias.username,
     })
     .from(tasks)
     .innerJoin(users, eq(tasks.clientId, users.id))
+    .leftJoin(claimantAlias, eq(tasks.claimantId, claimantAlias.id))
     .where(and(...conditions))
     .orderBy(desc(tasks.createdAt))
 

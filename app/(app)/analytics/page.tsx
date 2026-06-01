@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { tasks, submissions } from '@/lib/db/schema'
 import { eq, sql, and, gte } from 'drizzle-orm'
 import { BarChart3, TrendingUp, Clock, CheckCircle2, Zap, Target, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function AnalyticsPage() {
   const session = await auth()
@@ -87,10 +88,34 @@ export default async function AnalyticsPage() {
   const pendingReviewCount = dbStats.submittedCount
 
   const statCards = [
-    { label: isOwner ? 'Completion rate' : 'Tasks completed', value: isOwner ? `${completionRate}%` : `${dbStats.completedCount}`, hint: isOwner ? 'Of all posted tasks' : 'Verified shipments', icon: Target },
-    { label: isOwner ? 'Pending reviews' : 'Active tasks', value: `${isOwner ? pendingReviewCount : dbStats.claimedCount}`, hint: isOwner ? 'Awaiting your action' : 'In progress', icon: Clock },
-    { label: isOwner ? 'Total tasks' : 'Total claimed', value: `${dbStats.totalCount}`, hint: isOwner ? 'All-time posted' : 'Lifetime tasks taken', icon: Zap },
-    { label: isOwner ? 'Open tasks' : 'Submissions pending', value: `${isOwner ? dbStats.openCount : dbStats.submittedCount}`, hint: isOwner ? 'Awaiting developers' : 'Awaiting review', icon: BarChart3 },
+    {
+      label: isOwner ? 'Completion rate' : 'Tasks completed',
+      value: isOwner ? `${completionRate}%` : `${dbStats.completedCount}`,
+      hint: isOwner ? 'Of all posted tasks' : 'Verified shipments',
+      icon: Target,
+      href: '/submissions',
+    },
+    {
+      label: isOwner ? 'Pending reviews' : 'Active tasks',
+      value: `${isOwner ? pendingReviewCount : dbStats.claimedCount}`,
+      hint: isOwner ? 'Awaiting your action' : 'In progress',
+      icon: Clock,
+      href: '/submissions',
+    },
+    {
+      label: isOwner ? 'Total tasks' : 'Total claimed',
+      value: `${dbStats.totalCount}`,
+      hint: isOwner ? 'All-time posted' : 'Lifetime tasks taken',
+      icon: Zap,
+      href: '/tasks',
+    },
+    {
+      label: isOwner ? 'Open tasks' : 'Submissions pending',
+      value: `${isOwner ? dbStats.openCount : dbStats.submittedCount}`,
+      hint: isOwner ? 'Awaiting developers' : 'Awaiting review',
+      icon: BarChart3,
+      href: isOwner ? '/tasks?filter=unclaimed' : '/tasks',
+    },
   ]
 
   return (
@@ -116,16 +141,25 @@ export default async function AnalyticsPage() {
           {statCards.map((card) => {
             const Icon = card.icon
             return (
-              <div key={card.label} className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left">
+              <Link
+                key={card.label}
+                href={card.href}
+                className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 text-left hover:border-accent/40 hover:bg-accent/[0.03] transition-all duration-200 block cursor-pointer"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-muted)]">{card.label}</span>
-                  <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                  <span className="text-xs text-[var(--color-text-muted)] group-hover:text-white/70 transition-colors">{card.label}</span>
+                  <Icon className="w-3.5 h-3.5 text-[var(--color-text-muted)] group-hover:text-accent transition-colors" />
                 </div>
                 <div className="mt-3">
-                  <h3 className="ui-kpi">{card.value}</h3>
-                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1">{card.hint}</p>
+                  <h3 className="ui-kpi group-hover:text-accent transition-colors">{card.value}</h3>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-[11px] text-[var(--color-text-muted)]">{card.hint}</p>
+                    <span className="text-[10px] text-accent/0 group-hover:text-accent/70 transition-colors font-medium flex items-center gap-0.5">
+                      View →
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>

@@ -2,8 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Lock, Clock, User, ChevronRight } from 'lucide-react'
-import { getRequiredLevel } from '@/lib/utils/xp'
+import { Clock, User, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface TaskCardProps {
@@ -13,10 +12,16 @@ interface TaskCardProps {
     budget: number
     skillTags: string[] | null
     createdAt: Date
+    status: string
+    claimantId?: string | null
+    claimedAt?: Date | null
   }
   clientName: string
-  userLevel: number
+  userLevel?: number
   isOwner?: boolean
+  claimantName?: string | null
+  claimantUsername?: string | null
+  currentUserId?: string
 }
 
 function timeAgo(date: Date) {
@@ -35,9 +40,15 @@ function timeAgo(date: Date) {
   return Math.floor(interval) + 'm ago'
 }
 
-export default function TaskCard({ task, clientName, userLevel, isOwner = false }: TaskCardProps) {
-  const requiredLevel = getRequiredLevel(task.skillTags ?? [])
-  const isLocked = !isOwner && userLevel < requiredLevel
+export default function TaskCard({
+  task,
+  clientName,
+  userLevel,
+  isOwner = false,
+  claimantName,
+  claimantUsername,
+  currentUserId,
+}: TaskCardProps) {
   const budgetInRupees = Math.floor(task.budget / 100)
 
   return (
@@ -64,16 +75,57 @@ export default function TaskCard({ task, clientName, userLevel, isOwner = false 
       </div>
 
       <div className="mt-auto space-y-3.5">
-        <div className="flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5">
-          <div className="flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" />
-            <span>by <span className="text-white/70">{clientName}</span></span>
+        {/* Claimant Info if Claimed */}
+        {task.status !== 'open' && claimantName && (
+          <div className="flex items-center justify-between text-[11px] border-t border-[var(--color-border)] pt-3.5">
+            <div className={cn(
+              "flex items-center gap-1.5 font-medium",
+              currentUserId === task.claimantId ? "text-emerald-500" : "text-amber-500"
+            )}>
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full animate-pulse shrink-0",
+                currentUserId === task.claimantId ? "bg-emerald-500" : "bg-amber-500"
+              )} />
+              <span>
+                {currentUserId === task.claimantId ? (
+                  <span>Claimed by <span className="font-semibold text-white">you</span></span>
+                ) : (
+                  <span>
+                    Claimed by{' '}
+                    <Link
+                      href={claimantUsername ? `/${claimantUsername}` : `/profile/${task.claimantId || ''}`}
+                      className="text-white hover:text-accent font-semibold transition-colors underline decoration-white/20 hover:decoration-accent/40"
+                    >
+                      {claimantName}
+                    </Link>
+                  </span>
+                )}
+              </span>
+            </div>
+            <span className="text-[var(--color-text-muted)] font-mono text-[10px]">
+              {timeAgo(task.claimedAt || task.createdAt)}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{timeAgo(task.createdAt)}</span>
+        )}
+
+        {/* Default Client/Created row (only if open) */}
+        {task.status === 'open' && (
+          <div className={cn(
+            "flex items-center justify-between text-[11px] text-[var(--color-text-muted)] border-t border-[var(--color-border)] pt-3.5",
+            isOwner && "justify-end"
+          )}>
+            {!isOwner && (
+              <div className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5" />
+                <span>by <span className="text-white/70">{clientName}</span></span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{timeAgo(task.createdAt)}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <Link
           href={`/tasks/${task.id}`}
@@ -81,27 +133,11 @@ export default function TaskCard({ task, clientName, userLevel, isOwner = false 
             "flex items-center justify-center gap-1.5 w-full h-9 rounded-lg text-[13px] font-medium transition-colors",
             isOwner
               ? "ui-btn-secondary"
-              : isLocked
-                ? "bg-white/[0.02] text-white/30 border border-[var(--color-border)] cursor-not-allowed"
-                : "ui-btn-primary"
+              : "ui-btn-primary"
           )}
         >
-          {isOwner ? (
-            <>
-              View details
-              <ChevronRight className="w-3.5 h-3.5" />
-            </>
-          ) : isLocked ? (
-            <>
-              <Lock className="w-3.5 h-3.5" />
-              Unlock at Lvl {requiredLevel}
-            </>
-          ) : (
-            <>
-              Claim task
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </>
-          )}
+          View details
+          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
     </div>

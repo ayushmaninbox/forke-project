@@ -103,7 +103,7 @@ export default function SettingsForm({
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-left pb-16">
       {/* Left Block: settings forms */}
-      <form onSubmit={handleSubmit} className="md:col-span-8 space-y-4">
+      <form onSubmit={handleSubmit} className={cn("space-y-4", isOwner ? "md:col-span-12" : "md:col-span-8")}>
         {success && (
           <div className="p-3 rounded-lg flex items-center gap-2.5 bg-emerald-500/[0.07] border border-emerald-500/20 text-emerald-400 text-[13px] animate-in fade-in slide-in-from-top-2 duration-300">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -286,34 +286,36 @@ export default function SettingsForm({
       </form>
 
       {/* Right Column: system spec sidebar */}
-      <div className="md:col-span-4 space-y-4">
-        <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
-          <div className="px-4 py-3 border-b border-[var(--color-border)]">
-            <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Laptop className="w-4 h-4 text-accent" /> System
-            </h4>
-          </div>
+      {!isOwner && (
+        <div className="md:col-span-4 space-y-4">
+          <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
+            <div className="px-4 py-3 border-b border-[var(--color-border)]">
+              <h4 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Laptop className="w-4 h-4 text-accent" /> System
+              </h4>
+            </div>
 
-          <div className="divide-y divide-[var(--color-border)] text-[13px]">
-            <div className="flex justify-between items-center px-4 py-2.5">
-              <span className="text-[var(--color-text-muted)]">Runtime</span>
-              <span className="text-white font-medium font-mono text-[12px]">{systemSpecs.runtimeVersion}</span>
-            </div>
-            <div className="flex justify-between items-center px-4 py-2.5">
-              <span className="text-[var(--color-text-muted)]">Database</span>
-              <span className={cn("font-medium capitalize", systemSpecs.databaseState === 'connected' ? "text-emerald-400" : "text-rose-500")}>
-                {systemSpecs.databaseState} {systemSpecs.dbLatencyMs > 0 && `(${systemSpecs.dbLatencyMs}ms)`}
-              </span>
-            </div>
-            <div className="flex justify-between items-center px-4 py-2.5">
-              <span className="text-[var(--color-text-muted)]">SSL</span>
-              <span className={cn("font-medium capitalize", sslActive ? "text-emerald-400" : "text-amber-500")}>
-                {sslActive ? 'active' : 'inactive'}
-              </span>
+            <div className="divide-y divide-[var(--color-border)] text-[13px]">
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">Runtime</span>
+                <span className="text-white font-medium font-mono text-[12px]">{systemSpecs.runtimeVersion}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">Database</span>
+                <span className={cn("font-medium capitalize", systemSpecs.databaseState === 'connected' ? "text-emerald-400" : "text-rose-500")}>
+                  {systemSpecs.databaseState} {systemSpecs.dbLatencyMs > 0 && `(${systemSpecs.dbLatencyMs}ms)`}
+                </span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5">
+                <span className="text-[var(--color-text-muted)]">SSL</span>
+                <span className={cn("font-medium capitalize", sslActive ? "text-emerald-400" : "text-amber-500")}>
+                  {sslActive ? 'active' : 'inactive'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

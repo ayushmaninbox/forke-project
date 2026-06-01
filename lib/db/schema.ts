@@ -143,6 +143,7 @@ export const tasks = pgTable('tasks', {
     .references(() => users.id)
     .notNull(),
   claimantId: uuid('claimant_id').references(() => users.id),
+  claimedAt: timestamp('claimed_at'),
   deadline: timestamp('deadline'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -241,5 +242,17 @@ export const messages = pgTable('messages', {
   fileName: text('file_name'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const notifications = pgTable('notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  type: text('type').notNull(), // e.g. 'task_claimed', 'submission_received', 'message', 'payment', etc.
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  link: text('link'), // optional deep-link (e.g. /tasks/123)
+  isRead: boolean('is_read').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 
 

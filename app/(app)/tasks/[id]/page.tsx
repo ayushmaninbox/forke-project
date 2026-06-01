@@ -11,7 +11,7 @@ import ClaimButton from '@/components/tasks/ClaimButton'
 import SubmitWorkForm from '@/components/tasks/SubmitWorkForm'
 import DeleteTaskButton from '@/components/tasks/DeleteTaskButton'
 import TopBar from '@/components/shared/TopBar'
-import { Calendar, User, Clock, ArrowLeft, AlertCircle, CheckCircle2, Coins } from 'lucide-react'
+import { Calendar, User, Clock, ArrowLeft, AlertCircle, CheckCircle2, Coins, ChevronRight } from 'lucide-react'
 
 function timeAgo(date: Date) {
   const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000)
@@ -94,74 +94,127 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
         {/* Form Section - When Claimed by Me and not submitted */}
         {isClaimedByMe && task.status === 'claimed' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start text-left">
-             <div className="lg:col-span-7 space-y-5">
-                {revisionRequest && (
-                  <div className="bg-red-500/[0.07] border border-red-500/20 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-red-400 font-medium text-[13px]">
-                      <AlertCircle className="w-4 h-4" />
-                      Revision requested
-                    </div>
-                    <div className="p-3.5 bg-white/[0.01] rounded-lg border border-red-500/15 text-white/80 text-[13px]">
-                      &ldquo;{revisionRequest.clientNote}&rdquo;
-                    </div>
-                  </div>
-                )}
+             <div className="lg:col-span-7 rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-6 space-y-6">
+                 {revisionRequest && (
+                   <div className="bg-red-500/[0.07] border border-red-500/20 rounded-xl p-4 space-y-3">
+                     <div className="flex items-center gap-2 text-red-400 font-medium text-[13px]">
+                       <AlertCircle className="w-4 h-4" />
+                       Revision requested
+                     </div>
+                     <div className="p-3.5 bg-white/[0.01] rounded-lg border border-red-500/15 text-white/80 text-[13px]">
+                       &ldquo;{revisionRequest.clientNote}&rdquo;
+                     </div>
+                   </div>
+                 )}
 
-                <div className="space-y-4">
-                  <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight">
-                    {task.title}
-                  </h1>
-                  <p className="text-[13px] md:text-sm text-white/65 leading-relaxed whitespace-pre-wrap">
-                    {task.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 pt-4 border-t border-[var(--color-border)]">
-                    {task.skillTags?.map(tag => (
-                      <span key={tag} className="px-1.5 py-0.5 bg-white/[0.04] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-medium rounded">
-                        {tag}
+                 <div className="space-y-3">
+                   <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                     Active Quest
+                   </span>
+                   <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                     {task.title}
+                   </h1>
+                 </div>
+
+                 <div className="space-y-2 border-t border-white/5 pt-5">
+                   <h3 className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+                     Description
+                   </h3>
+                   <p className="text-[13px] md:text-sm text-white/65 leading-relaxed whitespace-pre-wrap">
+                     {task.description}
+                   </p>
+                 </div>
+
+                 <div className="space-y-3 border-t border-white/5 pt-5">
+                   <h3 className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+                     Skill tags
+                   </h3>
+                   <div className="flex flex-wrap gap-1.5">
+                     {task.skillTags?.map(tag => (
+                       <span key={tag} className="px-2 py-1 bg-white/[0.04] border border-[var(--color-border)] text-white/80 text-[11px] font-medium rounded-lg">
+                         {tag}
+                       </span>
+                     ))}
+                   </div>
+                 </div>
+             </div>
+
+              <div className="lg:col-span-5 space-y-4">
+                {/* Owner Profile Card */}
+                <Link
+                  href={`/profile/${task.clientId}`}
+                  className="group flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.018] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                      <User className="w-4 h-4 text-accent" />
+                    </div>
+                    <div className="flex flex-col text-left leading-tight">
+                      <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Client</span>
+                      <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
+                        {clientName}
                       </span>
-                    ))}
+                    </div>
                   </div>
+                  <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                    <span>Profile</span>
+                    <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+
+                {/* Submit Work Form */}
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
+                   <div className="space-y-2.5">
+                     <h2 className="text-base font-semibold text-white">Submit your work</h2>
+                     <ul className="space-y-1.5">
+                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
+                        </li>
+                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
+                        </li>
+                     </ul>
+                   </div>
+
+                   <SubmitWorkForm taskId={task.id} />
                 </div>
-             </div>
-
-             <div className="lg:col-span-5">
-               <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
-                  <div className="space-y-2.5">
-                    <h2 className="text-base font-semibold text-white">Submit your work</h2>
-                    <ul className="space-y-1.5">
-                       <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                         <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
-                       </li>
-                       <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                         <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
-                       </li>
-                    </ul>
-                  </div>
-
-                  <SubmitWorkForm taskId={task.id} />
-               </div>
-             </div>
-          </div>
+              </div>
+           </div>
         )}
 
         {/* Standard Layout - Otherwise */}
         {(task.status !== 'claimed' || !isClaimedByMe) && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-left">
-            <div className="lg:col-span-2 space-y-4">
-              <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight">
-                {task.title}
-              </h1>
+            <div className="lg:col-span-2 rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-6 space-y-6">
+              <div className="space-y-3">
+                <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                  Mission Briefing
+                </span>
+                <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                  {task.title}
+                </h1>
+              </div>
 
-              <p className="text-[13px] md:text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
-                {task.description}
-              </p>
+              <div className="space-y-2 border-t border-white/5 pt-5">
+                <h3 className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+                  Objective & Description
+                </h3>
+                <p className="text-[13px] md:text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
+                  {task.description}
+                </p>
+              </div>
 
-              <div className="flex flex-wrap gap-1.5 pt-4 border-t border-[var(--color-border)]">
-                {task.skillTags?.map(tag => (
-                  <span key={tag} className="px-1.5 py-0.5 bg-white/[0.04] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-medium rounded">
-                    {tag}
-                  </span>
-                ))}
+              <div className="space-y-3 border-t border-white/5 pt-5">
+                <h3 className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-medium">
+                  Required Skillset
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {task.skillTags?.map(tag => (
+                    <span key={tag} className="px-2 py-1 bg-white/[0.04] border border-[var(--color-border)] text-white/80 text-[11px] font-medium rounded-lg">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -176,15 +229,53 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
 
                   <div className="space-y-2 text-[13px]">
-                    <div className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">
-                      <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4 text-accent" />
-                      </div>
-                      <div className="flex flex-col text-left leading-none">
-                        <span className="text-[11px] text-[var(--color-text-muted)]">Client</span>
-                        <span className="text-white/85 font-medium mt-1 text-[13px]">{clientName}</span>
-                      </div>
-                    </div>
+                    {/* For Developer: show Owner (Client) profile */}
+                    {isDeveloper && (
+                      <Link
+                        href={`/profile/${task.clientId}`}
+                        className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                            <User className="w-4 h-4 text-accent" />
+                          </div>
+                          <div className="flex flex-col text-left leading-tight">
+                            <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Client</span>
+                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
+                              {clientName}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                          <span>Profile</span>
+                          <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </Link>
+                    )}
+
+                    {/* For Owner: show Developer profile if claimed */}
+                    {!isDeveloper && task.claimantId && claimantName && (
+                      <Link
+                        href={`/profile/${task.claimantId}`}
+                        className="group flex items-center justify-between px-2.5 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] hover:border-accent/40 hover:bg-accent/[0.03] transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                            <User className="w-4 h-4 text-accent" />
+                          </div>
+                          <div className="flex flex-col text-left leading-tight">
+                            <span className="text-[11px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">Developer</span>
+                            <span className="text-white/85 font-medium text-[13px] group-hover:text-accent transition-colors font-semibold">
+                              {claimantName}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-accent/70 group-hover:text-accent transition-colors font-medium">
+                          <span>Profile</span>
+                          <ChevronRight className="w-3.5 h-3.5 translate-x-0 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </Link>
+                    )}
 
                     {task.deadline && (
                       <div className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">
@@ -213,8 +304,8 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                     <div className="pt-4 border-t border-[var(--color-border)]">
                       <ClaimButton
                         taskId={task.id}
-                        isLocked={isLevelLocked}
-                        requiredLevel={requiredLevel}
+                        isLocked={false}
+                        requiredLevel={0}
                       />
                     </div>
                   )}

@@ -21,6 +21,10 @@ import { eq, and, sql } from 'drizzle-orm'
 import { ensureMessagesTable } from '@/app/(app)/messages/actions'
 import ToastContainer from '@/components/shared/Toast'
 
+import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
+import NotificationBell from '@/components/shared/NotificationBell'
+import { getUnreadCount } from '@/app/(app)/notifications/actions'
+
 export default async function AppLayout({
   children,
 }: {
@@ -48,6 +52,7 @@ export default async function AppLayout({
   let companyName = ''
   let pendingSubmissionsCount = 0
   let unreadMessagesCount = 0
+  let unreadNotificationsCount = 0
 
   // Fetch received messages count for the logged-in user dynamically
   try {
@@ -86,6 +91,11 @@ export default async function AppLayout({
     }
   }
 
+  try {
+    const notifRes = await getUnreadCount(user.id)
+    unreadNotificationsCount = notifRes.count
+  } catch { /* ignore */ }
+
   return (
     <DashboardProvider>
       <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember">
@@ -102,10 +112,15 @@ export default async function AppLayout({
           pendingSubmissionsCount={pendingSubmissionsCount}
           unreadMessagesCount={unreadMessagesCount}
         />
-        <main className="flex-grow flex flex-col min-w-0 overflow-hidden">
+        <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative">
+          {/* Floating Mobile Trigger */}
+          <div className="absolute top-3 left-4 z-40 md:hidden bg-[#0c0c0f]/80 backdrop-blur border border-white/[0.06] p-1 rounded-lg">
+            <MobileMenuTrigger />
+          </div>
           {children}
         </main>
       </div>
+      <NotificationBell userId={user.id} initialUnreadCount={unreadNotificationsCount} />
       <LevelUpCelebration />
       <ToastContainer />
     </DashboardProvider>
