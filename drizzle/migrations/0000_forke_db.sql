@@ -13,7 +13,8 @@ CREATE TABLE "account" (
 	"token_type" text,
 	"scope" text,
 	"id_token" text,
-	"session_state" text
+	"session_state" text,
+	CONSTRAINT "account_provider_providerAccountId_pk" PRIMARY KEY("provider","providerAccountId")
 );
 --> statement-breakpoint
 CREATE TABLE "admins" (
@@ -179,6 +180,8 @@ CREATE TABLE "users" (
 	"email" text NOT NULL,
 	"email_verified" timestamp,
 	"image" text,
+	"github_avatar_url" text,
+	"google_avatar_url" text,
 	"password_hash" text,
 	"role" "user_role" DEFAULT 'developer' NOT NULL,
 	"level" integer DEFAULT 1 NOT NULL,
@@ -205,7 +208,8 @@ CREATE TABLE "users" (
 CREATE TABLE "verificationToken" (
 	"identifier" text NOT NULL,
 	"token" text NOT NULL,
-	"expires" timestamp NOT NULL
+	"expires" timestamp NOT NULL,
+	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier","token")
 );
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

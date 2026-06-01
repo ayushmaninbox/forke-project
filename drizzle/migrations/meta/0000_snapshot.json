@@ -1,6 +1,6 @@
 {
-  "id": "ad3cbbcc-b3f0-430c-be5c-9847ae577b22",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b06f692e-67c1-426e-a02d-695b1f623bef",
+  "prevId": "",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1229,6 +1229,18 @@
         },
         "image": {
           "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "github_avatar_url": {
+          "name": "github_avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "google_avatar_url": {
+          "name": "google_avatar_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
