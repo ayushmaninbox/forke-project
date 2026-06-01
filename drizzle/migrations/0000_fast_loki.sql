@@ -145,6 +145,7 @@ CREATE TABLE "users" (
 	"is_banned" boolean DEFAULT false NOT NULL,
 	"email_alerts" boolean DEFAULT true,
 	"slack_webhooks" boolean DEFAULT false,
+	"last_active_at" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
@@ -184,6 +185,10 @@ CREATE TABLE "messages" (
 	"sender_id" uuid NOT NULL,
 	"receiver_id" uuid NOT NULL,
 	"content" text NOT NULL,
+	"is_received" boolean DEFAULT false NOT NULL,
+	"is_seen" boolean DEFAULT false NOT NULL,
+	"file_url" text,
+	"file_name" text,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
