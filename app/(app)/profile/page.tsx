@@ -5,6 +5,7 @@ import { users, owners, tasks } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
 import { Globe, Mail, Phone, Shield, Calendar } from 'lucide-react'
+import CopyProfileButton from '@/components/shared/CopyProfileButton'
 
 function LinkedinIcon({ className }: { className?: string }) {
   return (
@@ -74,10 +75,14 @@ export default async function ProfilePage() {
                 <h3 className="text-lg md:text-xl font-semibold text-white tracking-tight">
                   {isOwner ? (ownerDetails?.companyName || 'Acme Labs') : dbUser?.name}
                 </h3>
-                {isOwner && (
+                {isOwner ? (
                   <span className="px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent text-[11px] font-medium">
                     Verified employer
                   </span>
+                ) : (
+                  dbUser?.username && (
+                    <CopyProfileButton username={dbUser.username} />
+                  )
                 )}
               </div>
 
