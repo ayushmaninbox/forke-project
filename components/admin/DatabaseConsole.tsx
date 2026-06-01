@@ -247,10 +247,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
 
   return (
-    <div className="flex h-[calc(100vh-12rem)] border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
-      
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-10rem)] lg:h-[calc(100vh-12rem)] border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
+
       {/* --- LEFT SIDEBAR: TABLES LIST --- */}
-      <aside className="w-60 border-r border-white/[0.06] flex flex-col shrink-0 bg-white/[0.005]">
+      <aside className="w-full lg:w-60 border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-col shrink-0 bg-white/[0.005] max-h-48 lg:max-h-none">
         
         {/* Sidebar Header & Search */}
         <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
@@ -271,7 +271,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         </div>
 
         {/* Scrollable table name links */}
-        <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5">
+        <div className="flex-grow flex lg:flex-col gap-1 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto p-1.5">
           {isLoadingTables ? (
             <div className="text-center py-6 text-xs text-white/30">Loading tables...</div>
           ) : filteredTables.length === 0 ? (
@@ -291,7 +291,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     setSelectedRowKeys([])
                   }}
                   className={cn(
-                    "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors text-ellipsis overflow-hidden whitespace-nowrap cursor-pointer",
+                    "w-auto lg:w-full shrink-0 text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors text-ellipsis overflow-hidden whitespace-nowrap cursor-pointer",
                     isSelected
                       ? "bg-accent/10 text-accent font-semibold border border-accent/20"
                       : "text-white/60 hover:text-white hover:bg-white/[0.02] border border-transparent"
@@ -309,10 +309,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
       <main className="flex-grow flex flex-col min-w-0 bg-[#070709]/20">
         
         {/* Main Tabbar & Actions */}
-        <div className="h-12 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-white/[0.005]">
-          
+        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-2 sm:px-4 shrink-0 bg-white/[0.005] overflow-x-auto">
+
           {/* Sub-Tabs Selector */}
-          <div className="flex gap-4 h-full">
+          <div className="flex gap-2 sm:gap-4 h-12 shrink-0">
             <button
               onClick={() => setActiveSubTab('data')}
               className={cn(
@@ -381,7 +381,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         </div>
 
         {/* --- DYNAMIC RENDER OF VIEW --- */}
-        <div className="flex-grow overflow-auto p-4 relative">
+        <div className="flex-grow overflow-auto p-2 sm:p-4 relative">
           
           {!selectedTable ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2">
@@ -433,12 +433,12 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
             <div className="flex flex-col gap-4 h-full">
               
               {/* Row filters bar */}
-              <form onSubmit={handleFilterSubmit} className="flex items-center gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.005] shrink-0 text-xs">
+              <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.005] shrink-0 text-xs">
                 <span className="text-white/40 font-semibold uppercase tracking-wider text-[10px]">Filter:</span>
                 <select
                   value={filterColumn}
                   onChange={(e) => setFilterColumn(e.target.value)}
-                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2 py-1 focus:outline-none focus:border-accent text-white"
+                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2 py-1 focus:outline-none focus:border-accent text-white min-w-0"
                 >
                   <option value="" className="bg-[#0c0c0e]">-- Choose column --</option>
                   {columns.map(col => (
@@ -450,7 +450,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                   placeholder="Contains text..."
                   value={filterValue}
                   onChange={(e) => setFilterValue(e.target.value)}
-                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2.5 py-1 focus:outline-none focus:border-accent text-white w-48"
+                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2.5 py-1 focus:outline-none focus:border-accent text-white w-full sm:w-48 min-w-0"
                   disabled={!filterColumn}
                 />
                 <Button type="submit" size="sm" disabled={!filterColumn || !filterValue}>
@@ -468,7 +468,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               </form>
 
               {/* Grid block */}
-              <div className="border border-white/[0.06] rounded-xl overflow-x-auto bg-white/[0.005] flex-grow max-h-[calc(100vh-25rem)]">
+              <div className="border border-white/[0.06] rounded-xl overflow-x-auto bg-white/[0.005] flex-grow max-h-[calc(100vh-22rem)]">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none">
@@ -610,7 +610,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               </div>
 
               {/* Pagination footer bar */}
-              <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-white/[0.06] bg-white/[0.005] rounded-xl shrink-0">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3 border-t border-white/[0.06] bg-white/[0.005] rounded-xl shrink-0">
                 <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-mono">
                   Showing <span className="text-white">{rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> – <span className="text-white">{Math.min(currentPage * pageSize, totalRecords)}</span> of <span className="text-white">{totalRecords}</span>
                 </p>

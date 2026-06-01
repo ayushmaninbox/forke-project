@@ -54,7 +54,9 @@ import {
   Copy,
   Eye,
   EyeOff,
-  Database
+  Database,
+  Menu,
+  X
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 
@@ -72,6 +74,13 @@ export default function AdminDashboard() {
     'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'database'
   >('dashboard')
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // Switch tab and close the mobile drawer
+  function selectTab(tab: typeof activeTab) {
+    setActiveTab(tab)
+    setMobileNavOpen(false)
+  }
 
   // Modal open states
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
@@ -555,7 +564,7 @@ export default function AdminDashboard() {
     if (activeListLength === 0) return null
 
     return (
-      <div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-[var(--color-border)] bg-white/[0.005] text-left">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[var(--color-border)] bg-white/[0.005] text-left">
         {/* Info label */}
         <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-mono">
           Showing <span className="text-white">{(currentPage - 1) * pageSize + 1}</span> – <span className="text-white">{Math.min(currentPage * pageSize, activeListLength)}</span> of <span className="text-white">{activeListLength}</span>
@@ -610,16 +619,34 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#070709] text-white flex">
-      
+
+      {/* --- MOBILE NAV BACKDROP --- */}
+      {mobileNavOpen && (
+        <div
+          onClick={() => setMobileNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
       {/* --- SIDEBAR --- */}
-      <aside className="w-64 border-r border-[var(--color-border)] bg-[#070709] shrink-0 flex flex-col justify-between h-screen sticky top-0 select-none">
+      <aside className={cn(
+        "w-64 max-w-[80vw] border-r border-[var(--color-border)] bg-[#070709] shrink-0 flex flex-col justify-between h-screen fixed lg:sticky top-0 left-0 z-50 transition-transform duration-300 select-none",
+        mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
         <div className="flex-grow flex flex-col overflow-y-auto pt-4">
           
           {/* Logo & Header */}
-          <div className="h-14 flex items-center px-5 border-b border-[var(--color-border)] mb-4">
+          <div className="h-14 flex items-center justify-between px-5 border-b border-[var(--color-border)] mb-4">
             <span className="font-serif text-xl text-white tracking-wide">
               Forke<span className="text-accent italic pr-1"> admin</span>
             </span>
+            <button
+              onClick={() => setMobileNavOpen(false)}
+              className="lg:hidden p-1.5 -mr-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Navigation Links */}
@@ -627,7 +654,7 @@ export default function AdminDashboard() {
             
             {/* Dashboard */}
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => selectTab('dashboard')}
               className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                 activeTab === 'dashboard'
                   ? 'bg-white/[0.05] text-white'
@@ -658,7 +685,7 @@ export default function AdminDashboard() {
               {usersMenuOpen && (
                 <div className="pl-6 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
                   <button
-                    onClick={() => setActiveTab('owner-approval')}
+                    onClick={() => selectTab('owner-approval')}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
                       activeTab === 'owner-approval'
                         ? 'text-accent font-semibold bg-accent/[0.04]'
@@ -669,7 +696,7 @@ export default function AdminDashboard() {
                   </button>
 
                   <button
-                    onClick={() => setActiveTab('developer-ban')}
+                    onClick={() => selectTab('developer-ban')}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
                       activeTab === 'developer-ban'
                         ? 'text-accent font-semibold bg-accent/[0.04]'
@@ -684,7 +711,7 @@ export default function AdminDashboard() {
 
             {/* Enquiries */}
             <button
-              onClick={() => setActiveTab('enquiries')}
+              onClick={() => selectTab('enquiries')}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                 activeTab === 'enquiries'
                   ? 'bg-white/[0.05] text-white'
@@ -704,7 +731,7 @@ export default function AdminDashboard() {
 
             {/* Subscribers */}
             <button
-              onClick={() => setActiveTab('subscribers')}
+              onClick={() => selectTab('subscribers')}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                 activeTab === 'subscribers'
                   ? 'bg-white/[0.05] text-white'
@@ -724,7 +751,7 @@ export default function AdminDashboard() {
 
             {/* Database Console */}
             <button
-              onClick={() => setActiveTab('database')}
+              onClick={() => selectTab('database')}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                 activeTab === 'database'
                   ? 'bg-white/[0.05] text-white'
@@ -743,7 +770,7 @@ export default function AdminDashboard() {
             {/* Admins */}
             {currentAdmin?.role === 'super_admin' && (
               <button
-                onClick={() => setActiveTab('admins')}
+                onClick={() => selectTab('admins')}
                 className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                   activeTab === 'admins'
                     ? 'bg-white/[0.05] text-white'
@@ -817,23 +844,30 @@ export default function AdminDashboard() {
       <main className="flex-grow h-screen overflow-y-auto bg-[#0b0b0e] flex flex-col text-left">
         
         {/* --- HEADER --- */}
-        <header className="h-14 px-8 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold text-white tracking-tight capitalize">
+        <header className="h-14 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="lg:hidden p-1.5 -ml-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer shrink-0"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-sm font-semibold text-white tracking-tight capitalize truncate">
               {activeTab === 'owner-approval' 
                 ? 'Owner Approval' 
                 : activeTab === 'developer-ban' 
                 ? 'Developers' 
                 : activeTab}
             </h1>
-            <span className="text-[9px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
+            <span className="hidden sm:inline text-[9px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
               System Control Panel
             </span>
           </div>
         </header>
 
         {/* --- DYNAMIC BODY VIEWS --- */}
-        <div className="flex-grow p-8 space-y-6 max-w-6xl w-full mx-auto">
+        <div className="flex-grow p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl w-full mx-auto">
 
           {/* ==================== DASHBOARD PANEL ==================== */}
           {activeTab === 'dashboard' && (
