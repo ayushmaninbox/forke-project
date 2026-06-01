@@ -6,7 +6,7 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set')
 }
 
-let client: postgres.Sql;
+export let client: postgres.Sql;
 
 if (process.env.NODE_ENV === 'production') {
   client = postgres(process.env.DATABASE_URL)
