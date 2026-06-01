@@ -66,31 +66,33 @@ function CustomSelect({ label, value, options, onChange }: CustomSelectProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#0b0b0e] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 max-h-60 overflow-y-auto divide-y divide-white/[0.03] animate-in fade-in slide-in-from-top-1 duration-200">
-          {options.map((opt) => {
-            const isSelected = opt.value === value
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => {
-                  onChange(opt.value)
-                  setIsOpen(false)
-                }}
-                className={cn(
-                  "w-full px-4 py-2.5 text-[13px] text-left transition-colors flex items-center justify-between cursor-pointer",
-                  isSelected
-                    ? "bg-[#ff8a00]/10 text-[#ff8a00] font-black"
-                    : "text-white/70 hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <span>{opt.label}</span>
-                {isSelected && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] shadow-[0_0_6px_#ff8a00]" />
-                )}
-              </button>
-            )
-          })}
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#0b0b0e] border border-white/10 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="max-h-60 overflow-y-auto divide-y divide-white/[0.03]">
+            {options.map((opt) => {
+              const isSelected = opt.value === value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt.value)
+                    setIsOpen(false)
+                  }}
+                  className={cn(
+                    "w-full px-4 py-2.5 text-[13px] text-left transition-colors flex items-center justify-between cursor-pointer",
+                    isSelected
+                      ? "bg-[#ff8a00]/10 text-[#ff8a00] font-black"
+                      : "text-white/70 hover:bg-white/[0.04] hover:text-white"
+                  )}
+                >
+                  <span>{opt.label}</span>
+                  {isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] shadow-[0_0_6px_#ff8a00]" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

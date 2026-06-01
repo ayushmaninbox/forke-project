@@ -333,7 +333,7 @@ export default function LevelsPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="gsap-lvl-hero-title font-serif text-6xl md:text-8xl text-white leading-none tracking-tight opacity-0">
+            <h1 className="gsap-lvl-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-none tracking-tight opacity-0">
               The Level <span className="text-accent italic font-normal text-glow">System</span>
             </h1>
 

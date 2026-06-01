@@ -137,8 +137,9 @@ function SetupFormContent() {
   }
 
   return (
-    <form 
-      onSubmit={handleSubmit} 
+    <form
+      onSubmit={handleSubmit}
+      noValidate
       className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-left max-w-md w-full"
     >
       <div className="border-b border-[var(--color-border)] pb-3">

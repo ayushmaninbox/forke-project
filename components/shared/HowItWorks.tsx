@@ -80,9 +80,9 @@ export default function HowItWorks() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} id="how-it-works" className="py-48 px-4 bg-bg relative overflow-hidden">
+    <section ref={containerRef} id="how-it-works" className="py-24 sm:py-32 lg:py-48 px-4 bg-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-24 relative">
+        <div className="text-center mb-16 sm:mb-24 relative">
           <div className="inline-block relative">
             <h2 className="gsap-how-title font-serif text-5xl md:text-7xl text-white opacity-0">
               How it works
@@ -103,7 +103,7 @@ export default function HowItWorks() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-24 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24 relative">
           {STEPS.map((step, index) => (
             <div key={index} className="gsap-how-step group relative flex flex-col items-center text-center opacity-0">
               {/* Background Number */}

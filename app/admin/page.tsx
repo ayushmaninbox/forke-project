@@ -25,6 +25,8 @@ import {
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
+import ToastContainer, { toast } from '@/components/shared/Toast'
 import { cn } from '@/lib/utils/cn'
 import { 
   LayoutDashboard,
@@ -238,7 +240,7 @@ export default function AdminDashboard() {
   async function handleSaveWaitlistConfig(e: React.FormEvent) {
     e.preventDefault()
     if (!waitlistModalPassword.trim()) {
-      alert('Bypass password is required.')
+      toast('Bypass password is required.', "error")
       return
     }
     setIsTogglingWaitlist(true)
@@ -301,7 +303,7 @@ export default function AdminDashboard() {
         if (res.success) {
           fetchData()
         } else {
-          alert('Failed to delete subscriber')
+          toast('Failed to delete subscriber', "error")
         }
       } catch (err) {
         console.error('Failed to delete subscriber:', err)
@@ -312,7 +314,7 @@ export default function AdminDashboard() {
   async function handleInviteAdmin(e: React.FormEvent) {
     e.preventDefault()
     if (!inviteName.trim() || !inviteEmail.trim()) {
-      alert('Please fill in Name and Email address.')
+      toast('Please fill in Name and Email address.', "error")
       return
     }
     setIsInviting(true)
@@ -324,7 +326,7 @@ export default function AdminDashboard() {
         inviteAltEmail.trim() || undefined
       )
       if (res.success) {
-        alert('Invitation dispatched successfully!')
+        toast('Invitation dispatched successfully!', "success")
         setIsInviteModalOpen(false)
         setInviteName('')
         setInviteEmail('')
@@ -332,11 +334,11 @@ export default function AdminDashboard() {
         setInviteRole('admin')
         fetchData()
       } else {
-        alert(res.error || 'Failed to send administrative invitation.')
+        toast(res.error || 'Failed to send administrative invitation.', "error")
       }
     } catch (err) {
       console.error('Invite error:', err)
-      alert('Something went wrong. Please try again.')
+      toast('Something went wrong. Please try again.', "error")
     } finally {
       setIsInviting(false)
     }
@@ -349,7 +351,7 @@ export default function AdminDashboard() {
         if (res.success) {
           fetchData()
         } else {
-          alert(res.error || 'Failed to delete admin account.')
+          toast(res.error || 'Failed to delete admin account.', "error")
         }
       } catch (err) {
         console.error('Failed to delete admin:', err)
@@ -360,11 +362,11 @@ export default function AdminDashboard() {
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault()
     if (!profileName.trim()) {
-      alert('Name field cannot be left blank.')
+      toast('Name field cannot be left blank.', "error")
       return
     }
     if (!profileUsername.trim()) {
-      alert('Username field cannot be left blank.')
+      toast('Username field cannot be left blank.', "error")
       return
     }
     setIsUpdatingProfile(true)
@@ -375,15 +377,15 @@ export default function AdminDashboard() {
         profileAltEmail.trim() || undefined
       )
       if (res.success) {
-        alert('Administrative profile successfully updated!')
+        toast('Administrative profile successfully updated!', "success")
         fetchCurrentAdmin()
         setIsProfileModalOpen(false)
       } else {
-        alert(res.error || 'Failed to update administrative profile.')
+        toast(res.error || 'Failed to update administrative profile.', "error")
       }
     } catch (err) {
       console.error('Profile update error:', err)
-      alert('Something went wrong. Please try again.')
+      toast('Something went wrong. Please try again.', "error")
     } finally {
       setIsUpdatingProfile(false)
     }
@@ -396,14 +398,14 @@ export default function AdminDashboard() {
       try {
         const res = await toggleAdminDisabledAction(adminId, newStatus)
         if (res.success) {
-          alert(`Administrator has been successfully ${newStatus ? 'disabled' : 'enabled'}.`)
+          toast(`Administrator has been successfully ${newStatus ? 'disabled' : 'enabled'}.`, "success")
           fetchData()
         } else {
-          alert(res.error || 'Failed to update administrator status.')
+          toast(res.error || 'Failed to update administrator status.', "error")
         }
       } catch (err) {
         console.error('Toggle status error:', err)
-        alert('Something went wrong.')
+        toast('Something went wrong.', "error")
       }
     }
   }
@@ -412,23 +414,23 @@ export default function AdminDashboard() {
     e.preventDefault()
     if (!resetTargetAdmin) return
     if (!resetNewPassword || resetNewPassword.trim().length < 6) {
-      alert('Password must be at least 6 characters long.')
+      toast('Password must be at least 6 characters long.', "error")
       return
     }
     setIsResetting(true)
     try {
       const res = await resetAdminPasswordAction(resetTargetAdmin.id, resetNewPassword.trim())
       if (res.success) {
-        alert(`Password for ${resetTargetAdmin.name} has been successfully reset!`)
+        toast(`Password for ${resetTargetAdmin.name} has been successfully reset!`, "success")
         setIsResetModalOpen(false)
         setResetTargetAdmin(null)
         setResetNewPassword('')
       } else {
-        alert(res.error || 'Failed to reset administrator password.')
+        toast(res.error || 'Failed to reset administrator password.', "error")
       }
     } catch (err) {
       console.error('Password reset error:', err)
-      alert('Something went wrong.')
+      toast('Something went wrong.', "error")
     } finally {
       setIsResetting(false)
     }
@@ -437,32 +439,32 @@ export default function AdminDashboard() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault()
     if (!oldPassword || !newPassword || !confirmPassword) {
-      alert('Please fill in all password fields.')
+      toast('Please fill in all password fields.', "error")
       return
     }
     if (newPassword !== confirmPassword) {
-      alert('New password and password confirmation do not match.')
+      toast('New password and password confirmation do not match.', "error")
       return
     }
     if (newPassword.length < 6) {
-      alert('New password must be at least 6 characters long.')
+      toast('New password must be at least 6 characters long.', "error")
       return
     }
     setIsChangingPassword(true)
     try {
       const res = await changeAdminPasswordAction(oldPassword, newPassword)
       if (res.success) {
-        alert('Your password has been successfully changed!')
+        toast('Your password has been successfully changed!', "success")
         setOldPassword('')
         setNewPassword('')
         setConfirmPassword('')
         setIsChangePasswordModalOpen(false)
       } else {
-        alert(res.error || 'Failed to change your password.')
+        toast(res.error || 'Failed to change your password.', "error")
       }
     } catch (err) {
       console.error('Change password error:', err)
-      alert('Something went wrong. Please try again.')
+      toast('Something went wrong. Please try again.', "error")
     } finally {
       setIsChangingPassword(false)
     }
@@ -574,20 +576,19 @@ export default function AdminDashboard() {
           {/* Rows selector */}
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Rows</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
+            <Select
+              aria-label="Rows per page"
+              value={String(pageSize)}
+              onChange={(v) => {
+                setPageSize(Number(v))
                 setCurrentPage(1)
               }}
-              className="h-7 bg-white/[0.02] border border-[var(--color-border)] rounded-md px-1.5 text-[11px] font-medium text-white focus:outline-none transition-colors cursor-pointer"
-            >
-              <option value={5} className="bg-[#0c0c0c] text-white">5</option>
-              <option value={10} className="bg-[#0c0c0c] text-white">10</option>
-              <option value={20} className="bg-[#0c0c0c] text-white">20</option>
-              <option value={50} className="bg-[#0c0c0c] text-white">50</option>
-              <option value={100} className="bg-[#0c0c0c] text-white">100</option>
-            </select>
+              size="sm"
+              align="right"
+              placement="top"
+              className="w-16"
+              options={[5, 10, 20, 50, 100].map((n) => ({ value: String(n), label: String(n) }))}
+            />
           </div>
 
           {/* Navigation buttons */}
@@ -843,31 +844,28 @@ export default function AdminDashboard() {
       {/* --- MAIN PAGE CONTENT --- */}
       <main className="flex-grow h-screen overflow-y-auto bg-[#0b0b0e] flex flex-col text-left">
         
-        {/* --- HEADER --- */}
-        <header className="h-14 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
+        {/* --- HEADER (mobile only — desktop uses sidebar for context) --- */}
+        <header className="lg:hidden h-14 px-4 sm:px-6 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="lg:hidden p-1.5 -ml-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer shrink-0"
+              className="p-1.5 -ml-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer shrink-0"
               aria-label="Open menu"
             >
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-sm font-semibold text-white tracking-tight capitalize truncate">
-              {activeTab === 'owner-approval' 
-                ? 'Owner Approval' 
-                : activeTab === 'developer-ban' 
-                ? 'Developers' 
+              {activeTab === 'owner-approval'
+                ? 'Owner Approval'
+                : activeTab === 'developer-ban'
+                ? 'Developers'
                 : activeTab}
             </h1>
-            <span className="hidden sm:inline text-[9px] font-mono text-[var(--color-text-muted)] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
-              System Control Panel
-            </span>
           </div>
         </header>
 
         {/* --- DYNAMIC BODY VIEWS --- */}
-        <div className="flex-grow p-4 sm:p-6 lg:p-8 space-y-6 max-w-6xl w-full mx-auto">
+        <div className="flex-grow min-h-0 w-full flex flex-col p-4 sm:p-6 lg:p-8">
 
           {/* ==================== DASHBOARD PANEL ==================== */}
           {activeTab === 'dashboard' && (
@@ -1605,7 +1603,9 @@ export default function AdminDashboard() {
 
           {/* ==================== DATABASE CONSOLE PANEL ==================== */}
           {activeTab === 'database' && (
-            <DatabaseConsole currentAdmin={currentAdmin} />
+            <div className="flex-1 min-h-0">
+              <DatabaseConsole currentAdmin={currentAdmin} />
+            </div>
           )}
 
         </div>
@@ -1624,7 +1624,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <form onSubmit={handleInviteAdmin} className="space-y-4">
+              <form onSubmit={handleInviteAdmin} noValidate className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-[var(--color-text-muted)]">Full Name</label>
@@ -1665,14 +1665,16 @@ export default function AdminDashboard() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-[var(--color-text-muted)]">Access Role Level</label>
-                    <select
+                    <Select
+                      aria-label="Access role level"
                       value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as 'super_admin' | 'admin')}
-                      className="w-full h-9 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-2 text-[13px] text-white focus:outline-none focus:border-accent transition-colors cursor-pointer font-sans"
-                    >
-                      <option value="admin" className="bg-[#0c0c0e] text-white">Admin (Standard)</option>
-                      <option value="super_admin" className="bg-[#0c0c0e] text-white">Super Admin (All Privileges)</option>
-                    </select>
+                      onChange={(v) => setInviteRole(v as 'super_admin' | 'admin')}
+                      className="h-9 text-[13px]"
+                      options={[
+                        { value: 'admin', label: 'Admin (Standard)' },
+                        { value: 'super_admin', label: 'Super Admin (All Privileges)' },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1726,7 +1728,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <form onSubmit={handleResetPassword} className="space-y-4">
+              <form onSubmit={handleResetPassword} noValidate className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-[var(--color-text-muted)]">New Password</label>
                   <div className="relative">
@@ -1796,7 +1798,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <form onSubmit={handleSaveWaitlistConfig} className="space-y-4">
+              <form onSubmit={handleSaveWaitlistConfig} noValidate className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-[var(--color-text-muted)]">Bypass Secret Key</label>
                   <input
@@ -1853,7 +1855,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <form onSubmit={handleUpdateProfile} noValidate className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-[var(--color-text-muted)]">Full Name</label>
@@ -1951,7 +1953,7 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <form onSubmit={handleChangePassword} className="space-y-4">
+              <form onSubmit={handleChangePassword} noValidate className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-[var(--color-text-muted)]">Current Password</label>
                   <div className="relative">
@@ -2051,6 +2053,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Themed toast notifications */}
+      <ToastContainer />
 
     </div>
   )

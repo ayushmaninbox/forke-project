@@ -15,10 +15,18 @@ export default function AdminLoginPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setIsLoading(true)
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    const username = (formData.get('username') as string)?.trim()
+    const password = (formData.get('password') as string) || ''
+
+    if (!username || !password) {
+      setError('Please enter your username and password.')
+      return
+    }
+
+    setIsLoading(true)
     const result = await adminLogin(formData)
 
     if (result.success) {
@@ -60,6 +68,7 @@ export default function AdminLoginPage() {
         {/* Auth Console Card */}
         <form
           onSubmit={handleSubmit}
+          noValidate
           className="p-8 rounded-3xl bg-[#0a0a0a]/80 border border-white/[0.06] space-y-6 shadow-[0_24px_64px_rgba(0,0,0,0.85)] backdrop-blur-3xl relative overflow-hidden group text-left"
         >
           {/* Subtle top edge glow border */}

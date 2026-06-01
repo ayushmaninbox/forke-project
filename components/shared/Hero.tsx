@@ -138,12 +138,12 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-12 relative z-30">
             <div className="space-y-6">
-              <h1 className="gsap-hero-title font-serif text-6xl md:text-8xl text-white leading-[1.1] tracking-tight opacity-0">
+              <h1 className="gsap-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-[1.1] tracking-tight opacity-0">
                 Ship real work. <br />
                 Earn XP. <span className="text-accent text-glow">Get paid.</span>
               </h1>
-              
-              <p className="gsap-hero-subtitle text-xl md:text-2xl text-white/50 max-w-xl leading-relaxed font-light opacity-0">
+
+              <p className="gsap-hero-subtitle text-lg sm:text-xl md:text-2xl text-white/50 max-w-xl leading-relaxed font-light opacity-0">
                 Micro-task marketplace for developers. Claim bounties, build reputation and cash out instantly.
               </p>
             </div>
@@ -168,8 +168,8 @@ export default function Hero() {
 
           </div>
 
-          {/* Hero Visual Area - Orbital Layout */}
-          <div className="absolute right-[-300px] top-1/2 -translate-y-1/2 w-[1200px] h-[1200px] pointer-events-none">
+          {/* Hero Visual Area - Orbital Layout (desktop only — too wide for phones) */}
+          <div className="hidden lg:block absolute right-[-300px] top-1/2 -translate-y-1/2 w-[1200px] h-[1200px] pointer-events-none">
             
             {/* Connecting Lines SVG Layer */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible opacity-20">

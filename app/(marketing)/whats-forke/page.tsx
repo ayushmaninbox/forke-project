@@ -150,7 +150,7 @@ export default function WhatsForkePage() {
                 </div>
 
                 {/* Headline (Upscaled to text-6xl md:text-8xl to match homepage title exactly) */}
-                <h1 className="gsap-wf-hero-title font-serif text-6xl md:text-8xl text-white leading-[1.05] tracking-tight opacity-0">
+                <h1 className="gsap-wf-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-[1.05] tracking-tight opacity-0">
                   What is <span className="text-accent italic font-normal text-glow">Forke?</span>
                 </h1>
 
@@ -160,7 +160,7 @@ export default function WhatsForkePage() {
                 </p>
 
                 {/* Row of Three Features */}
-                <div className="gsap-wf-hero-row grid grid-cols-3 gap-4 md:gap-5 opacity-0 max-w-2xl">
+                <div className="gsap-wf-hero-row grid grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 opacity-0 max-w-2xl">
                   {[
                     { title: 'Real tasks', desc: 'from real projects', icon: Code },
                     { title: 'Verified work', desc: 'you can be proud of', icon: Shield },
@@ -168,9 +168,9 @@ export default function WhatsForkePage() {
                   ].map((item, idx) => {
                     const Icon = item.icon
                     return (
-                      <div key={idx} className="p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] backdrop-blur-md flex flex-col gap-4 hover:border-white/10 transition-colors">
-                        <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-                          <Icon className="w-5 h-5" />
+                      <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] backdrop-blur-md flex flex-col gap-3 sm:gap-4 hover:border-white/10 transition-colors">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div>
                           <h4 className="text-white font-bold text-sm md:text-base tracking-tight">{item.title}</h4>
@@ -184,7 +184,7 @@ export default function WhatsForkePage() {
               </div>
 
               {/* Hero Right Image Render (Absolutely positioned, static, edge-faded mascot visual) */}
-              <div className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[55vw] h-[55vw] max-w-[850px] max-h-[850px] pointer-events-none z-0">
+              <div className="hidden lg:block absolute right-[-10%] top-1/2 -translate-y-1/2 w-[55vw] h-[55vw] max-w-[850px] max-h-[850px] pointer-events-none z-0">
                 <div 
                   className="gsap-wf-hero-image-wrap relative w-full h-full"
                   style={{

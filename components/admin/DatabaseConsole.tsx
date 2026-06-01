@@ -15,6 +15,10 @@ import {
   Plus, 
   Trash2, 
   ArrowUpDown, 
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
   Check, 
   X, 
   RefreshCw, 
@@ -22,6 +26,8 @@ import {
   FileText
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
+import { toast } from '@/components/shared/Toast'
 import { cn } from '@/lib/utils/cn'
 
 interface DatabaseConsoleProps {
@@ -136,6 +142,16 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setCurrentPage(1)
   }
 
+  // Select a table and reset view state (page, sort, filters, selection)
+  function handleSelectTable(tableName: string) {
+    setSelectedTable(tableName)
+    setCurrentPage(1)
+    setSortBy('')
+    setFilterColumn('')
+    setFilterValue('')
+    setSelectedRowKeys([])
+  }
+
   // Toggle sorting direction or column
   function handleSort(colName: string) {
     if (sortBy === colName) {
@@ -196,7 +212,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
       setSuccessFlashCell({ rowIndex, colName })
       setTimeout(() => setSuccessFlashCell(null), 1000)
     } else {
-      alert(res.error || 'Failed to update field value.')
+      toast(res.error || 'Failed to update field value.', 'error')
     }
     setEditingCell(null)
     setUpdatingCellProgress(false)
@@ -212,10 +228,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
       setIsLoadingData(true)
       const res = await deleteTableRecords(selectedTable, primaryKeyCol, selectedRowKeys)
       if (res.success) {
-        alert('Records successfully deleted!')
+        toast('Records successfully deleted!', 'success')
         fetchTableMetadataAndData()
       } else {
-        alert(res.error || 'Failed to delete records.')
+        toast(res.error || 'Failed to delete records.', 'error')
         setIsLoadingData(false)
       }
       setSelectedRowKeys([])
@@ -230,12 +246,12 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setIsSubmittingRecord(true)
     const res = await insertTableRecord(selectedTable, newRecordData)
     if (res.success) {
-      alert('Record added successfully!')
+      toast('Record added successfully!', 'success')
       setIsAddModalOpen(false)
       setNewRecordData({})
       fetchTableMetadataAndData()
     } else {
-      alert(res.error || 'Failed to insert new record.')
+      toast(res.error || 'Failed to insert new record.', 'error')
     }
     setIsSubmittingRecord(false)
   }
@@ -247,10 +263,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-10rem)] lg:h-[calc(100vh-12rem)] border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
+    <div className="flex h-full min-h-0 border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
 
-      {/* --- LEFT SIDEBAR: TABLES LIST --- */}
-      <aside className="w-full lg:w-60 border-b lg:border-b-0 lg:border-r border-white/[0.06] flex flex-col shrink-0 bg-white/[0.005] max-h-48 lg:max-h-none">
+      {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
+      <aside className="hidden lg:flex w-60 border-r border-white/[0.06] flex-col shrink-0 bg-white/[0.005]">
         
         {/* Sidebar Header & Search */}
         <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
@@ -271,7 +287,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         </div>
 
         {/* Scrollable table name links */}
-        <div className="flex-grow flex lg:flex-col gap-1 lg:gap-0.5 overflow-x-auto lg:overflow-y-auto p-1.5">
+        <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5">
           {isLoadingTables ? (
             <div className="text-center py-6 text-xs text-white/30">Loading tables...</div>
           ) : filteredTables.length === 0 ? (
@@ -282,16 +298,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               return (
                 <button
                   key={t}
-                  onClick={() => {
-                    setSelectedTable(t)
-                    setCurrentPage(1)
-                    setSortBy('')
-                    setFilterColumn('')
-                    setFilterValue('')
-                    setSelectedRowKeys([])
-                  }}
+                  onClick={() => handleSelectTable(t)}
                   className={cn(
-                    "w-auto lg:w-full shrink-0 text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors text-ellipsis overflow-hidden whitespace-nowrap cursor-pointer",
+                    "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors text-ellipsis overflow-hidden whitespace-nowrap cursor-pointer",
                     isSelected
                       ? "bg-accent/10 text-accent font-semibold border border-accent/20"
                       : "text-white/60 hover:text-white hover:bg-white/[0.02] border border-transparent"
@@ -307,7 +316,23 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
 
       {/* --- RIGHT SIDEBAR: CONSOLE VIEW --- */}
       <main className="flex-grow flex flex-col min-w-0 bg-[#070709]/20">
-        
+
+        {/* Mobile table selector (replaces the desktop sidebar on small screens) */}
+        <div className="lg:hidden flex items-center gap-2 p-2 border-b border-white/[0.06] shrink-0 bg-white/[0.005]">
+          <Database className="w-4 h-4 text-accent shrink-0" />
+          <div className="flex-grow min-w-0">
+            <Select
+              aria-label="Select table"
+              value={selectedTable}
+              onChange={handleSelectTable}
+              options={tablesList.map((t) => ({ value: t, label: t }))}
+              placeholder={isLoadingTables ? 'Loading tables…' : 'Select a table'}
+              className="font-mono"
+            />
+          </div>
+          <span className="text-[10px] font-mono text-white/30 shrink-0">{tablesList.length} tables</span>
+        </div>
+
         {/* Main Tabbar & Actions */}
         <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-2 sm:px-4 shrink-0 bg-white/[0.005] overflow-x-auto">
 
@@ -381,7 +406,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         </div>
 
         {/* --- DYNAMIC RENDER OF VIEW --- */}
-        <div className="flex-grow overflow-auto p-2 sm:p-4 relative">
+        <div className="flex-grow min-h-0 overflow-auto p-2 sm:p-4 relative">
           
           {!selectedTable ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2">
@@ -435,16 +460,18 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               {/* Row filters bar */}
               <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.005] shrink-0 text-xs">
                 <span className="text-white/40 font-semibold uppercase tracking-wider text-[10px]">Filter:</span>
-                <select
+                <Select
+                  aria-label="Filter column"
                   value={filterColumn}
-                  onChange={(e) => setFilterColumn(e.target.value)}
-                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2 py-1 focus:outline-none focus:border-accent text-white min-w-0"
-                >
-                  <option value="" className="bg-[#0c0c0e]">-- Choose column --</option>
-                  {columns.map(col => (
-                    <option key={col.name} value={col.name} className="bg-[#0c0c0e]">{col.name}</option>
-                  ))}
-                </select>
+                  onChange={setFilterColumn}
+                  size="sm"
+                  className="w-44"
+                  placeholder="Choose column"
+                  options={[
+                    { value: '', label: 'Choose column' },
+                    ...columns.map((col) => ({ value: col.name, label: col.name })),
+                  ]}
+                />
                 <input
                   type="text"
                   placeholder="Contains text..."
@@ -468,7 +495,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               </form>
 
               {/* Grid block */}
-              <div className="border border-white/[0.06] rounded-xl overflow-x-auto bg-white/[0.005] flex-grow max-h-[calc(100vh-22rem)]">
+              <div className="border border-white/[0.06] rounded-xl overflow-auto bg-white/[0.005] flex-grow min-h-0">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none">
@@ -498,7 +525,15 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                           >
                             <div className="flex items-center gap-1.5">
                               <span>{col.name}</span>
-                              <ArrowUpDown className={cn("w-3 h-3 transition-opacity", isSorted ? "opacity-100" : "opacity-20")} />
+                              {isSorted ? (
+                                sortOrder === 'asc' ? (
+                                  <ArrowUp className="w-3.5 h-3.5 text-accent opacity-100" />
+                                ) : (
+                                  <ArrowDown className="w-3.5 h-3.5 text-accent opacity-100" />
+                                )
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 opacity-20" />
+                              )}
                             </div>
                           </th>
                         )
@@ -619,19 +654,19 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                   {/* Rows selector */}
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Rows</span>
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value))
+                    <Select
+                      aria-label="Rows per page"
+                      value={String(pageSize)}
+                      onChange={(v) => {
+                        setPageSize(Number(v))
                         setCurrentPage(1)
                       }}
-                      className="h-7 bg-white/[0.02] border border-white/[0.06] rounded-md px-1.5 text-[11px] font-medium text-white focus:outline-none transition-colors cursor-pointer"
-                    >
-                      <option value={5} className="bg-[#0c0c0e] text-white">5</option>
-                      <option value={10} className="bg-[#0c0c0e] text-white">10</option>
-                      <option value={20} className="bg-[#0c0c0e] text-white">20</option>
-                      <option value={50} className="bg-[#0c0c0e] text-white">50</option>
-                    </select>
+                      size="sm"
+                      align="right"
+                      placement="top"
+                      className="w-16"
+                      options={[5, 10, 20, 50].map((n) => ({ value: String(n), label: String(n) }))}
+                    />
                   </div>
 
                   {/* Navigation buttons */}
@@ -641,7 +676,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                       disabled={currentPage === 1 || isLoadingData}
                       className="w-7 h-7 flex items-center justify-center rounded-md bg-white/[0.02] border border-white/[0.06] text-white/50 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                     >
-                      <X className="w-3.5 h-3.5 rotate-90" /> {/* Left Arrow fallback */}
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-[11px] font-medium text-white px-2 font-mono select-none">
                       {currentPage} / {totalPages}
@@ -651,7 +686,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                       disabled={currentPage === totalPages || isLoadingData}
                       className="w-7 h-7 flex items-center justify-center rounded-md bg-white/[0.02] border border-white/[0.06] text-white/50 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                     >
-                      <X className="w-3.5 h-3.5 -rotate-90" /> {/* Right Arrow fallback */}
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -677,7 +712,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
             </div>
 
             {/* Modal Form Content */}
-            <form onSubmit={handleAddRecord} className="flex-grow overflow-y-auto p-6 space-y-4">
+            <form onSubmit={handleAddRecord} noValidate className="flex-grow overflow-y-auto p-6 space-y-4">
               <div className="space-y-4">
                 {columns.map((col) => {
                   const isPk = col.isPrimaryKey

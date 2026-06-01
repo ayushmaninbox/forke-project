@@ -128,8 +128,8 @@ export default function CTA() {
 
           <div className="relative z-10 flex items-center min-h-[320px]">
             {/* Left side — Text + CTA */}
-            <div className="flex-1 p-12 md:p-16 space-y-6">
-              <h2 className="gsap-cta-title font-serif text-4xl md:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
+            <div className="flex-1 p-8 sm:p-12 md:p-16 space-y-6">
+              <h2 className="gsap-cta-title font-serif text-3xl sm:text-4xl md:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
                 Ready to ship?
               </h2>
               <p className="gsap-cta-text text-lg text-white/50 font-light max-w-md opacity-0">
