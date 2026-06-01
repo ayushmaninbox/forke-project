@@ -10,7 +10,11 @@ import {
 import CopyProfileButton from '@/components/shared/CopyProfileButton'
 
 // three.js can't render on the server — load the lanyard client-only.
-const Lanyard = dynamic(() => import('./Lanyard'), { ssr: false })
+// The fallback is dark (not white) so a reload never flashes a white panel.
+const Lanyard = dynamic(() => import('./Lanyard'), {
+  ssr: false,
+  loading: () => <div className="w-full h-full" />,
+})
 
 function Github({ className }: { className?: string }) {
   return (
@@ -92,7 +96,7 @@ export default function PublicProfileView({
   const joined = new Date(data.joinedAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 
   const cardCol = (
-    <div className="relative h-[470px] lg:h-full">
+    <div className="relative h-[470px] lg:h-full rounded-2xl overflow-hidden bg-[#0b0a0d]/40 border border-white/[0.05]">
       <Lanyard card={{ name: data.name, username: data.username, level: data.level, title: data.levelTitle, headline: data.headline, avatarUrl: data.avatarUrl }} />
     </div>
   )
@@ -225,10 +229,12 @@ export default function PublicProfileView({
     )
   }
 
-  // Public page: document-flow, card sticks while the page scrolls.
+  // Public page: the card is pinned (sticky) just below the navbar and stays put
+  // while the bento on the right scrolls. Once the (taller) bento is fully
+  // scrolled, the row ends and the card scrolls away with it, revealing the footer.
   return (
-    <div className="grid lg:grid-cols-[minmax(0,440px)_1fr] gap-5 items-start">
-      <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-7rem)]">{cardCol}</div>
+    <div className="grid lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start">
+      <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
       <div className="space-y-4 min-w-0">{bento}</div>
     </div>
   )

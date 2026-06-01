@@ -68,8 +68,9 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
     ? (OWNER_LEVEL_TITLES[user.level || 1] ?? 'Owner')
     : getLevelTitle(user.level || 1)
 
-  // Profile lives at the public username URL (e.g. /ayushman); fall back to /profile
-  const profileHref = user.username ? `/${user.username}` : '/profile'
+  // Clicking Profile opens the in-dashboard editor; the public page is reachable
+  // from there via "Preview public".
+  const profileHref = '/profile'
 
   const links = isOwner ? [
     { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },

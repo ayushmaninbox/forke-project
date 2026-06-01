@@ -15,6 +15,7 @@ import {
   RigidBodyProps,
 } from '@react-three/rapier'
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline'
+import { RefreshCw } from 'lucide-react'
 import * as THREE from 'three'
 
 extend({ MeshLineGeometry, MeshLineMaterial })
@@ -55,6 +56,8 @@ export default function Lanyard({
   const [isMobile, setIsMobile] = useState<boolean>(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
+  const [flipped, setFlipped] = useState(false)
+  const flipRef = useRef(false) // read inside the render loop without stale closures
 
   useEffect(() => {
     const handleResize = (): void => setIsMobile(window.innerWidth < 768)
@@ -62,17 +65,27 @@ export default function Lanyard({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  const toggleFlip = () => {
+    flipRef.current = !flipRef.current
+    setFlipped(flipRef.current)
+  }
+
   return (
     <div className={`relative z-0 w-full h-full flex justify-center items-center ${className}`}>
       <Canvas
         camera={{ position, fov }}
         dpr={[1, isMobile ? 2 : 3]}
-        gl={{ alpha: transparent, antialias: true }}
-        onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
+        gl={{ alpha: true, antialias: true, premultipliedAlpha: false }}
+        style={{ background: 'transparent' }}
+        onCreated={({ gl, scene }) => {
+          gl.setClearColor(new THREE.Color(0x000000), 0)
+          gl.setClearAlpha(0)
+          scene.background = null
+        }}
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} card={card} />
+          <Band isMobile={isMobile} card={card} flipRef={flipRef} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
@@ -81,6 +94,14 @@ export default function Lanyard({
           <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
         </Environment>
       </Canvas>
+
+      <button
+        onClick={toggleFlip}
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-9 px-4 rounded-full bg-white/[0.06] border border-white/15 hover:bg-white/[0.12] hover:border-white/25 backdrop-blur text-xs font-bold text-white/85 hover:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+        {flipped ? 'Show front' : 'Flip card'}
+      </button>
     </div>
   )
 }
@@ -90,11 +111,8 @@ interface BandProps {
   minSpeed?: number
   isMobile?: boolean
   card?: LanyardCard
+  flipRef?: React.MutableRefObject<boolean>
 }
-
-// ---- rotation feel (continuous CW↔CCW, front shown longer than back) ----
-const ROT_AMPLITUDE = 3.4 // radians at the peak (~195°, just past the back face)
-const ROT_SPEED = 0.4 // higher = flips happen more often
 
 // ---- HTML face sizing ----
 const FACE_W = 380 // px (card art is rendered as real DOM at this width)
@@ -105,7 +123,7 @@ const FACE_H = 536 // px
 const FACE_FUDGE = 48
 const FACE_OFFSET = 0.04 // how far each DOM face sits off the body (avoids occlusion clipping)
 
-function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card }: BandProps) {
+function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: BandProps) {
   const band = useRef<any>(null)
   const fixed = useRef<any>(null)
   const j1 = useRef<any>(null)
@@ -115,6 +133,8 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card }: BandProps
   const bodyRef = useRef<any>(null)
 
   const ang = new THREE.Vector3()
+  const quat = new THREE.Quaternion()
+  const euler = new THREE.Euler()
 
   const segmentProps: any = {
     type: 'dynamic' as RigidBodyProps['type'],
@@ -161,7 +181,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card }: BandProps
     [0, 1.45, 0],
   ])
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (!fixed.current || !cardRef.current) return
 
     // Relax band joints toward rest, then redraw the woven strap.
@@ -176,15 +196,18 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card }: BandProps
     curve.points[3].copy(fixed.current.translation())
     band.current.geometry.setPoints(curve.getPoints(isMobile ? 16 : 32))
 
-    // Continuous turn. Driving y-angvel with the derivative of A·sin³(ωt) makes
-    // the angle follow sin³ — it lingers at the front (0°) and sweeps quickly
-    // through the back (±A), so the front is shown far longer. It naturally goes
-    // clockwise, then anticlockwise, forever. The x/z sway stays physics-driven.
-    const t = state.clock.elapsedTime
-    const s = Math.sin(t * ROT_SPEED)
-    const yVel = ROT_AMPLITUDE * 3 * s * s * Math.cos(t * ROT_SPEED) * ROT_SPEED
+    // The x/z sway is fully physics-driven, so it swings in on load and damps to
+    // rest like a real badge. Only the y-facing is steered: toward 0° (front) by
+    // default, or 180° (back) when the flip button is toggled — a one-shot,
+    // ease-to-target turn that then holds still.
+    const r = cardRef.current.rotation()
+    quat.set(r.x, r.y, r.z, r.w)
+    euler.setFromQuaternion(quat, 'YXZ')
+    const targetY = flipRef?.current ? Math.PI : 0
+    let err = targetY - euler.y
+    err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
     ang.copy(cardRef.current.angvel())
-    cardRef.current.setAngvel({ x: ang.x, y: yVel, z: ang.z })
+    cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
   })
 
   curve.curveType = 'chordal'

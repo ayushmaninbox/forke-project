@@ -4,13 +4,14 @@ import { eq, desc, sql, and } from 'drizzle-orm'
 import {
   getLevelFromXp, getLevelTitle, getLevelProgress, getXpForNextLevel,
 } from '@/lib/utils/xp'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { auth } from '@/auth'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
 import { ensureProfileColumns } from '@/lib/actions/profile-actions'
 import PublicProfileView, { ProfileData, ShippedItem, AchievementItem } from '@/components/profile/PublicProfileView'
+import Navbar from '@/components/shared/Navbar'
+import Footer from '@/components/shared/Footer'
 
 const RESERVED_KEYWORDS = [
   'admin', 'api', 'checkout', 'privacy', 'register', 'signin', 'terms', 'waitlist',
@@ -179,39 +180,13 @@ export default async function PublicProfilePage({
 
   return (
     <div className="min-h-screen bg-[#060608] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900 via-[#060608] to-[#060608] text-white font-sans flex flex-col antialiased">
-      {/* Public Header */}
-      <header className="border-b border-white/5 bg-[#060608]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 select-none group">
-            <span className="text-base font-black tracking-widest text-[#ff8a00] font-mono group-hover:text-white transition-colors">FORKE //</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] animate-pulse" />
-          </Link>
-          <div className="flex items-center gap-2">
-            {session?.user ? (
-              <Link href="/dashboard" className="h-9 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 transition-all text-xs font-black text-[#0a0a0a] flex items-center cursor-pointer">Dashboard</Link>
-            ) : (
-              <>
-                <Link href="/signin" className="h-9 px-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-xs font-bold text-white/80 hover:text-white flex items-center cursor-pointer">Sign in</Link>
-                <Link href="/register" className="h-9 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 transition-all text-xs font-black text-[#0a0a0a] flex items-center cursor-pointer">Join Forke</Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-5 py-8 md:py-10">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12">
         <PublicProfileView data={data} isOwnProfile={isOwnProfile} />
       </main>
 
-      <footer className="border-t border-white/5 py-6 bg-[#060608]">
-        <div className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/30 font-medium font-mono">
-          <div>© {new Date().getFullYear()} Forke Technology Group. All rights reserved.</div>
-          <div className="flex items-center gap-4">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
