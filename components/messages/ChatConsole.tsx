@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { getMessagesBetweenUsers, sendMessageAction } from '@/app/(app)/messages/actions'
-import { Send, CheckCheck, Paperclip, Mail, ShieldAlert } from 'lucide-react'
+import { getMessagesBetweenUsers, sendMessageAction, uploadChatFile } from '@/app/(app)/messages/actions'
+import { Send, Check, CheckCheck, Paperclip, Mail, ShieldAlert, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface Contact {
@@ -18,6 +18,10 @@ interface Message {
   receiverId: string
   content: string
   createdAt: Date
+  isReceived: boolean
+  isSeen: boolean
+  fileUrl?: string | null
+  fileName?: string | null
 }
 
 interface ChatConsoleProps {
@@ -30,8 +34,11 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
   const [activeContactId, setActiveContactId] = useState<string>(contacts[0]?.id || '')
   const [messagesList, setMessagesList] = useState<Message[]>(initialMessages)
   const [inputText, setInputText] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [activeContactOnline, setActiveContactOnline] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const activeContact = contacts.find(c => c.id === activeContactId) || contacts[0]
 
@@ -46,7 +53,8 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
     const interval = setInterval(async () => {
       const res = await getMessagesBetweenUsers(currentUserId, activeContactId)
       if (res.success) {
-        setMessagesList(res.messages)
+        setMessagesList(res.messages as Message[])
+        setActiveContactOnline(!!res.isOnline)
       }
     }, 3000)
     return () => clearInterval(interval)
@@ -56,7 +64,8 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
     setActiveContactId(contactId)
     const res = await getMessagesBetweenUsers(currentUserId, contactId)
     if (res.success) {
-      setMessagesList(res.messages)
+      setMessagesList(res.messages as Message[])
+      setActiveContactOnline(!!res.isOnline)
     }
   }
 
@@ -73,6 +82,8 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
       senderId: currentUserId,
       receiverId: activeContactId,
       content: text,
+      isReceived: false,
+      isSeen: false,
       createdAt: new Date()
     }
     setMessagesList(prev => [...prev, optimisticMessage])
@@ -86,7 +97,63 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
       // Re-fetch message logs to get canonical id/timestamp
       const fetchRes = await getMessagesBetweenUsers(currentUserId, activeContactId)
       if (fetchRes.success) {
-        setMessagesList(fetchRes.messages)
+        setMessagesList(fetchRes.messages as Message[])
+        setActiveContactOnline(!!fetchRes.isOnline)
+      }
+    }
+  }
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !activeContactId) return
+
+    setIsUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadRes = await uploadChatFile(formData)
+    if (!uploadRes.success || !uploadRes.fileUrl) {
+      alert(uploadRes.error || 'File upload failed')
+      setIsUploading(false)
+      return
+    }
+
+    // Optimistic UI update for file message
+    const optimisticMsg: Message = {
+      id: Math.random().toString(),
+      senderId: currentUserId,
+      receiverId: activeContactId,
+      content: `Sent a file: ${file.name}`,
+      fileUrl: uploadRes.fileUrl,
+      fileName: file.name,
+      isReceived: false,
+      isSeen: false,
+      createdAt: new Date()
+    }
+    setMessagesList(prev => [...prev, optimisticMsg])
+
+    const sendRes = await sendMessageAction(
+      currentUserId,
+      activeContactId,
+      `Sent a file: ${file.name}`,
+      uploadRes.fileUrl,
+      file.name
+    )
+
+    setIsUploading(false)
+    
+    if (!sendRes.success) {
+      setMessagesList(prev => prev.filter(m => m.id !== optimisticMsg.id))
+      alert(sendRes.error || 'Failed to dispatch file message')
+    } else {
+      const fetchRes = await getMessagesBetweenUsers(currentUserId, activeContactId)
+      if (fetchRes.success) {
+        setMessagesList(fetchRes.messages as Message[])
+        setActiveContactOnline(!!fetchRes.isOnline)
       }
     }
   }
@@ -149,10 +216,12 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
                 </div>
                 <div>
                   <h5 className="text-[13px] font-medium text-white leading-none">{activeContact.name}</h5>
-                  <span className="text-[11px] text-emerald-400 mt-1 block">Active</span>
+                  <span className={cn("text-[11px] mt-1 block font-mono", activeContactOnline ? "text-emerald-400" : "text-white/40")}>
+                    {activeContactOnline ? 'ONLINE' : 'OFFLINE'}
+                  </span>
                 </div>
               </div>
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className={cn("w-2 h-2 rounded-full transition-colors duration-300", activeContactOnline ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-white/20")} />
             </div>
 
             {/* Messages list (scrollable) */}
@@ -174,15 +243,58 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
                         </div>
                       )}
                       <div className={cn(
-                        "px-3 py-2 rounded-lg text-[13px] leading-relaxed relative text-left pb-5",
+                        "px-3 py-2 rounded-lg text-[13px] leading-relaxed relative text-left pb-5 min-w-[120px] max-w-full",
                         isSender
                           ? "bg-accent/15 border border-accent/20 text-white"
                           : "bg-white/[0.03] border border-[var(--color-border)] text-white/85"
                       )}>
-                        {m.content}
-                        <span className="absolute bottom-1 right-2 flex items-center gap-1 text-[10px] text-white/30 tabular-nums">
+                        
+                        {/* File Attachment Render */}
+                        {m.fileUrl ? (
+                          <div className="mb-2">
+                            {/\.(jpg|jpeg|png|gif|webp)$/i.test(m.fileUrl) ? (
+                              <a 
+                                href={m.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="block relative group rounded overflow-hidden border border-white/10 bg-[#0d0d0f]/50 p-0.5"
+                              >
+                                <img src={m.fileUrl} alt={m.fileName || 'Attached image'} className="max-h-36 object-cover rounded hover:opacity-90 transition-opacity" />
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-semibold text-white">
+                                  View Image
+                                </div>
+                              </a>
+                            ) : (
+                              <a 
+                                href={m.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="flex items-center gap-2 p-2 bg-[#0c0c0e] hover:bg-white/[0.04] border border-white/10 rounded-lg text-xs text-accent font-semibold transition-colors"
+                              >
+                                <Paperclip className="w-4 h-4 shrink-0" />
+                                <span className="truncate max-w-[180px] text-white/80">{m.fileName || 'Attached File'}</span>
+                              </a>
+                            )}
+                          </div>
+                        ) : (
+                          m.content
+                        )}
+
+                        {/* WhatsApp Ticks Status */}
+                        <span className="absolute bottom-1 right-2 flex items-center gap-1 text-[9px] text-white/30 font-mono select-none">
                           {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {isSender && <CheckCheck className="w-3 h-3 text-accent" />}
+                          
+                          {isSender && (
+                            <span className="shrink-0 flex ml-0.5">
+                              {m.isSeen ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-sky-400" />
+                              ) : m.isReceived ? (
+                                <CheckCheck className="w-3.5 h-3.5 text-white/40" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5 text-white/30" />
+                              )}
+                            </span>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -198,18 +310,43 @@ export default function ChatConsole({ contacts, currentUserId, initialMessages }
             </div>
 
             {/* Input field */}
-            <form onSubmit={handleSend} className="p-3 border-t border-[var(--color-border)] flex items-center gap-2 shrink-0">
-              <button type="button" className="p-2 text-[var(--color-text-muted)] hover:text-white rounded-lg hover:bg-white/[0.03] cursor-pointer">
-                <Paperclip className="w-4 h-4" />
+            <form onSubmit={handleSend} className="p-3 border-t border-[var(--color-border)] flex items-center gap-2 shrink-0 relative">
+              
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <button 
+                type="button" 
+                onClick={handleFileClick}
+                disabled={isUploading}
+                className="p-2 text-[var(--color-text-muted)] hover:text-white rounded-lg hover:bg-white/[0.03] cursor-pointer disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                ) : (
+                  <Paperclip className="w-4 h-4" />
+                )}
               </button>
+              
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type a message…"
-                className="flex-1 h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white placeholder-white/25 outline-none focus:border-accent transition-colors"
+                placeholder={isUploading ? "Uploading file..." : "Type a message…"}
+                disabled={isUploading}
+                className="flex-1 h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white placeholder-white/25 outline-none focus:border-accent transition-colors disabled:opacity-50"
               />
-              <button type="submit" className="p-2.5 text-[#0a0a0a] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors">
+              
+              <button 
+                type="submit" 
+                disabled={isUploading}
+                className="p-2.5 text-[#0a0a0a] bg-accent hover:bg-accent-hover rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+              >
                 <Send className="w-4 h-4" />
               </button>
             </form>
