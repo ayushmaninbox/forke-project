@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string }>
+  searchParams: Promise<{ tag?: string | string[]; maxBudget?: string; q?: string }>
 }) {
   const session = await auth()
   const user = session?.user as { id: string; xp: number; role?: 'developer' | 'owner' } | undefined
@@ -27,8 +27,9 @@ export default async function TasksPage({
 
   const tags = typeof params.tag === 'string' ? [params.tag] : params.tag
   const maxBudget = params.maxBudget ? parseInt(params.maxBudget) : undefined
+  const q = params.q || ''
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q })
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
