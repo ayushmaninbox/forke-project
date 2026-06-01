@@ -637,13 +637,20 @@ export default function AdminDashboard() {
         <div className="flex-grow flex flex-col overflow-y-auto pt-4">
           
           {/* Logo & Header */}
-          <div className="h-14 flex items-center justify-between px-5 border-b border-[var(--color-border)] mb-4">
-            <span className="font-serif text-xl text-white tracking-wide">
-              Forke<span className="text-accent italic pr-1"> admin</span>
+          <div className="h-14 flex items-center gap-2.5 px-5 border-b border-[var(--color-border)] mb-4 shrink-0">
+            <div className="w-6 h-6 relative flex items-center shrink-0">
+              <img 
+                src="/forke-assets/forke_logo.png" 
+                alt="Forke Logo" 
+                className="absolute -left-3 -top-3 w-12 h-12 max-w-none object-contain"
+              />
+            </div>
+            <span className="font-bold text-xs uppercase tracking-[0.2em] text-white whitespace-nowrap">
+              ADMIN PANEL
             </span>
             <button
               onClick={() => setMobileNavOpen(false)}
-              className="lg:hidden p-1.5 -mr-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 -mr-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer ml-auto"
               aria-label="Close menu"
             >
               <X className="w-5 h-5" />
@@ -873,16 +880,16 @@ export default function AdminDashboard() {
               
               {/* Waitlist Control Card */}
               <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
-                <div className="flex items-center justify-between border-b border-[var(--color-border)] pb-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-white">Waitlist Access Control</h3>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Manage signup restrictions and bypass codes</p>
+                <div className="flex flex-row items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3">
+                  <div className="min-w-0 pr-2">
+                    <h3 className="text-sm font-semibold text-white truncate">Waitlist Access Control</h3>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate sm:not-truncate">Manage signup restrictions and bypass codes</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                     <span className={`w-2 h-2 rounded-full ${
                       waitlistEnabled ? 'bg-accent shadow-[0_0_8px_var(--color-accent)]' : 'bg-white/15'
                     }`} />
-                    <span className="text-xs font-medium text-white">{waitlistEnabled ? 'Gate Enabled' : 'Gate Disabled'}</span>
+                    <span className="text-xs font-medium text-white whitespace-nowrap">{waitlistEnabled ? 'Gate Enabled' : 'Gate Disabled'}</span>
                   </div>
                 </div>
 
@@ -1386,10 +1393,10 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Subscriber ID</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Email Address</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Date & Time Joined</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Actions</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Subscriber ID</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Email Address</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Date & Time Joined</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--color-border)]/50">
@@ -1404,16 +1411,16 @@ export default function AdminDashboard() {
                     ) : (
                       paginatedSubscribers.map((sub) => (
                         <tr key={sub.id} className="group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0">
-                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)]">
+                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
                             <p>{sub.id}</p>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <p className="text-sm font-medium text-white">{sub.email}</p>
                           </td>
-                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)]">
+                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
                             <p>{new Date(sub.createdAt).toLocaleString()}</p>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <button 
                               onClick={() => handleDeleteSubscriber(sub.id)}
                               className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
@@ -1467,13 +1474,13 @@ export default function AdminDashboard() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Administrative Profile</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Email / Credentials</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Access Level</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Last Login</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Status</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Administrative Profile</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Email / Credentials</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Access Level</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Last Login</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Status</th>
                       {currentAdmin?.role === 'super_admin' && (
-                        <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Actions</th>
+                        <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                       )}
                     </tr>
                   </thead>
@@ -1489,7 +1496,7 @@ export default function AdminDashboard() {
                     ) : (
                       paginatedAdmins.map((adm) => (
                         <tr key={adm.id} className={`group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0 ${adm.isDisabled ? 'opacity-40' : ''}`}>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <p className="font-medium text-white text-sm">{adm.name}</p>
                               {adm.alternativeEmail && (
@@ -1499,7 +1506,7 @@ export default function AdminDashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <p className="font-mono text-xs text-[var(--color-text-muted)]">{adm.email}</p>
                               {adm.username ? (
@@ -1513,8 +1520,8 @@ export default function AdminDashboard() {
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                               adm.role === 'super_admin' 
                                 ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' 
                                 : 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
@@ -1522,18 +1529,18 @@ export default function AdminDashboard() {
                               {adm.role === 'super_admin' ? 'Super Admin' : 'Admin'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)]">
+                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
                             {adm.lastLoginAt ? (
-                              <p>
+                              <p className="whitespace-nowrap">
                                 {new Date(adm.lastLoginAt).toLocaleString()}
                               </p>
                             ) : (
-                              <p className="text-white/20 italic">
+                              <p className="text-white/20 italic whitespace-nowrap">
                                 Never logged in
                               </p>
                             )}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             {adm.isDisabled ? (
                               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
                                 <UserX className="w-3 h-3" /> Disabled
@@ -1549,7 +1556,7 @@ export default function AdminDashboard() {
                             )}
                           </td>
                           {currentAdmin?.role === 'super_admin' && (
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               {currentAdmin.id !== adm.id ? (
                                 <div className="flex items-center gap-2">
                                   {/* Toggle Disable/Enable */}
@@ -1587,7 +1594,7 @@ export default function AdminDashboard() {
                                   </button>
                                 </div>
                               ) : (
-                                <span className="text-xs text-white/20 italic">Logged In</span>
+                                <span className="text-xs text-white/20 italic whitespace-nowrap">Logged In</span>
                               )}
                             </td>
                           )}

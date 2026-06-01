@@ -80,6 +80,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   // Fetch all tables on mount
   useEffect(() => {
     fetchTables()
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setPageSize(5)
+    }
   }, [])
 
   // Refetch data when table or query parameters change
