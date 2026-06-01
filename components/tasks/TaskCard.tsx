@@ -2,8 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Lock, Clock, User, ChevronRight } from 'lucide-react'
-import { getRequiredLevel } from '@/lib/utils/xp'
+import { Clock, User, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface TaskCardProps {
@@ -15,7 +14,7 @@ interface TaskCardProps {
     createdAt: Date
   }
   clientName: string
-  userLevel: number
+  userLevel?: number
   isOwner?: boolean
 }
 
@@ -36,8 +35,6 @@ function timeAgo(date: Date) {
 }
 
 export default function TaskCard({ task, clientName, userLevel, isOwner = false }: TaskCardProps) {
-  const requiredLevel = getRequiredLevel(task.skillTags ?? [])
-  const isLocked = !isOwner && userLevel < requiredLevel
   const budgetInRupees = Math.floor(task.budget / 100)
 
   return (
@@ -81,27 +78,11 @@ export default function TaskCard({ task, clientName, userLevel, isOwner = false 
             "flex items-center justify-center gap-1.5 w-full h-9 rounded-lg text-[13px] font-medium transition-colors",
             isOwner
               ? "ui-btn-secondary"
-              : isLocked
-                ? "bg-white/[0.02] text-white/30 border border-[var(--color-border)] cursor-not-allowed"
-                : "ui-btn-primary"
+              : "ui-btn-primary"
           )}
         >
-          {isOwner ? (
-            <>
-              View details
-              <ChevronRight className="w-3.5 h-3.5" />
-            </>
-          ) : isLocked ? (
-            <>
-              <Lock className="w-3.5 h-3.5" />
-              Unlock at Lvl {requiredLevel}
-            </>
-          ) : (
-            <>
-              Claim task
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </>
-          )}
+          View details
+          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
     </div>
