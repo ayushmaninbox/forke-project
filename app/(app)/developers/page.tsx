@@ -1,10 +1,11 @@
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { users, tasks, messages } from '@/lib/db/schema'
+import { eq, desc, and, sql } from 'drizzle-orm'
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
-import { UserCheck } from 'lucide-react'
+import { UserCheck, Mail } from 'lucide-react'
+import Link from 'next/link'
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -16,7 +17,7 @@ function GithubIcon({ className }: { className?: string }) {
 
 export default async function DevelopersPage() {
   const session = await auth()
-  const sessionUser = session?.user
+  const sessionUser = session?.user as { id: string; role?: 'developer' | 'owner'; level: number; xp: number } | undefined
 
   if (!sessionUser) return null
 
@@ -26,6 +27,43 @@ export default async function DevelopersPage() {
     .from(users)
     .where(eq(users.role, 'developer'))
     .orderBy(desc(users.level), desc(users.xp))
+
+  // Fetch tasks claimed by these developers that were posted by the current owner
+  const isOwner = sessionUser.role === 'owner'
+  let ownerClaimedTasks: any[] = []
+  let unreadCounts: Record<string, number> = {}
+
+  if (isOwner) {
+    ownerClaimedTasks = await db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.clientId, sessionUser.id),
+          sql`${tasks.claimantId} IS NOT NULL`
+        )
+      )
+      .orderBy(desc(tasks.createdAt))
+
+    // Fetch unread messages count for this owner grouped by sender
+    const unreadMsgs = await db
+      .select({
+        senderId: messages.senderId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.receiverId, sessionUser.id),
+          eq(messages.isSeen, false)
+        )
+      )
+      .groupBy(messages.senderId)
+    
+    unreadMsgs.forEach(item => {
+      unreadCounts[item.senderId] = item.count
+    })
+  }
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
@@ -49,23 +87,29 @@ export default async function DevelopersPage() {
             {developersList.map((dev) => {
               const devLevel = getLevelFromXp(dev.xp || 0)
               const levelTitle = getLevelTitle(devLevel)
+              const profileHref = dev.username ? `/${dev.username}` : `/profile/${dev.id}`
+              const devTasks = ownerClaimedTasks.filter(t => t.claimantId === dev.id)
 
               return (
-                <div key={dev.id} className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 transition-colors hover:border-white/[0.14] flex flex-col justify-between min-h-[200px] text-left">
+                <div key={dev.id} className="group rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 transition-colors hover:border-white/[0.14] flex flex-col justify-between min-h-[220px] text-left">
                   <div className="space-y-3">
                     {/* Header: Avatar, Name, Level Title */}
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/20 flex items-center justify-center text-accent text-base font-medium shrink-0 overflow-hidden">
-                        {dev.image ? (
-                          <img src={dev.image} alt={dev.name} className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                          dev.name?.[0]?.toUpperCase()
-                        )}
-                      </div>
+                      <Link href={profileHref} className="hover:opacity-85 transition-opacity shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/20 flex items-center justify-center text-accent text-base font-medium shrink-0 overflow-hidden">
+                          {dev.image ? (
+                            <img src={dev.image} alt={dev.name} className="w-full h-full object-cover rounded-full" />
+                          ) : (
+                            dev.name?.[0]?.toUpperCase()
+                          )}
+                        </div>
+                      </Link>
                       <div className="min-w-0 leading-tight space-y-1.5">
-                        <h4 className="text-sm font-medium text-white truncate group-hover:text-accent transition-colors">
-                          {dev.name}
-                        </h4>
+                        <Link href={profileHref} className="group-hover:text-accent transition-colors block">
+                          <h4 className="text-sm font-semibold text-white truncate hover:underline">
+                            {dev.name}
+                          </h4>
+                        </Link>
                         <div className="flex items-center gap-1.5">
                           <span className="px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-medium text-[11px] font-mono">
                             Lvl {devLevel}
@@ -78,34 +122,92 @@ export default async function DevelopersPage() {
                     </div>
 
                     {/* Developer Bio */}
-                    <p className="text-[13px] text-white/45 leading-relaxed line-clamp-3">
+                    <p className="text-[13px] text-white/45 leading-relaxed line-clamp-2">
                       {dev.bio || "No bio provided. Shipping clean code on Forke."}
                     </p>
+
+                    {/* Claimed Tasks Section */}
+                    {isOwner && devTasks.length > 0 && (
+                      <div className="mt-3.5 pt-3.5 border-t border-white/5 space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-white/45 font-mono block">
+                          Claimed from you ({devTasks.length})
+                        </span>
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto pr-0.5">
+                          {devTasks.map((t) => (
+                            <div
+                              key={t.id}
+                              className="flex justify-between items-center gap-3 p-2 bg-white/[0.01] border border-white/5 rounded-lg hover:border-white/10 transition-colors text-[13px]"
+                            >
+                              <Link
+                                href={`/tasks/${t.id}`}
+                                className="text-xs font-semibold text-white/95 hover:text-accent truncate transition-colors max-w-[130px] md:max-w-[160px] block hover:underline"
+                              >
+                                {t.title}
+                              </Link>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[10px] text-accent font-mono font-medium">
+                                  ₹{Math.floor(t.budget / 100).toLocaleString()}
+                                </span>
+                                {t.status === 'submitted' ? (
+                                  <Link
+                                    href={`/tasks/${t.id}`}
+                                    className="px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-[#ff8a00]/15 border border-[#ff8a00]/25 text-[#ff8a00] uppercase hover:bg-[#ff8a00]/25 transition-colors leading-none block hover:underline"
+                                  >
+                                    View Submission
+                                  </Link>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/5 border border-white/10 text-white/40 uppercase leading-none">
+                                    {t.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Footer Stats & Actions */}
-                  <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between">
+                  <div className="pt-4 mt-4 border-t border-[var(--color-border)] flex items-center justify-between gap-3 flex-wrap">
                     <div className="text-left">
                       <span className="text-[11px] text-[var(--color-text-muted)] block">Reputation</span>
                       <span className="text-[13px] text-white/75 font-medium block mt-0.5 tabular-nums">{dev.xp} XP</span>
                     </div>
 
-                    {/* GitHub Link */}
-                    {dev.githubUrl ? (
-                      <a
-                        href={dev.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="h-8 px-3 text-[13px] font-medium ui-btn-secondary rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <GithubIcon className="w-3.5 h-3.5 text-accent" />
-                        <span>GitHub</span>
-                      </a>
-                    ) : (
-                      <span className="text-[11px] text-[var(--color-text-muted)]">
-                        No GitHub
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isOwner && (
+                        <Link
+                          href={`/messages?userId=${dev.id}`}
+                          className="relative h-8 px-3 text-[13px] font-bold bg-[#ff8a00]/10 border border-[#ff8a00]/20 text-[#ff8a00] hover:bg-[#ff8a00]/20 hover:border-[#ff8a00]/30 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5 shrink-0" />
+                          <span>Message</span>
+                          {unreadCounts[dev.id] > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 px-1 py-0.5 text-[9px] font-bold leading-none bg-red-500 text-white rounded-full min-w-4 text-center shadow-[0_0_8px_#ef4444]">
+                              {unreadCounts[dev.id]}
+                            </span>
+                          )}
+                        </Link>
+                      )}
+
+                      {/* GitHub Link */}
+                      {dev.githubUrl ? (
+                        <a
+                          href={dev.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-8 px-3 text-[13px] font-medium ui-btn-secondary rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <GithubIcon className="w-3.5 h-3.5 text-accent" />
+                          <span>GitHub</span>
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-[var(--color-text-muted)]">
+                          No GitHub
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                 </div>
