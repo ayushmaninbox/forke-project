@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { users, owners, tasks, submissions } from '@/lib/db/schema'
 import { eq, desc, sql, and } from 'drizzle-orm'
 import {
-  getLevelFromXp, getLevelTitle, getLevelProgress, getXpForNextLevel,
+  getLevelFromXp, getLevelTitle, getLevelProgress, getXpForNextLevel, calculateXpAward,
 } from '@/lib/utils/xp'
 import { redirect } from 'next/navigation'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
@@ -12,20 +12,54 @@ import { ensureProfileColumns } from '@/lib/actions/profile-actions'
 import ProfileEditor from '@/components/profile/ProfileEditor'
 import { ShippedItem, AchievementItem, ProfileData } from '@/components/profile/PublicProfileView'
 
-function buildHeatmap(dates: Date[]): { date: string; count: number }[] {
-  const days = 182 // 26 weeks
+function getStreakMilestoneBonus(day: number): number {
+  if (day === 30) return 150
+  if (day === 14) return 100
+  if (day === 7) return 50
+  if (day === 5) return 30
+  if (day === 2) return 15
+  return 0
+}
+
+function toLocalDateString(date: Date) {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function buildHeatmap(activities: { date: Date; xp: number }[], currentStreak: number): { date: string; count: number }[] {
+  const days = 371 // 53 weeks
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const counts = new Map<string, number>()
-  for (const d of dates) {
-    const key = new Date(d).toISOString().slice(0, 10)
-    counts.set(key, (counts.get(key) || 0) + 1)
+  
+  for (const act of activities) {
+    const key = toLocalDateString(new Date(act.date))
+    counts.set(key, (counts.get(key) || 0) + act.xp + 10)
   }
+  
+  for (let s = 0; s < currentStreak; s++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - s)
+    const key = toLocalDateString(d)
+    
+    const streakDayNum = currentStreak - s
+    const milestoneBonus = getStreakMilestoneBonus(streakDayNum)
+    
+    const existing = counts.get(key) || 0
+    if (existing > 0) {
+      counts.set(key, existing + milestoneBonus)
+    } else {
+      counts.set(key, 10 + milestoneBonus)
+    }
+  }
+
   const out: { date: string; count: number }[] = []
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today)
     d.setDate(today.getDate() - i)
-    const key = d.toISOString().slice(0, 10)
+    const key = toLocalDateString(d)
     out.push({ date: key, count: counts.get(key) || 0 })
   }
   return out
@@ -77,7 +111,7 @@ export default async function ProfilePage() {
   let avgRating: number | null = null
   let completionRate: number | null = null
   let earned = 0
-  let shipDates: Date[] = []
+  let shipActivities: { date: Date; xp: number }[] = []
 
   if (isOwner) {
     const rows = await db
@@ -88,13 +122,14 @@ export default async function ProfilePage() {
       .limit(30)
     shippedWork = rows.map((r) => ({ id: r.id, title: r.title, budget: Math.floor((r.budget || 0) / 100), tags: r.tags || [], rating: null, prUrl: null, date: r.date.toISOString() }))
     shipped = rows.length
-    shipDates = rows.map((r) => r.date)
+    shipActivities = rows.map((r) => ({ date: r.date, xp: 100 }))
     earned = rows.reduce((s, r) => s + Math.floor((r.budget || 0) / 100), 0)
   } else {
     const rows = await db
       .select({
         id: tasks.id, title: tasks.title, budget: tasks.budget, tags: tasks.skillTags,
         rating: submissions.rating, prUrl: submissions.githubLink, date: submissions.createdAt,
+        taskCreatedAt: tasks.createdAt, deadline: tasks.deadline
       })
       .from(submissions)
       .innerJoin(tasks, eq(submissions.taskId, tasks.id))
@@ -103,7 +138,20 @@ export default async function ProfilePage() {
       .limit(30)
     shippedWork = rows.map((r) => ({ id: r.id, title: r.title, budget: Math.floor((r.budget || 0) / 100), tags: r.tags || [], rating: r.rating ?? null, prUrl: r.prUrl ?? null, date: r.date.toISOString() }))
     shipped = rows.length
-    shipDates = rows.map((r) => r.date)
+    shipActivities = rows.map((r) => {
+      const xpVal = calculateXpAward({
+        budgetPaise: r.budget || 0,
+        taskCreatedAt: r.taskCreatedAt,
+        submittedAt: r.date,
+        deadline: r.deadline,
+        rating: r.rating,
+        hadRevision: false
+      })
+      return {
+        date: r.date,
+        xp: xpVal
+      }
+    })
     earned = rows.reduce((s, r) => s + Math.floor((r.budget || 0) / 100), 0)
 
     const ratings = rows.map((r) => r.rating).filter((r): r is number => typeof r === 'number')
@@ -144,7 +192,7 @@ export default async function ProfilePage() {
     stats: { shipped, avgRating, completionRate },
     shippedWork,
     achievements: buildAchievements({ shipped, level, streak: dbUser.currentStreak || 0, earned }),
-    heatmap: buildHeatmap(shipDates),
+    heatmap: buildHeatmap(shipActivities, dbUser.currentStreak || 0),
   }
 
   return (

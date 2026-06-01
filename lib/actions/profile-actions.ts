@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { users } from '@/lib/db/schema'
+import { users, accounts, githubProfiles } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
@@ -27,8 +27,8 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024 // 5MB
 
 /**
  * Uploads an avatar. The file is written under a SHA-256 content-hash name and
- * its path is stored AES-256-GCM encrypted on the user row, so the real file
- * location is never exposed in the database or HTML.
+ * returns the plaintext path for client preview. It is not saved to the database
+ * until the user clicks "Save changes".
  */
 export async function uploadAvatar(formData: FormData) {
   const session = await auth()
@@ -54,11 +54,6 @@ export async function uploadAvatar(formData: FormData) {
     await writeFile(join(uploadsDir, fileName), buffer)
 
     const publicPath = `/uploads/avatars/${fileName}`
-    // Store the path encrypted so the raw location never leaves the server in cleartext.
-    await db.update(users).set({ image: encryptUrl(publicPath) }).where(eq(users.id, session.user.id))
-
-    revalidatePath('/[username]', 'page')
-    // Return the plaintext path for instant client preview.
     return { success: true, url: publicPath }
   } catch (error) {
     console.error('Avatar upload failed:', error)
@@ -74,6 +69,7 @@ export interface ProfileUpdateInput {
   githubUrl?: string
   linkedinUrl?: string
   websiteUrl?: string
+  avatarUrl?: string | null
 }
 
 export async function updateProfile(data: ProfileUpdateInput) {
@@ -99,13 +95,66 @@ export async function updateProfile(data: ProfileUpdateInput) {
   const name = data.name?.trim()
   if (name) set.name = name
 
+  if (data.avatarUrl !== undefined) {
+    set.image = data.avatarUrl ? encryptUrl(data.avatarUrl) : null
+  }
+
   try {
     await db.update(users).set(set).where(eq(users.id, session.user.id))
     revalidatePath('/[username]', 'page')
+    revalidatePath('/profile')
     revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Profile update failed:', error)
     return { success: false, error: 'Could not save profile' }
   }
+}
+
+/**
+ * Fetches linked avatar URLs from OAuth providers (GitHub, Google).
+ * Returns whichever are available for the current user.
+ */
+export async function getLinkedAvatars(): Promise<{ github: string | null; google: string | null }> {
+  const session = await auth()
+  if (!session?.user?.id) return { github: null, google: null }
+
+  let githubAvatar: string | null = null
+  let googleAvatar: string | null = null
+
+  try {
+    // GitHub avatar from the githubProfiles table
+    const ghProfile = await db.query.githubProfiles.findFirst({
+      where: eq(githubProfiles.userId, session.user.id),
+    })
+    if (ghProfile?.avatarUrl) {
+      githubAvatar = ghProfile.avatarUrl
+    }
+
+    // Google avatar from the accounts table + users.image (original OAuth image)
+    const googleAccount = await db.query.accounts.findFirst({
+      where: eq(accounts.userId, session.user.id),
+    })
+    if (googleAccount?.provider === 'google') {
+      // The original OAuth image was stored in users.image on first sign-in
+      // We can construct the Google avatar from the providerAccountId
+      googleAvatar = `https://lh3.googleusercontent.com/a/${googleAccount.providerAccountId}`
+    }
+
+    // Also check all accounts for any Google one
+    const allAccounts = await db.select().from(accounts).where(eq(accounts.userId, session.user.id))
+    for (const acct of allAccounts) {
+      if (acct.provider === 'github' && !githubAvatar) {
+        // Fallback: construct from provider account ID
+        githubAvatar = `https://avatars.githubusercontent.com/u/${acct.providerAccountId}`
+      }
+      if (acct.provider === 'google' && !googleAvatar) {
+        googleAvatar = `https://lh3.googleusercontent.com/a/${acct.providerAccountId}`
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching linked avatars:', error)
+  }
+
+  return { github: githubAvatar, google: googleAvatar }
 }

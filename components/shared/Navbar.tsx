@@ -6,9 +6,12 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
+import { useSession } from 'next-auth/react'
 
 export default function Navbar() {
   const router = useRouter()
+  const { data: session } = useSession()
+  const isLoggedIn = !!session?.user
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -68,13 +71,23 @@ export default function Navbar() {
           
           {/* Right: CTA Section */}
           <div className="flex items-center gap-4 shrink-0">
-            <Button 
-              variant="primary" 
-              className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
-              onClick={() => router.push('/register')}
-            >
-              Get Started
-            </Button>
+            {isLoggedIn ? (
+              <Button 
+                variant="primary" 
+                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                onClick={() => router.push('/dashboard')}
+              >
+                Dashboard
+              </Button>
+            ) : (
+              <Button 
+                variant="primary" 
+                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                onClick={() => router.push('/register')}
+              >
+                Get Started
+              </Button>
+            )}
 
             {/* Mobile Menu Button */}
             <div className="lg:hidden flex items-center">
@@ -116,12 +129,18 @@ export default function Navbar() {
             ))}
           </div>
           <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-            <Button variant="outline" className="w-full rounded-full" onClick={() => router.push('/register')}>
+            <Button variant="outline" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
               Post a Task
             </Button>
-            <Button variant="primary" className="w-full rounded-full" onClick={() => router.push('/register')}>
-              Get Started
-            </Button>
+            {isLoggedIn ? (
+              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
+                Dashboard
+              </Button>
+            ) : (
+              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
+                Get Started
+              </Button>
+            )}
           </div>
         </div>
       )}

@@ -1,12 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   MapPin, Calendar, Flame, Link2, Globe,
-  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Sparkles, Pencil,
+  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Sparkles, Pencil, Share2, X,
 } from 'lucide-react'
+import { toast } from '@/components/shared/Toast'
 import CopyProfileButton from '@/components/shared/CopyProfileButton'
 
 // three.js can't render on the server — load the lanyard client-only.
@@ -93,6 +94,7 @@ export default function PublicProfileView({
   /** When true: card column is pinned full-height and only the bento scrolls. */
   contained?: boolean
 }) {
+  const [shareOpen, setShareOpen] = useState(false)
   const joined = new Date(data.joinedAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 
   const cardCol = (
@@ -111,12 +113,13 @@ export default function PublicProfileView({
             <p className="text-sm text-white/40 font-mono mt-0.5">@{data.username}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <CopyProfileButton username={data.username} />
-            {isOwnProfile && (
-              <Link href="/profile" className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all text-xs font-bold text-white/80 hover:text-white">
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </Link>
-            )}
+            <button
+              onClick={() => setShareOpen(true)}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.15] border border-white/10 hover:border-white/20 text-white text-xs font-bold transition-all cursor-pointer select-none active:scale-[0.98] shadow-md"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share</span>
+            </button>
           </div>
         </div>
 
@@ -156,65 +159,71 @@ export default function PublicProfileView({
       </div>
 
       {/* Shipped work */}
-      <Section icon={<Trophy className="w-4 h-4 text-[#ff8a00]" />} title="Shipped Work" subtitle="Verified · timestamped · GitHub-linked">
-        {data.shippedWork.length === 0 ? (
-          <Empty text="No shipped work yet. Approved tasks appear here as verified proof of work." />
-        ) : (
-          <div className="divide-y divide-white/[0.04]">
-            {data.shippedWork.map((t) => (
-              <div key={t.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0 group">
-                <div className="min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-white/95 truncate group-hover:text-accent transition-colors">{t.title}</h4>
-                    {t.rating != null && (
-                      <span className="shrink-0 flex items-center gap-0.5 text-[11px] text-amber-400 font-bold"><Star className="w-3 h-3 fill-amber-400" />{t.rating}</span>
+      {(!contained && data.shippedWork.length === 0) ? null : (
+        <Section icon={<Trophy className="w-4 h-4 text-[#ff8a00]" />} title="Shipped Work" subtitle="Verified · timestamped · GitHub-linked">
+          {data.shippedWork.length === 0 ? (
+            <Empty text="No shipped work yet. Approved tasks appear here as verified proof of work." />
+          ) : (
+            <div className="divide-y divide-white/[0.04]">
+              {data.shippedWork.map((t) => (
+                <div key={t.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0 group">
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-semibold text-white/95 truncate group-hover:text-accent transition-colors">{t.title}</h4>
+                      {t.rating != null && (
+                        <span className="shrink-0 flex items-center gap-0.5 text-[11px] text-amber-400 font-bold"><Star className="w-3 h-3 fill-amber-400" />{t.rating}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {t.tags.slice(0, 5).map((tag) => (
+                        <span key={tag} className="px-1.5 py-0.5 bg-white/[0.02] border border-white/[0.06] text-[10px] text-white/40 rounded font-semibold">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <span className="text-sm font-black text-accent font-mono">₹{t.budget.toLocaleString()}</span>
+                    {t.prUrl ? (
+                      <a href={t.prUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-accent/40 hover:text-accent text-white/70 text-xs font-bold transition-colors">
+                        <Github className="w-3.5 h-3.5" /> PR <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-white/20 font-mono">{new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {t.tags.slice(0, 5).map((tag) => (
-                      <span key={tag} className="px-1.5 py-0.5 bg-white/[0.02] border border-white/[0.06] text-[10px] text-white/40 rounded font-semibold">{tag}</span>
-                    ))}
-                  </div>
                 </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className="text-sm font-black text-accent font-mono">₹{t.budget.toLocaleString()}</span>
-                  {t.prUrl ? (
-                    <a href={t.prUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:border-accent/40 hover:text-accent text-white/70 text-xs font-bold transition-colors">
-                      <Github className="w-3.5 h-3.5" /> PR <ExternalLink className="w-3 h-3" />
-                    </a>
-                  ) : (
-                    <span className="text-[11px] text-white/20 font-mono">{new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
+              ))}
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* Achievements */}
-      <Section icon={<Award className="w-4 h-4 text-[#ff8a00]" />} title="Achievements" subtitle={`${data.achievements.filter(a => a.unlocked).length} / ${data.achievements.length} unlocked`}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {data.achievements.map((a) => {
-            const Icon = ACH_ICON[a.icon]
-            return (
-              <div key={a.id} className={`rounded-xl border p-3.5 flex items-start gap-3 transition-colors ${a.unlocked ? 'border-accent/25 bg-accent/[0.04]' : 'border-white/[0.05] bg-white/[0.01] opacity-50'}`}>
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.unlocked ? 'bg-accent/15 text-accent' : 'bg-white/[0.03] text-white/30'}`}>
-                  <Icon className="w-[18px] h-[18px]" />
-                </div>
-                <div className="min-w-0">
-                  <p className={`text-xs font-bold truncate ${a.unlocked ? 'text-white' : 'text-white/40'}`}>{a.label}</p>
-                  <p className="text-[10px] text-white/35 leading-tight mt-0.5">{a.desc}</p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </Section>
+      {(!contained && data.achievements.filter(a => a.unlocked).length === 0) ? null : (
+        <Section icon={<Award className="w-4 h-4 text-[#ff8a00]" />} title="Achievements" subtitle={`${data.achievements.filter(a => a.unlocked).length} / ${data.achievements.length} unlocked`}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {data.achievements
+              .filter((a) => contained || a.unlocked)
+              .map((a) => {
+                const Icon = ACH_ICON[a.icon]
+                return (
+                  <div key={a.id} className={`rounded-xl border p-3.5 flex items-start gap-3 transition-colors ${a.unlocked ? 'border-accent/25 bg-accent/[0.04]' : 'border-white/[0.05] bg-white/[0.01] opacity-50'}`}>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${a.unlocked ? 'bg-accent/15 text-accent' : 'bg-white/[0.03] text-white/30'}`}>
+                      <Icon className="w-[18px] h-[18px]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold truncate ${a.unlocked ? 'text-white' : 'text-white/40'}`}>{a.label}</p>
+                      <p className="text-[10px] text-white/35 leading-tight mt-0.5">{a.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </Section>
+      )}
 
       {/* Heatmap */}
-      <Section icon={<Sparkles className="w-4 h-4 text-[#ff8a00]" />} title="Contribution Activity" subtitle="Shipped tasks · last 26 weeks">
-        <Heatmap data={data.heatmap} />
+      <Section icon={<Sparkles className="w-4 h-4 text-[#ff8a00]" />} title="XP Activity">
+        <Heatmap data={data.heatmap} username={data.username} joinedAt={data.joinedAt} />
       </Section>
     </>
   )
@@ -225,6 +234,7 @@ export default function PublicProfileView({
       <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0">
         <div className="lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
+        {shareOpen && <ShareModal username={data.username} onClose={() => setShareOpen(false)} />}
       </div>
     )
   }
@@ -235,7 +245,8 @@ export default function PublicProfileView({
   return (
     <div className="grid lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start">
       <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
-      <div className="space-y-4 min-w-0">{bento}</div>
+      <div className="space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
+      {shareOpen && <ShareModal username={data.username} onClose={() => setShareOpen(false)} />}
     </div>
   )
 }
@@ -273,28 +284,465 @@ function Empty({ text }: { text: string }) {
   return <p className="text-[13px] text-white/30 py-6 text-center">{text}</p>
 }
 
-function Heatmap({ data }: { data: { date: string; count: number }[] }) {
-  const max = Math.max(1, ...data.map((d) => d.count))
-  const level = (c: number) => (c === 0 ? 0 : Math.min(4, Math.ceil((c / max) * 4)))
-  const colors = ['bg-white/[0.04]', 'bg-accent/25', 'bg-accent/45', 'bg-accent/70', 'bg-accent']
-  const weeks: { date: string; count: number }[][] = []
-  for (let i = 0; i < data.length; i += 7) weeks.push(data.slice(i, i + 7))
+/* --------------------------- Daily XP Heatmap Generator & Widget --------------------------- */
+
+function toLocalDateString(date: Date) {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function getDaysForMonth(
+  year: number,
+  month: number,
+  username: string,
+  realData: { date: string; count: number }[],
+  joinYear: number
+) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const out: { date: string; count: number }[] = []
+  
+  const realMap = new Map<string, number>()
+  for (const item of realData) {
+    realMap.set(item.date, item.count)
+  }
+  
+  // Only generate deterministic fake data for years strictly before the join year
+  const useFakeData = year < joinYear
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    if (realMap.has(dateStr)) {
+      out.push({ date: dateStr, count: realMap.get(dateStr) || 0 })
+    } else if (useFakeData) {
+      // Deterministic generator for demo years before account creation
+      const seed = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + year
+      const xpBuckets = [0, 100, 250, 450, 600]
+      
+      const dateObj = new Date(year, month, d)
+      const startOfYear = new Date(year, 0, 0)
+      const diff = dateObj.getTime() - startOfYear.getTime()
+      const dayIndex = Math.floor(diff / (1000 * 60 * 60 * 24))
+      
+      const x = Math.sin(seed + dayIndex) * 10000
+      const rand = x - Math.floor(x)
+      
+      let xp = 0
+      if (rand < 0.82) {
+        xp = 0
+      } else if (rand < 0.91) {
+        xp = xpBuckets[1]
+      } else if (rand < 0.96) {
+        xp = xpBuckets[2]
+      } else if (rand < 0.985) {
+        xp = xpBuckets[3]
+      } else {
+        xp = xpBuckets[4]
+      }
+      
+      out.push({ date: dateStr, count: xp })
+    } else {
+      // Real year with no data for this date — show 0
+      out.push({ date: dateStr, count: 0 })
+    }
+  }
+  return out
+}
+
+function buildMonthGrid(
+  year: number,
+  month: number,
+  username: string,
+  realData: { date: string; count: number }[],
+  joinYear: number
+) {
+  const days = getDaysForMonth(year, month, username, realData, joinYear)
+  const firstDayOfWeek = new Date(year, month, 1).getDay() // 0 is Sunday, 1 is Monday, etc.
+  
+  const totalSlots = firstDayOfWeek + days.length
+  const totalWeeks = Math.ceil(totalSlots / 7)
+  
+  const slots: ({ date: string; count: number } | null)[] = []
+  
+  // Pad beginning
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    slots.push(null)
+  }
+  
+  // Add real days
+  for (const d of days) {
+    slots.push(d)
+  }
+  
+  // Pad end
+  const paddedLength = totalWeeks * 7
+  while (slots.length < paddedLength) {
+    slots.push(null)
+  }
+  
+  // Slice into columns of 7 days
+  const weeks: ({ date: string; count: number } | null)[][] = []
+  for (let w = 0; w < totalWeeks; w++) {
+    weeks.push(slots.slice(w * 7, (w + 1) * 7))
+  }
+  
+  return weeks
+}
+
+function Heatmap({ data, username, joinedAt }: { data: { date: string; count: number }[]; username: string; joinedAt: string }) {
+  const currentYear = new Date().getFullYear()
+  const joinYear = joinedAt ? (new Date(joinedAt).getFullYear() || currentYear) : currentYear
+  
+  const [activeYear, setActiveYear] = useState<string>('trailing')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Build the list of months to render
+  const months: { year: number; month: number }[] = []
+  
+  if (activeYear === 'trailing') {
+    const today = new Date()
+    const cy = today.getFullYear()
+    const cm = today.getMonth() // 0-11
+    
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(cy, cm - i, 1)
+      months.push({ year: d.getFullYear(), month: d.getMonth() })
+    }
+  } else {
+    const y = parseInt(activeYear)
+    for (let m = 0; m < 12; m++) {
+      months.push({ year: y, month: m })
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
+      }
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [activeYear])
+
+  // Find the maximum XP count in the visible months to scale colors dynamically
+  const maxXP = months.reduce((max, { year, month }) => {
+    const days = getDaysForMonth(year, month, username, data, joinYear)
+    return Math.max(max, ...days.map(d => d.count))
+  }, 0)
+
+  const level = (c: number) => {
+    if (c === 0) return 0
+    if (maxXP === 0) return 1
+    if (c <= maxXP * 0.25) return 1
+    if (c <= maxXP * 0.5) return 2
+    if (c <= maxXP * 0.75) return 3
+    return 4
+  }
+
+  const colors = [
+    'bg-white/[0.04] border border-white/[0.02]',
+    'bg-[#ff8a00]/15 border border-[#ff8a00]/20',
+    'bg-[#ff8a00]/40 border border-[#ff8a00]/45',
+    'bg-[#ff8a00]/70 border border-[#ff8a00]/75',
+    'bg-[#ff8a00] shadow-[0_0_10px_rgba(255,138,0,0.45)]',
+  ]
+
+  // Calculate total sum of counts for the selected year
+  const totalSum = months.reduce((sum, { year, month }) => {
+    const days = getDaysForMonth(year, month, username, data, joinYear)
+    return sum + days.reduce((s, d) => s + d.count, 0)
+  }, 0)
+
+  const contributionHeader = 
+    activeYear === 'trailing'
+      ? `${totalSum.toLocaleString()} XP gained in the last year`
+      : `${totalSum.toLocaleString()} XP gained in ${activeYear}`
+
+  const years: string[] = []
+  for (let y = currentYear; y >= joinYear; y--) {
+    years.push(String(y))
+  }
+
+  const getTooltipTextOnly = (count: number) => {
+    if (count === 0) return 'No XP gained'
+    if (count === 10) return '10 XP (Daily Login)'
+    if (count === 25) return '25 XP (Daily Login + 15 XP Streak Milestone)'
+    if (count === 40) return '40 XP (Daily Login + 30 XP Streak Milestone)'
+    if (count === 60) return '60 XP (Daily Login + 50 XP Streak Milestone)'
+    if (count === 110) return '110 XP (Daily Login + 100 XP Streak Milestone)'
+    if (count === 160) return '160 XP (Daily Login + 150 XP Streak Milestone)'
+    
+    if (count > 100) {
+      let shippedXp = count - 10
+      let streakMilestone = 0
+      
+      const milestones = [15, 30, 50, 100, 150]
+      for (const m of milestones) {
+        const testShipped = shippedXp - m
+        if (testShipped === 100 || testShipped === 250 || testShipped === 450 || testShipped === 600 || testShipped === 0) {
+          shippedXp = testShipped
+          streakMilestone = m
+          break
+        }
+      }
+      
+      if (shippedXp > 0 && streakMilestone > 0) {
+        return `${count.toLocaleString()} XP (${shippedXp} XP Shipped + ${streakMilestone} XP Streak + 10 XP Login)`
+      }
+      if (shippedXp > 0) {
+        return `${count.toLocaleString()} XP (${shippedXp} XP Shipped + 10 XP Login)`
+      }
+      if (streakMilestone > 0) {
+        return `${count.toLocaleString()} XP (${streakMilestone} XP Streak + 10 XP Login)`
+      }
+    }
+    
+    return `${count.toLocaleString()} XP gained`
+  }
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-1 min-w-max">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-1">
-            {week.map((d) => (
-              <div key={d.date} title={`${d.count} shipped · ${d.date}`} className={`w-3 h-3 rounded-[3px] ${colors[level(d.count)]}`} />
-            ))}
+    <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
+      {/* Calendar Card (Left) */}
+      <div className="flex-1 min-w-0 rounded-xl border border-white/[0.08] bg-black/40 p-5 flex flex-col gap-4">
+        <div className="flex items-center">
+          <span className="text-[15px] font-semibold text-white/90 font-sans">{contributionHeader}</span>
+        </div>
+
+        <div ref={scrollRef} className="overflow-x-auto scrollbar-none pt-8 pb-6">
+          <div className="flex gap-4 min-w-max items-end">
+            {months.map(({ year, month }, mi) => {
+              const weeks = buildMonthGrid(year, month, username, data, joinYear)
+              const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'short' })
+              
+              return (
+                <div key={mi} className="flex flex-col items-center gap-2 select-none">
+                  {/* Heatmap blocks grid for this month */}
+                  <div className="flex gap-1">
+                    {weeks.map((week, wi) => (
+                      <div key={wi} className="flex flex-col gap-1">
+                        {week.map((d, di) => {
+                          if (!d) return <div key={di} className="w-3 h-3" /> // blank gap!
+                          const hasXp = d.count > 0
+                          const isTopRow = di < 3
+                          return (
+                            <div key={d.date} className="relative group">
+                              <div 
+                                className={`w-3 h-3 rounded-[2.5px] transition-all hover:scale-110 cursor-pointer ${colors[level(d.count)]}`} 
+                              />
+                              {hasXp && (
+                                isTopRow ? (
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-[120]">
+                                    {/* Up arrow */}
+                                    <div className="w-1.5 h-1.5 bg-[#0b0a0d] border-l border-t border-white/10 transform rotate-45 -mb-[4px] z-[121]" />
+                                    <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
+                                      <span className="font-semibold text-white/90">{getTooltipTextOnly(d.count)}</span>
+                                      <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-[120]">
+                                    <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
+                                      <span className="font-semibold text-white/90">{getTooltipTextOnly(d.count)}</span>
+                                      <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
+                                    </div>
+                                    {/* Down arrow */}
+                                    <div className="w-1.5 h-1.5 bg-[#0b0a0d] border-r border-b border-white/10 transform rotate-45 -mt-[4px]" />
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Centered Month label */}
+                  <span className="text-[10px] font-mono text-white/30 tracking-wide">
+                    {monthName}
+                  </span>
+                </div>
+              )
+            })}
           </div>
-        ))}
+        </div>
+
+        {/* Legend / footer */}
+        <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 text-[10px] text-white/30 font-sans">
+          <span className="text-white/20 select-none">
+            Developer activity proof-of-work
+          </span>
+          <div className="flex items-center gap-1.5 select-none">
+            <span>Less</span>
+            {colors.map((c, i) => <div key={i} className={`w-3 h-3 rounded-[2.5px] ${c}`} />)}
+            <span>More</span>
+          </div>
+        </div>
       </div>
-      <div className="flex items-center gap-1.5 mt-3 text-[10px] text-white/30 font-mono">
-        <span>Less</span>
-        {colors.map((c, i) => <div key={i} className={`w-3 h-3 rounded-[3px] ${c}`} />)}
-        <span>More</span>
+
+      {/* Year Tabs (Right) - Styled exactly like GitHub vertical tabs */}
+      <div className="w-full lg:w-28 shrink-0 flex flex-row lg:flex-col gap-1 select-none overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0">
+        {years.map((y) => {
+          const isActive = activeYear === y || (activeYear === 'trailing' && y === String(currentYear))
+          return (
+            <button
+              key={y}
+              onClick={() => {
+                if (y === String(currentYear)) {
+                  if (activeYear === 'trailing') {
+                    setActiveYear(y)
+                  } else {
+                    setActiveYear('trailing')
+                  }
+                } else {
+                  setActiveYear(y)
+                }
+              }}
+              className={`text-xs font-bold py-1.5 px-3 text-left rounded-lg transition-all cursor-pointer shrink-0 w-full ${
+                isActive 
+                  ? 'bg-[#ff8a00] text-black font-black shadow-[0_0_12px_rgba(255,138,0,0.3)]' 
+                  : 'text-white/40 hover:text-white/80 hover:bg-white/5'
+              }`}
+            >
+              {y}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* --------------------------- Forke-Branded Share Modal --------------------------- */
+
+interface ShareModalProps {
+  username: string
+  onClose: () => void
+}
+
+function ShareModal({ username, onClose }: ShareModalProps) {
+  const profileUrl = typeof window !== 'undefined' ? `${window.location.origin}/${username}` : `https://forke.space/${username}`
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(profileUrl)
+      setCopied(true)
+      toast('Copied to clipboard!', 'success')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      toast('Failed to copy link', 'error')
+    }
+  }
+
+  const socialChannels = [
+    {
+      name: 'WhatsApp',
+      icon: (
+        <svg className="w-5.5 h-5.5 fill-current" viewBox="0 0 24 24">
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.714-1.463L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.745 1.451 5.436 0 9.86-4.413 9.863-9.847.001-2.63-1.019-5.101-2.871-6.958C16.512 1.982 14.047.962 11.437.962 6.002.962 1.579 5.375 1.577 10.81c0 1.597.49 3.158 1.42 4.542l-.993 3.626 3.71-.974-.157-.25z" />
+        </svg>
+      ),
+      action: () => window.open(`https://api.whatsapp.com/send?text=Check out my Forke profile: ${profileUrl}`, '_blank')
+    },
+    {
+      name: 'X',
+      icon: (
+        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+      ),
+      action: () => window.open(`https://twitter.com/intent/tweet?text=Check out my Forke developer profile!&url=${profileUrl}`, '_blank')
+    },
+    {
+      name: 'Facebook',
+      icon: (
+        <svg className="w-5.5 h-5.5 fill-current" viewBox="0 0 24 24">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+        </svg>
+      ),
+      action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${profileUrl}`, '_blank')
+    },
+    {
+      name: 'LinkedIn',
+      icon: (
+        <svg className="w-5.5 h-5.5 fill-current" viewBox="0 0 24 24">
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+        </svg>
+      ),
+      action: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${profileUrl}`, '_blank')
+    },
+    {
+      name: 'Reddit',
+      icon: (
+        <svg className="w-5.5 h-5.5 fill-current" viewBox="0 0 24 24">
+          <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-.683 1.12c.045.187.067.38.067.575 0 2.87-3.486 5.2-7.788 5.2-4.3 0-7.788-2.33-7.788-5.2 0-.19.022-.38.067-.575a1.25 1.25 0 0 1-.68-1.12c0-.688.563-1.25 1.25-1.25.378 0 .708.172.938.442C5.578 4.3 7.64 3.793 9.9 3.722l.745-2.327 2.052.44a.976.976 0 1 1-.1 1.943.978.978 0 0 1-.87-.714l-1.572-.338-.636 1.986c2.277.065 4.349.57 5.561 1.583a1.246 1.246 0 0 1 .938-.451zm-7.666 3.666a.89.89 0 0 0-.889.89.89.89 0 0 0 .889.888.89.89 0 0 0 .888-.888.89.89 0 0 0-.888-.89zm3.333 0a.89.89 0 0 0-.888.89c0 .49.4.888.888.888a.89.89 0 0 0 .89-.888c0-.49-.4-.89-.89-.89zm-4.32 3.111c-.056.056-.056.147 0 .204a2.915 2.915 0 0 0 4.198 0c.056-.056.056-.148 0-.204a.144.144 0 0 0-.204 0c-.86.86-2.25.86-3.11 0a.144.144 0 0 0-.205 0z"/>
+        </svg>
+      ),
+      action: () => window.open(`https://www.reddit.com/submit?url=${profileUrl}&title=Check out my Forke developer profile!`, '_blank')
+    },
+    {
+      name: 'Email',
+      icon: (
+        <svg className="w-5.5 h-5.5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
+        </svg>
+      ),
+      action: () => window.open(`mailto:?subject=Check out my Forke developer profile!&body=Hey, take a look at my Forke developer profile here: ${profileUrl}`, '_self')
+    }
+  ]
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
+      <div 
+        className="w-full max-w-md rounded-2xl bg-[#0c0c0f]/95 border border-[#ff8a00]/15 p-6 shadow-[0_32px_64px_rgba(0,0,0,0.9),_0_0_50px_rgba(255,138,0,0.05)] relative text-left flex flex-col gap-6 animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black tracking-widest font-mono text-white flex items-center gap-1.5 uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00] animate-pulse" />
+            Share Profile
+          </h2>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Premium grid layout themed to the site */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 w-full">
+          {socialChannels.map((c) => (
+            <button 
+              key={c.name} 
+              onClick={() => { c.action(); onClose(); }}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <div className="w-14 h-14 rounded-full bg-black/45 border border-white/5 hover:border-accent/50 text-white/70 hover:text-accent flex items-center justify-center transition-all duration-300 transform group-hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+                {c.icon}
+              </div>
+              <span className="text-[10px] text-white/40 group-hover:text-accent font-mono uppercase tracking-wider mt-2 text-center transition-colors duration-300">
+                {c.name}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Copy bar */}
+        <div className="flex items-center gap-3 w-full h-12 rounded-xl bg-black/55 border border-white/5 px-3 focus-within:border-[#ff8a00]/50 transition-colors">
+          <div className="flex-grow text-xs text-white/70 truncate pr-2 font-mono select-all">
+            {profileUrl}
+          </div>
+          <button
+            onClick={handleCopy}
+            className="h-8 px-4 rounded-full bg-[#ff8a00] text-black hover:bg-[#ff8a00]/90 active:scale-95 transition-all text-xs font-black shrink-0 cursor-pointer shadow-md"
+          >
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
       </div>
     </div>
   )

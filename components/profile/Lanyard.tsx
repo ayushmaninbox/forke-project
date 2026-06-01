@@ -132,6 +132,9 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
   const cardRef = useRef<any>(null)
   const bodyRef = useRef<any>(null)
 
+  const frontHtmlRef = useRef<HTMLDivElement>(null)
+  const backHtmlRef = useRef<HTMLDivElement>(null)
+
   const ang = new THREE.Vector3()
   const quat = new THREE.Quaternion()
   const euler = new THREE.Euler()
@@ -181,7 +184,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
     [0, 1.45, 0],
   ])
 
-  useFrame((_state, delta) => {
+  useFrame((state, delta) => {
     if (!fixed.current || !cardRef.current) return
 
     // Relax band joints toward rest, then redraw the woven strap.
@@ -208,6 +211,29 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
     err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
     ang.copy(cardRef.current.angvel())
     cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
+
+    // Mathematical camera dot-product normal-check for high-performance visibility toggling
+    if (frontHtmlRef.current && backHtmlRef.current) {
+      const translation = cardRef.current.translation()
+      const localNormal = new THREE.Vector3(0, 0, 1)
+      const worldNormal = localNormal.applyQuaternion(quat)
+
+      // Vector from card center to camera
+      const toCamera = new THREE.Vector3()
+        .copy(state.camera.position)
+        .sub(new THREE.Vector3(translation.x, translation.y, translation.z))
+        .normalize()
+
+      const dot = worldNormal.dot(toCamera)
+      const isFrontFacing = dot > 0
+
+      // Toggle display visibility and pointer-events directly on DOM nodes
+      frontHtmlRef.current.style.visibility = isFrontFacing ? 'visible' : 'hidden'
+      frontHtmlRef.current.style.pointerEvents = isFrontFacing ? 'auto' : 'none'
+
+      backHtmlRef.current.style.visibility = isFrontFacing ? 'hidden' : 'visible'
+      backHtmlRef.current.style.pointerEvents = isFrontFacing ? 'none' : 'auto'
+    }
   })
 
   curve.curveType = 'chordal'
@@ -226,7 +252,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
         <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[2, 0, 0]} ref={cardRef} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[2, 0, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={'dynamic' as RigidBodyProps['type']}>
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
 
           {/* Physical card body + metal clip from the model (gives depth + the clasp) */}
@@ -238,30 +264,31 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
           </group>
 
-          {/* Real DOM faces (crisp text + fetched <img>), occluded by the body so
-              only the side facing the camera is visible. */}
+          {/* Real DOM faces (crisp text + fetched <img>), visibility steered dynamically. */}
           {card && (
             <>
               <Html
                 transform
-                occlude={[bodyRef]}
                 position={[place.cx, place.cy, place.cz + place.d / 2 + FACE_OFFSET]}
                 scale={htmlScale}
                 zIndexRange={[10, 0]}
                 style={{ width: FACE_W, height: FACE_H }}
               >
-                <CardFront card={card} />
+                <div ref={frontHtmlRef} style={{ width: FACE_W, height: FACE_H, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+                  <CardFront card={card} />
+                </div>
               </Html>
               <Html
                 transform
-                occlude={[bodyRef]}
                 position={[place.cx, place.cy, place.cz - place.d / 2 - FACE_OFFSET]}
                 rotation={[0, Math.PI, 0]}
                 scale={htmlScale}
                 zIndexRange={[10, 0]}
                 style={{ width: FACE_W, height: FACE_H }}
               >
-                <CardBack card={card} />
+                <div ref={backHtmlRef} style={{ width: FACE_W, height: FACE_H, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+                  <CardBack card={card} />
+                </div>
               </Html>
             </>
           )}
@@ -276,7 +303,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
           resolution={isMobile ? [1000, 2000] : [1000, 1000]}
           useMap
           map={texture}
-          repeat={[-4, 1]}
+          repeat={[-5, 1]}
           lineWidth={1}
         />
       </mesh>
@@ -332,7 +359,7 @@ function CardBack({ card }: { card: LanyardCard }) {
         <span className="text-[#ff8a00] font-mono font-black text-2xl">//</span>
       </div>
       <div className="relative flex-1 flex flex-col items-center justify-center gap-3">
-        <img src={FORKY_BACK} alt="Forky" className="w-56 h-56 object-contain drop-shadow-[0_0_24px_rgba(255,138,0,0.15)]" />
+        <img src={FORKY_BACK} alt="Forky" className="w-[300px] h-[300px] object-contain drop-shadow-[0_0_36px_rgba(255,138,0,0.22)]" />
         <span className="text-[#ff8a00] font-mono font-black text-3xl">@{card.username || 'forke'}</span>
       </div>
       <p className="relative text-center text-[11px] font-mono text-white/30 tracking-[0.18em]">FORKE // DEVELOPER NETWORK</p>
