@@ -107,6 +107,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token = await authConfig.callbacks.jwt({ token, user, trigger, session })
       }
 
+      // Capture and cache OAuth profile pictures on sign in
+      if (user && token.id) {
+        if (account?.provider === 'google' && user.image) {
+          try {
+            await db.update(users).set({ googleAvatarUrl: user.image }).where(eq(users.id, token.id as string))
+          } catch (e) {
+            console.error('Failed to save googleAvatarUrl on sign in:', e)
+          }
+        }
+        if (account?.provider === 'github' && user.image) {
+          try {
+            await db.update(users).set({ githubAvatarUrl: user.image }).where(eq(users.id, token.id as string))
+          } catch (e) {
+            console.error('Failed to save githubAvatarUrl on sign in:', e)
+          }
+        }
+      }
+
       // Initial Sign In: Fetch extensive GitHub Data since the user now exists in the DB
       if (account?.provider === 'github' && account.access_token && profile?.login && token.id) {
          try {
@@ -123,6 +141,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
              
              await db.update(users).set({ 
                githubUrl: githubUrl,
+               githubAvatarUrl: githubData.avatar_url,
                githubStats: {
                  followers: githubData.followers,
                  following: githubData.following,

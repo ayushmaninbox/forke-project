@@ -35,6 +35,8 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   emailVerified: timestamp('email_verified', { mode: 'date' }),
   image: text('image'),
+  githubAvatarUrl: text('github_avatar_url'),
+  googleAvatarUrl: text('google_avatar_url'),
   passwordHash: text('password_hash'),
   role: userRoleEnum('role').default('developer').notNull(),
   level: integer('level').default(1).notNull(),

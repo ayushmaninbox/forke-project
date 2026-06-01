@@ -17,6 +17,8 @@ export async function ensureProfileColumns() {
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "location" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "website_url" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "linkedin_url" text;`)
+    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "github_avatar_url" text;`)
+    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "google_avatar_url" text;`)
   } catch (error) {
     console.error('Failed to add profile columns to users table:', error)
   }
@@ -111,50 +113,62 @@ export async function updateProfile(data: ProfileUpdateInput) {
   }
 }
 
-/**
- * Fetches linked avatar URLs from OAuth providers (GitHub, Google).
- * Returns whichever are available for the current user.
- */
 export async function getLinkedAvatars(): Promise<{ github: string | null; google: string | null }> {
   const session = await auth()
   if (!session?.user?.id) return { github: null, google: null }
 
-  let githubAvatar: string | null = null
-  let googleAvatar: string | null = null
-
   try {
-    // GitHub avatar from the githubProfiles table
-    const ghProfile = await db.query.githubProfiles.findFirst({
-      where: eq(githubProfiles.userId, session.user.id),
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        githubAvatarUrl: true,
+        googleAvatarUrl: true,
+      }
     })
-    if (ghProfile?.avatarUrl) {
-      githubAvatar = ghProfile.avatarUrl
+
+    let githubAvatar = user?.githubAvatarUrl || null
+    let googleAvatar = user?.googleAvatarUrl || null
+
+    // If either is missing, resolve them via legacy/linked tables and cache them in users table
+    if (!githubAvatar || !googleAvatar) {
+      if (!githubAvatar) {
+        // GitHub avatar from the githubProfiles table
+        const ghProfile = await db.query.githubProfiles.findFirst({
+          where: eq(githubProfiles.userId, session.user.id),
+        })
+        if (ghProfile?.avatarUrl) {
+          githubAvatar = ghProfile.avatarUrl
+        }
+      }
+
+      // Check accounts table for providers if still missing
+      const allAccounts = await db.select().from(accounts).where(eq(accounts.userId, session.user.id))
+      for (const acct of allAccounts) {
+        if (acct.provider === 'github' && !githubAvatar) {
+          githubAvatar = `https://avatars.githubusercontent.com/u/${acct.providerAccountId}`
+        }
+        if (acct.provider === 'google' && !googleAvatar) {
+          googleAvatar = `https://lh3.googleusercontent.com/a/${acct.providerAccountId}`
+        }
+      }
+
+      // Update the users table to store these values permanently
+      const updates: Record<string, string> = {}
+      if (githubAvatar && githubAvatar !== user?.githubAvatarUrl) {
+        updates.githubAvatarUrl = githubAvatar
+      }
+      if (googleAvatar && googleAvatar !== user?.googleAvatarUrl) {
+        updates.googleAvatarUrl = googleAvatar
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await db.update(users).set(updates).where(eq(users.id, session.user.id))
+      }
     }
 
-    // Google avatar from the accounts table + users.image (original OAuth image)
-    const googleAccount = await db.query.accounts.findFirst({
-      where: eq(accounts.userId, session.user.id),
-    })
-    if (googleAccount?.provider === 'google') {
-      // The original OAuth image was stored in users.image on first sign-in
-      // We can construct the Google avatar from the providerAccountId
-      googleAvatar = `https://lh3.googleusercontent.com/a/${googleAccount.providerAccountId}`
-    }
-
-    // Also check all accounts for any Google one
-    const allAccounts = await db.select().from(accounts).where(eq(accounts.userId, session.user.id))
-    for (const acct of allAccounts) {
-      if (acct.provider === 'github' && !githubAvatar) {
-        // Fallback: construct from provider account ID
-        githubAvatar = `https://avatars.githubusercontent.com/u/${acct.providerAccountId}`
-      }
-      if (acct.provider === 'google' && !googleAvatar) {
-        googleAvatar = `https://lh3.googleusercontent.com/a/${acct.providerAccountId}`
-      }
-    }
+    return { github: githubAvatar, google: googleAvatar }
   } catch (error) {
     console.error('Error fetching linked avatars:', error)
+    return { github: null, google: null }
   }
-
-  return { github: githubAvatar, google: googleAvatar }
 }

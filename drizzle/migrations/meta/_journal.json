@@ -8,6 +8,13 @@
       "when": 1780330330172,
       "tag": "0000_fast_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780344235789,
+      "tag": "0001_flaky_strong_guy",
+      "breakpoints": true
     }
   ]
 }
