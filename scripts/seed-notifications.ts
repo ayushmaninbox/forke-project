@@ -3,7 +3,8 @@
  * Run with: npx tsx scripts/seed-notifications.ts
  */
 
-import 'dotenv/config'
+import * as dotenv from 'dotenv'
+dotenv.config({ path: '.env.local' })
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { users, notifications } from '../lib/db/schema'
