@@ -3,7 +3,7 @@
 import { auth, signIn, signOut } from '@/auth'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { users, developers } from '@/lib/db/schema'
+import { users, developers, subscribers } from '@/lib/db/schema'
 import { eq, ilike, or } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { logAudit } from './actions/audit-actions'
@@ -17,6 +17,15 @@ export async function signInWithGoogle(role?: 'developer' | 'owner', redirectTo?
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     })
+    cookieStore.delete('forke_login_intent')
+  } else {
+    cookieStore.set('forke_login_intent', 'true', {
+      path: '/',
+      maxAge: 600, // 10 minutes
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    })
+    cookieStore.delete('forke_role')
   }
   
   await signIn('google', { redirectTo: redirectTo || '/dashboard' })
@@ -31,6 +40,15 @@ export async function signInWithGitHub(role?: 'developer' | 'owner', redirectTo?
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
     })
+    cookieStore.delete('forke_login_intent')
+  } else {
+    cookieStore.set('forke_login_intent', 'true', {
+      path: '/',
+      maxAge: 600, // 10 minutes
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    })
+    cookieStore.delete('forke_role')
   }
   
   await signIn('github', { redirectTo: redirectTo || '/dashboard' })
@@ -41,7 +59,7 @@ export async function signOutAction() {
 }
 
 export async function registerDeveloperWithCredentials(formData: any) {
-  const { firstName, lastName, email, password, confirmPassword, username } = formData
+  const { firstName, lastName, email, password, confirmPassword, username, receivePromotions } = formData
 
   if (!firstName || !lastName || !email || !password || !confirmPassword || !username) {
     return { success: false, error: 'All core fields including username are required.' }
@@ -100,6 +118,18 @@ export async function registerDeveloperWithCredentials(formData: any) {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
+
+      // Add to subscribers if receivePromotions is checked
+      if (receivePromotions) {
+        try {
+          await db.insert(subscribers).values({
+            email: email,
+            createdAt: new Date()
+          }).onConflictDoNothing()
+        } catch (e) {
+          console.error('Failed to add to subscribers upon registration:', e)
+        }
+      }
 
       // Log the developer signup
       await logAudit({

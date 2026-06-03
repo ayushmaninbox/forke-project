@@ -35,6 +35,17 @@ CREATE TABLE "admins" (
 	CONSTRAINT "admins_invite_token_unique" UNIQUE("invite_token")
 );
 --> statement-breakpoint
+CREATE TABLE "admin_audit_log" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"actor_id" uuid,
+	"actor_name" text,
+	"category" text DEFAULT 'admin' NOT NULL,
+	"action" text NOT NULL,
+	"target" text,
+	"metadata" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "developers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -194,6 +205,7 @@ CREATE TABLE "users" (
 	"email_alerts" boolean DEFAULT true,
 	"slack_webhooks" boolean DEFAULT false,
 	"college" text,
+	"deletion_scheduled_at" timestamp,
 	"last_active_at" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),

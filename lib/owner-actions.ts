@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from './db'
-import { users, owners } from './db/schema'
+import { users, owners, subscribers } from './db/schema'
 import { auth } from '@/auth'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -61,6 +61,18 @@ export async function submitOwnerApplication(formData: any) {
         message: formData.message || null,
       }
     })
+
+    // Add to subscribers if receivePromotions is checked
+    if (formData.receivePromotions && formData.contactEmail) {
+      try {
+        await db.insert(subscribers).values({
+          email: formData.contactEmail,
+          createdAt: new Date()
+        }).onConflictDoNothing()
+      } catch (e) {
+        console.error('Failed to add owner to subscribers:', e)
+      }
+    }
 
     revalidatePath('/dashboard')
 

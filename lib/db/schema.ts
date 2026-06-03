@@ -55,6 +55,7 @@ export const users = pgTable('users', {
   emailAlerts: boolean('email_alerts').default(true),
   slackWebhooks: boolean('slack_webhooks').default(false),
   college: text('college'),
+  deletionScheduledAt: timestamp('deletion_scheduled_at'),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

@@ -1,13 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Button } from '@/components/ui/Button'
 import { signInWithGoogle, signInWithGitHub } from '@/lib/auth-actions'
 import { Eye, EyeOff, ArrowLeft, Info } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Loader } from '@/components/ui/Loader'
 
-export default function SignInContent() {
+function SignInContentInner() {
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [lastUsed, setLastUsed] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -16,7 +19,12 @@ export default function SignInContent() {
   useEffect(() => {
     const saved = localStorage.getItem('forke_last_auth')
     if (saved) setLastUsed(saved)
-  }, [])
+
+    const err = searchParams.get('error')
+    if (err === 'AccountNotFound') {
+      setError('Account not found. Please sign up first before attempting to log in.')
+    }
+  }, [searchParams])
 
   const handleSocialClick = async (provider: 'google' | 'github') => {
     localStorage.setItem('forke_last_auth', provider)
@@ -236,5 +244,13 @@ export default function SignInContent() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInContent() {
+  return (
+    <Suspense fallback={<Loader fullScreen />}>
+      <SignInContentInner />
+    </Suspense>
   )
 }

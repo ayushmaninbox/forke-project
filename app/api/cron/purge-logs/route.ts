@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { adminAuditLog } from '@/lib/db/schema'
+import { adminAuditLog, users } from '@/lib/db/schema'
 import { sql } from 'drizzle-orm'
 import { logAudit } from '@/lib/actions/audit-actions'
 
@@ -27,14 +27,17 @@ export async function GET(request: NextRequest) {
     // Purge logs older than 7 days
     await db.delete(adminAuditLog).where(sql`created_at < now() - interval '7 days'`)
     
+    // Purge accounts scheduled for deletion more than 30 days ago
+    await db.delete(users).where(sql`deletion_scheduled_at < now() - interval '30 days'`)
+
     // Log the purge action itself in the database
     await logAudit({
       category: 'system',
       action: 'system.logs_purged_cron',
-      target: 'Logs older than 7 days via automated cron'
+      target: 'Logs older than 7 days and accounts scheduled for deletion > 30 days ago processed via automated cron'
     })
 
-    return NextResponse.json({ success: true, message: 'Audit logs older than 7 days purged successfully' })
+    return NextResponse.json({ success: true, message: 'Audit logs and scheduled account deletions processed successfully' })
   } catch (error: any) {
     console.error('Cron purge logs API error:', error)
     return NextResponse.json({ success: false, error: error.message || 'Purging failed' }, { status: 500 })

@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { updateProfileSettings, updateTelemetrySettings } from '@/app/(app)/settings/actions'
-import { Save, Sliders, Bell, Laptop, AlertTriangle, CheckCircle2, Link2, Check } from 'lucide-react'
+import { updateProfileSettings, updateTelemetrySettings, setupPasswordAction, scheduleAccountDeletionAction, updatePromotionalSubscriptionAction } from '@/app/(app)/settings/actions'
+import { Save, Sliders, Bell, Laptop, AlertTriangle, CheckCircle2, Link2, Check, Lock, Key, Trash2, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
-import { signIn } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -47,6 +47,8 @@ interface SettingsFormProps {
     runtimeVersion: string
   }
   connectedAccounts?: string[]
+  hasPassword: boolean
+  initialSubscribedToPromotions: boolean
 }
 
 export default function SettingsForm({
@@ -64,15 +66,28 @@ export default function SettingsForm({
   initialEmailAlerts,
   initialSlackWebhooks,
   systemSpecs,
-  connectedAccounts = []
+  connectedAccounts = [],
+  hasPassword,
+  initialSubscribedToPromotions
 }: SettingsFormProps) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [emailAlerts, setEmailAlerts] = useState(initialEmailAlerts)
   const [slackWebhooks, setSlackWebhooks] = useState(initialSlackWebhooks)
+  const [promoSubscribed, setPromoSubscribed] = useState(initialSubscribedToPromotions)
   const [sslActive, setSslActive] = useState(false)
   const isOwner = role === 'owner'
+
+  // New features state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [passSubmitting, setPassSubmitting] = useState(false)
+  const [hasLocalPassword, setHasLocalPassword] = useState(hasPassword)
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
 
   const isGoogleConnected = connectedAccounts.includes('google')
   const isGithubConnected = connectedAccounts.includes('github')
@@ -114,6 +129,72 @@ export default function SettingsForm({
     }
   }
 
+  const handleTogglePromo = async () => {
+    const targetState = !promoSubscribed
+    setPromoSubscribed(targetState)
+    const res = await updatePromotionalSubscriptionAction(userId, targetState)
+    if (!res.success) {
+      toast(res.error || 'Failed to update subscription status', 'error')
+      setPromoSubscribed(!targetState)
+    } else {
+      toast(targetState ? 'Subscribed to promotional emails!' : 'Unsubscribed from promotional emails!', 'success')
+    }
+  }
+
+  const handleSetupPassword = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!newPassword || !confirmPassword) {
+      toast('Please fill out all password fields.', 'error')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast('Passwords do not match.', 'error')
+      return
+    }
+    if (newPassword.length < 8) {
+      toast('Password must be at least 8 characters long.', 'error')
+      return
+    }
+
+    setPassSubmitting(true)
+    try {
+      const res = await setupPasswordAction(userId, newPassword)
+      if (res.success) {
+        toast('Password set up successfully! You can now log in using credentials.', 'success')
+        setHasLocalPassword(true)
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        toast(res.error || 'Failed to setup password.', 'error')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred.', 'error')
+    } finally {
+      setPassSubmitting(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteSubmitting(true)
+    try {
+      const res = await scheduleAccountDeletionAction(userId)
+      if (res.success) {
+        toast('Account scheduled for deletion. Signing out...', 'success')
+        setTimeout(async () => {
+          await signOut({ callbackUrl: '/?toast=deletion_scheduled' })
+        }, 1500)
+      } else {
+        toast(res.error || 'Failed to schedule deletion', 'error')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred', 'error')
+    } finally {
+      setDeleteSubmitting(false)
+      setShowDeleteModal(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -181,20 +262,20 @@ export default function SettingsForm({
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)]">
               <div>
-                <h5 className="text-[13px] font-medium text-white">Slack integration</h5>
-                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Push alerts into your workspace</p>
+                <h5 className="text-[13px] font-medium text-white">Promotional emails</h5>
+                <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">Receive news, promotions, and updates (unsubscribe to only receive important/transactional emails)</p>
               </div>
               <button
                 type="button"
-                onClick={() => handleToggle('slackWebhooks')}
+                onClick={handleTogglePromo}
                 className={cn(
                   "w-9 h-5 rounded-full flex items-center px-0.5 cursor-pointer transition-colors border",
-                  slackWebhooks ? "bg-accent/20 border-accent/40" : "bg-white/5 border-white/10"
+                  promoSubscribed ? "bg-accent/20 border-accent/40" : "bg-white/5 border-white/10"
                 )}
               >
                 <span className={cn(
                   "w-4 h-4 rounded-full transition-transform",
-                  slackWebhooks ? "bg-accent translate-x-4" : "bg-white/30 translate-x-0"
+                  promoSubscribed ? "bg-accent translate-x-4" : "bg-white/30 translate-x-0"
                 )} />
               </button>
             </div>
@@ -225,7 +306,7 @@ export default function SettingsForm({
                 <div>
                   {isGoogleConnected ? (
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full select-none">
-                      <Check className="w-3 h-3 text-emerald-400" /> Connected
+                      <Check className="w-3.5 h-3.5 text-emerald-455" /> Connected
                     </span>
                   ) : (
                     <button
@@ -251,7 +332,7 @@ export default function SettingsForm({
                 <div>
                   {isGithubConnected ? (
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full select-none">
-                      <Check className="w-3 h-3 text-emerald-400" /> Connected
+                      <Check className="w-3.5 h-3.5 text-emerald-455" /> Connected
                     </span>
                   ) : (
                     <button
@@ -267,8 +348,130 @@ export default function SettingsForm({
             </div>
           </div>
         )}
+
+        {/* Local Password Setup */}
+        {!hasLocalPassword && (
+          <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
+            <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+              <Key className="w-4 h-4 text-accent" /> Set Up Local Password
+            </h4>
+            
+            <p className="text-[11px] text-[var(--color-text-muted)] -mt-2 leading-relaxed">
+              Add a password to log in directly via username/email and password in the future.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5 text-left relative">
+                <label className="text-xs font-medium text-[var(--color-text-muted)]">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-medium text-[var(--color-text-muted)]">Confirm Password</label>
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleSetupPassword}
+                disabled={passSubmitting || !newPassword || !confirmPassword}
+                className="h-8 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
+              >
+                {passSubmitting ? 'Saving...' : 'Set Password'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Danger Zone */}
+        <div className="p-5 rounded-xl bg-red-500/[0.01] border border-red-500/10 space-y-5">
+          <h4 className="text-sm font-semibold text-red-400 border-b border-red-500/10 pb-3 flex items-center gap-2">
+            <Trash2 className="w-4 h-4 text-red-400" /> Danger Zone
+          </h4>
+          
+          <div className="p-4 rounded-lg bg-red-500/[0.02] border border-red-500/10 space-y-3">
+            <h5 className="text-[13px] font-semibold text-white">Delete Account</h5>
+            <p className="text-[11px] text-white/50 leading-relaxed">
+              Once you delete your account, your profile, active listings, and completed works will be scheduled for permanent erasure. 
+              Your account will be deleted in <strong>30 days</strong> from our database. Logging back in at any time before the 30-day window expires will cancel the deletion request.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className="h-8 px-4 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Account</span>
+            </button>
+          </div>
+        </div>
       </form>
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+          <div className="bg-[#0b0b0e] border border-red-500/20 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-red-400">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">Confirm Account Deletion</h3>
+            </div>
+            
+            <p className="text-xs text-white/60 leading-relaxed">
+              Are you absolutely sure you want to schedule your account for deletion? 
+              Your data will be held for <strong>30 days</strong>, after which it will be permanently deleted.
+              <br /><br />
+              <strong>Logging back in at any time within 30 days will cancel the deletion.</strong>
+            </p>
+            
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteSubmitting}
+                className="h-9 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-white/80 transition-all cursor-pointer font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleteSubmitting}
+                className="h-9 px-4 rounded-xl bg-red-500 hover:bg-red-650 text-xs text-white font-bold transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {deleteSubmitting ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>Confirm Deletion</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

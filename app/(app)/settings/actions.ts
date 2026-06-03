@@ -1,9 +1,10 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { users, owners } from '@/lib/db/schema'
+import { users, owners, subscribers } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import bcrypt from 'bcryptjs'
 
 export async function ensureTelemetrySettingsColumns() {
   try {
@@ -12,6 +13,9 @@ export async function ensureTelemetrySettingsColumns() {
     `)
     await db.execute(sql`
       ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "slack_webhooks" boolean DEFAULT false;
+    `)
+    await db.execute(sql`
+      ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "deletion_scheduled_at" timestamp;
     `)
   } catch (error) {
     console.error('Failed to add telemetry columns to users table:', error)
@@ -116,5 +120,71 @@ export async function updateProfileSettings(userId: string, role: 'developer' | 
   } catch (e) {
     console.error('Failed to update settings:', e)
     return { success: false, error: 'Failed to save settings to the database.' }
+  }
+}
+
+export async function setupPasswordAction(userId: string, password: string) {
+  if (!password || password.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters long.' }
+  }
+  
+  try {
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash(password, salt)
+    
+    await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to setup password:', error)
+    return { success: false, error: 'Failed to save password.' }
+  }
+}
+
+export async function scheduleAccountDeletionAction(userId: string) {
+  try {
+    const dbUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { email: true }
+    })
+    
+    await db.update(users).set({ deletionScheduledAt: new Date() }).where(eq(users.id, userId))
+    
+    if (dbUser?.email) {
+      const { sendAccountDeletionScheduledEmail } = await import('@/lib/email')
+      await sendAccountDeletionScheduledEmail(dbUser.email)
+    }
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to schedule account deletion:', error)
+    return { success: false, error: 'Failed to schedule account deletion.' }
+  }
+}
+
+export async function updatePromotionalSubscriptionAction(userId: string, subscribe: boolean) {
+  try {
+    const dbUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { email: true }
+    })
+    if (!dbUser?.email) {
+      return { success: false, error: 'User email not found.' }
+    }
+
+    if (subscribe) {
+      await db.insert(subscribers).values({
+        email: dbUser.email,
+        createdAt: new Date()
+      }).onConflictDoNothing()
+    } else {
+      await db.delete(subscribers).where(eq(subscribers.email, dbUser.email))
+    }
+
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to update promotional subscription:', error)
+    return { success: false, error: 'Failed to update subscription.' }
   }
 }

@@ -1,7 +1,7 @@
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
-import { users, owners, accounts } from '@/lib/db/schema'
+import { users, owners, accounts, subscribers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import SettingsForm from '@/components/settings/SettingsForm'
 import { ensureTelemetrySettingsColumns, getSystemSpecs } from '@/app/(app)/settings/actions'
@@ -66,6 +66,17 @@ export default async function SettingsPage() {
     console.error('Failed to fetch connected accounts:', e)
   }
 
+  // Fetch promotional subscription status
+  let subscribedToPromotions = false
+  try {
+    const subscriber = await db.query.subscribers.findFirst({
+      where: eq(subscribers.email, dbUser.email)
+    })
+    subscribedToPromotions = !!subscriber
+  } catch (e) {
+    console.error('Failed to fetch subscriber status:', e)
+  }
+
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
       <TopBar title="Settings" />
@@ -99,6 +110,8 @@ export default async function SettingsPage() {
           initialSlackWebhooks={dbUser.slackWebhooks ?? false}
           systemSpecs={systemSpecs}
           connectedAccounts={connectedAccounts}
+          hasPassword={!!dbUser.passwordHash}
+          initialSubscribedToPromotions={subscribedToPromotions}
         />
        </div>
       </div>

@@ -69,11 +69,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: eq(users.email, user.email),
         })
 
+        if (!dbUser) {
+          const cookieStore = await cookies()
+          const loginIntent = cookieStore.get('forke_login_intent')?.value
+          if (loginIntent === 'true') {
+            cookieStore.delete('forke_login_intent')
+            console.log(`[AUTH] Blocking direct OAuth registration for non-existent user: ${user.email}`)
+            return '/signin?error=AccountNotFound'
+          }
+        }
+
         if (dbUser) {
           if (dbUser.isBanned) {
             const cookieStore = await cookies()
             cookieStore.set('forke_auth_error', '1', { maxAge: 60, path: '/' })
             return '/auth-error?error=AccessDenied'
+          }
+
+          if (dbUser.deletionScheduledAt) {
+            await db.update(users).set({ deletionScheduledAt: null }).where(eq(users.id, dbUser.id))
+            console.log(`[AUTH] Cancelled scheduled account deletion for user: ${dbUser.id}`)
+            return '/dashboard?toast=deletion_cancelled'
           }
           
           if (account?.provider === 'github' && dbUser.githubUrl && profile?.login) {

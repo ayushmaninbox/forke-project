@@ -23,6 +23,7 @@ function RegisterContentInner() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [devUsername, setDevUsername] = useState('')
+  const [promoChecked, setPromoChecked] = useState(true)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -105,6 +106,7 @@ function RegisterContentInner() {
       designation: formData.get('designation') as string,
       otherLinks: formData.get('otherLinks') as string,
       message: formData.get('message') as string,
+      receivePromotions: promoChecked,
     }
 
     if (!data.firstName || !data.lastName || !data.contactEmail || !data.companyName || !data.designation) {
@@ -136,6 +138,7 @@ function RegisterContentInner() {
       password: formData.get('password') as string,
       confirmPassword: formData.get('confirmPassword') as string,
       username: devUsername,
+      receivePromotions: promoChecked,
     }
 
     if (!data.firstName || !data.lastName || !data.email || !data.password || !data.confirmPassword || !data.username) {
@@ -496,6 +499,33 @@ function RegisterContentInner() {
                 )}
               </div>
 
+              <div className="space-y-3 pt-2 text-left">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={true} 
+                    readOnly 
+                    onClick={(e) => e.preventDefault()}
+                    className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent cursor-not-allowed"
+                  />
+                  <span className="text-[11px] text-white/50 font-medium leading-tight">
+                    I agree to the <Link href="/terms" className="text-white hover:text-accent underline underline-offset-2">Terms of Services</Link> and <Link href="/privacy" className="text-white hover:text-accent underline underline-offset-2">Privacy Policy</Link>
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={promoChecked} 
+                    onChange={(e) => setPromoChecked(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent"
+                  />
+                  <span className="text-[11px] text-white/50 font-medium leading-tight">
+                    I would like to receive promotional emails, product updates, and special offers.
+                  </span>
+                </label>
+              </div>
+
               <Button 
                 type="submit"
                 disabled={!isGoogleAuthenticated || isAlreadyDeveloper || isSubmitting}
@@ -680,6 +710,32 @@ function RegisterContentInner() {
                       className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
                     />
                   </div>
+                </div>
+                <div className="space-y-3 pt-2 text-left">
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={true} 
+                      readOnly 
+                      onClick={(e) => e.preventDefault()}
+                      className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent cursor-not-allowed"
+                    />
+                    <span className="text-[11px] text-white/50 font-medium leading-tight">
+                      I agree to the <Link href="/terms" className="text-white hover:text-accent underline underline-offset-2">Terms of Services</Link> and <Link href="/privacy" className="text-white hover:text-accent underline underline-offset-2">Privacy Policy</Link>
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input 
+                      type="checkbox" 
+                      checked={promoChecked} 
+                      onChange={(e) => setPromoChecked(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent"
+                    />
+                    <span className="text-[11px] text-white/50 font-medium leading-tight">
+                      I would like to receive promotional emails, product updates, and special offers.
+                    </span>
+                  </label>
                 </div>
 
                 <Button 
