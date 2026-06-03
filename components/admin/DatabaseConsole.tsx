@@ -1491,13 +1491,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
           ) : (
             
             /* ==================== TABLE DATA VIEW ==================== */
-            <div className={cn("flex flex-col gap-4", shouldScrollVertically ? "h-full" : "h-auto min-h-full")}>
+            <div className="flex flex-col gap-4 h-full min-h-0">
               
               {/* Grid block */}
-              <div className={cn(
-                "border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0",
-                shouldScrollVertically ? "overflow-auto" : "overflow-x-auto overflow-y-visible"
-              )}>
+              <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0 overflow-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none">
