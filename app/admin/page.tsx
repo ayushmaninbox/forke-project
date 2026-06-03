@@ -67,6 +67,7 @@ import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
 import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
 import ActivityFeedPanel from '@/components/admin/ActivityFeedPanel'
+import { getActivityLogLiveStatusAction } from '@/lib/actions/audit-actions'
 
 
 const maskToken = (token: string) => {
@@ -84,6 +85,19 @@ export default function AdminDashboard() {
   >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [activityLive, setActivityLive] = useState(true)
+
+  // Keep the sidebar Activity badge in sync with the global live/paused status
+  useEffect(() => {
+    let active = true
+    const sync = async () => {
+      const res = await getActivityLogLiveStatusAction()
+      if (active && res.success && typeof res.live === 'boolean') setActivityLive(res.live)
+    }
+    sync()
+    const id = setInterval(sync, 5000)
+    return () => { active = false; clearInterval(id) }
+  }, [])
 
   // Synchronize activeTab with URL query parameter on mount
   useEffect(() => {
@@ -815,8 +829,12 @@ export default function AdminDashboard() {
             >
               <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'activity' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
               <span>Activity</span>
-              <span className="ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 leading-none">
-                Live
+              <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded border leading-none ${
+                activityLive
+                  ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
+                  : 'bg-white/[0.04] border-white/15 text-white/40'
+              }`}>
+                {activityLive ? 'Live' : 'Paused'}
               </span>
             </button>
 

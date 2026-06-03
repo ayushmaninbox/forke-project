@@ -113,12 +113,35 @@ export async function getTableDetails(tableName: string) {
 
     const primaryKeys = pkResult.map((row: any) => row.column_name as string)
 
+    // Fetch foreign key columns and what they reference
+    const fkResult: any = await db.execute(sql`
+      SELECT kcu.column_name,
+             ccu.table_name  AS foreign_table,
+             ccu.column_name AS foreign_column
+      FROM information_schema.table_constraints tc
+      JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+        AND tc.table_schema = kcu.table_schema
+      JOIN information_schema.constraint_column_usage ccu
+        ON ccu.constraint_name = tc.constraint_name
+        AND ccu.table_schema = tc.table_schema
+      WHERE tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_name = ${validTable};
+    `)
+
+    const fkMap = new Map<string, string>()
+    for (const row of fkResult) {
+      fkMap.set(row.column_name as string, `${row.foreign_table}.${row.foreign_column}`)
+    }
+
     const columns = columnsResult.map((row: any) => ({
       name: row.column_name as string,
       type: row.data_type as string,
       nullable: row.is_nullable === 'YES',
       defaultVal: row.column_default as string | null,
-      isPrimaryKey: primaryKeys.includes(row.column_name as string)
+      isPrimaryKey: primaryKeys.includes(row.column_name as string),
+      isForeignKey: fkMap.has(row.column_name as string),
+      references: fkMap.get(row.column_name as string) || null,
     }))
 
     return { success: true, columns, primaryKeys }

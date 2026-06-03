@@ -35,7 +35,9 @@ import {
   Copy,
   Table,
   Lock,
-  Scissors
+  Scissors,
+  KeyRound,
+  Link2
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
@@ -1394,6 +1396,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                   {columns.map((col) => {
                     let parts = [`${col.name}`, `${col.type.toUpperCase()}`]
                     if (col.isPrimaryKey) parts.push('PRIMARY KEY')
+                    if (col.isForeignKey && col.references) parts.push(`REFERENCES ${col.references}`)
                     if (!col.nullable) parts.push('NOT NULL')
                     if (col.defaultVal) {
                       parts.push(`DEFAULT ${col.defaultVal}`)
@@ -1560,6 +1563,16 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                             )}
                           >
                             <div className="flex items-center gap-1.5">
+                              {col.isPrimaryKey && (
+                                <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" aria-label="Primary key">
+                                  <title>Primary key</title>
+                                </KeyRound>
+                              )}
+                              {col.isForeignKey && (
+                                <Link2 className="w-3.5 h-3.5 text-sky-400 shrink-0" aria-label={`Foreign key → ${col.references}`}>
+                                  <title>{`Foreign key → ${col.references}`}</title>
+                                </Link2>
+                              )}
                               <span>{col.name}</span>
                               {isSorted ? (
                                 sortOrder === 'asc' ? (
