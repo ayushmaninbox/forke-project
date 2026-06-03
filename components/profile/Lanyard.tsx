@@ -187,12 +187,12 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
   useFrame((state, delta) => {
     if (!fixed.current || !cardRef.current) return
 
-    // Relax band joints toward rest, then redraw the woven strap.
-    ;[j1, j2].forEach((ref) => {
-      if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
-      const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
-      ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
-    })
+      // Relax band joints toward rest, then redraw the woven strap.
+      ;[j1, j2].forEach((ref) => {
+        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
+        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
+        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
+      })
     curve.points[0].copy(j3.current.translation())
     curve.points[1].copy(j2.current.lerped)
     curve.points[2].copy(j1.current.lerped)
