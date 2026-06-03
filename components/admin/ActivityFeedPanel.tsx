@@ -5,7 +5,7 @@ import {
   Shield, User, Briefcase, Database, MessageSquare, Zap, Settings, AlertTriangle,
   RefreshCw, Pause, Play, Terminal, Trash2
 } from 'lucide-react'
-import { getActivityFeed, purgeAuditLogsAction, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
+import { getActivityFeed, purgeAuditLogsAction, getActivityLogLiveStatusAction, setActivityLogLiveStatusAction, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
 
@@ -65,14 +65,14 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
   const [purging, setPurging] = useState(false)
 
   const handlePurge = async () => {
-    if (!confirm('Are you sure you want to manually purge logs older than 7 days? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to manually purge ALL logs? This action cannot be undone.')) {
       return
     }
     setPurging(true)
     try {
       const res = await purgeAuditLogsAction()
       if (res.success) {
-        toast('Logs older than 7 days have been successfully purged.', 'success')
+        toast('All administrative activity logs have been successfully purged.', 'success')
         load(true)
       } else {
         toast(res.error || 'Failed to purge logs.', 'error')
@@ -82,6 +82,28 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
       toast(err.message || 'An error occurred while purging logs.', 'error')
     } finally {
       setPurging(false)
+    }
+  }
+
+  const toggleLive = async () => {
+    if (!isSuperAdmin) {
+      toast('Only Super Admins can pause or resume the global activity feed.', 'error')
+      return
+    }
+    const newLive = !live
+    setLive(newLive)
+    try {
+      const res = await setActivityLogLiveStatusAction(newLive)
+      if (res.success) {
+        toast(`Global activity feed successfully ${newLive ? 'resumed' : 'paused'}.`, 'success')
+      } else {
+        toast(res.error || 'Failed to update global live status.', 'error')
+        setLive(!newLive)
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred.', 'error')
+      setLive(!newLive)
     }
   }
 
@@ -103,11 +125,43 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
     load(true)
   }, [filter, load])
 
-  // Live polling
+  // Sync initial live status
   useEffect(() => {
+    async function initLiveStatus() {
+      const res = await getActivityLogLiveStatusAction()
+      if (res.success && res.live !== undefined) {
+        setLive(res.live)
+      }
+    }
+    initLiveStatus()
+  }, [])
+
+  // Live polling (every 5 seconds, verifying global status)
+  useEffect(() => {
+    let active = true
+    const checkAndLoad = async () => {
+      const statusRes = await getActivityLogLiveStatusAction()
+      if (!active) return
+
+      if (statusRes.success && statusRes.live !== undefined) {
+        setLive(statusRes.live)
+        if (statusRes.live) {
+          await load(false)
+        }
+      } else {
+        if (live) {
+          await load(false)
+        }
+      }
+    }
+
     if (!live) return
-    const id = setInterval(() => load(false), 5000)
-    return () => clearInterval(id)
+
+    const id = setInterval(checkAndLoad, 5000)
+    return () => {
+      active = false
+      clearInterval(id)
+    }
   }, [live, load])
 
   // Tick every 15s so "2m ago" stays fresh
@@ -131,13 +185,15 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setLive((v) => !v)}
+              onClick={toggleLive}
+              disabled={!isSuperAdmin}
               className={cn(
-                'h-8 px-3 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer',
+                'h-8 px-3 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
                 live
                   ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
                   : 'bg-white/[0.02] border-white/[0.08] text-white/50 hover:text-white'
               )}
+              title={isSuperAdmin ? "Toggle global live/paused state" : "Only Super Admins can configure global live status"}
             >
               {live ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
               {live ? 'Live' : 'Paused'}
@@ -155,7 +211,7 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
                 onClick={handlePurge}
                 disabled={purging}
                 className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold"
-                title="Purge logs older than 7 days"
+                title="Purge all logs from the database"
               >
                 <Trash2 className={cn('w-3.5 h-3.5', purging && 'animate-spin')} />
                 <span>Purge Logs</span>

@@ -3,7 +3,7 @@
 import { auth, signIn, signOut } from '@/auth'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { users, githubProfiles } from '@/lib/db/schema'
+import { users, developers } from '@/lib/db/schema'
 import { eq, ilike, or } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
@@ -105,8 +105,8 @@ export async function registerDeveloperWithCredentials(formData: any) {
           finalGithubUrl = `https://github.com/${canonicalUsername}`
 
           // Check if this GitHub profile is already claimed by another user
-          const existingProfile = await db.query.githubProfiles.findFirst({
-            where: ilike(githubProfiles.login, canonicalUsername)
+          const existingProfile = await db.query.developers.findFirst({
+            where: ilike(developers.username, canonicalUsername)
           })
 
           const existingUserWithGithub = await db.query.users.findFirst({
@@ -168,10 +168,11 @@ export async function registerDeveloperWithCredentials(formData: any) {
           .sort((a, b) => b[1] - a[1])
           .reduce((acc, [lang, count]) => ({ ...acc, [lang]: count }), {})
 
-        await db.insert(githubProfiles).values({
+        await db.insert(developers).values({
           userId: newUser.id,
           githubId: profileData.id.toString(),
-          login: profileData.login,
+          username: profileData.login,
+          accessToken: '',
           avatarUrl: profileData.avatar_url,
           profileUrl: finalGithubUrl,
           rawProfile: profileData,
@@ -244,8 +245,8 @@ export async function completeOnboarding(formData: any) {
           finalGithubUrl = `https://github.com/${canonicalUsername}`
 
           // Check if claimed
-          const existingProfile = await db.query.githubProfiles.findFirst({
-            where: ilike(githubProfiles.login, canonicalUsername)
+          const existingProfile = await db.query.developers.findFirst({
+            where: ilike(developers.username, canonicalUsername)
           })
 
           const existingUserWithGithub = await db.query.users.findFirst({
@@ -305,7 +306,8 @@ export async function completeOnboarding(formData: any) {
         const profilePayload = {
           userId: session.user.id,
           githubId: profileData.id.toString(),
-          login: profileData.login,
+          username: profileData.login,
+          accessToken: '',
           avatarUrl: profileData.avatar_url,
           profileUrl: finalGithubUrl,
           rawProfile: profileData,
@@ -314,14 +316,14 @@ export async function completeOnboarding(formData: any) {
           updatedAt: new Date(),
         }
 
-        const existingProfile = await db.query.githubProfiles.findFirst({
-          where: eq(githubProfiles.userId, session.user.id)
+        const existingProfile = await db.query.developers.findFirst({
+          where: eq(developers.userId, session.user.id)
         })
 
         if (existingProfile) {
-          await db.update(githubProfiles).set(profilePayload).where(eq(githubProfiles.id, existingProfile.id))
+          await db.update(developers).set(profilePayload).where(eq(developers.id, existingProfile.id))
         } else {
-          await db.insert(githubProfiles).values({
+          await db.insert(developers).values({
             ...profilePayload,
             createdAt: new Date(),
           })

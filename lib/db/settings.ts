@@ -74,3 +74,35 @@ export async function setWaitlistBypassPassword(password: string): Promise<void>
     console.error('Failed to update waitlist_bypass_password setting:', error)
   }
 }
+
+export async function isActivityLogLive(): Promise<boolean> {
+  await ensureSettingsTable()
+  try {
+    const result = await db.execute(sql`
+      SELECT value FROM "system_settings" WHERE key = 'activity_log_live' LIMIT 1;
+    `)
+    if (result.length === 0) {
+      // Default to true (live feed is active by default)
+      return true
+    }
+    return result[0].value === 'true'
+  } catch (error) {
+    console.error('Failed to query activity_log_live setting:', error)
+    return true // Safe fallback
+  }
+}
+
+export async function setActivityLogLive(live: boolean): Promise<void> {
+  await ensureSettingsTable()
+  const val = live ? 'true' : 'false'
+  try {
+    await db.execute(sql`
+      INSERT INTO "system_settings" (key, value, updated_at)
+      VALUES ('activity_log_live', ${val}, NOW())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    `)
+  } catch (error) {
+    console.error('Failed to update activity_log_live setting:', error)
+  }
+}
+

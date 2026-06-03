@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { adminAuditLog, users, subscribers, supportEnquiries, tasks, submissions } from '@/lib/db/schema'
 import { desc, eq, sql } from 'drizzle-orm'
 import { getCurrentAdmin } from '@/lib/admin-actions'
+import { isActivityLogLive, setActivityLogLive } from '@/lib/db/settings'
 
 export type ActivityCategory =
   | 'admin' | 'user' | 'owner' | 'db' | 'support' | 'task' | 'system' | 'error'
@@ -81,25 +82,56 @@ export async function logAudit(entry: LogEntry) {
   }
 }
 
-/** Server Action: Manually purge logs older than 7 days. Only accessible to Super Admins. */
+/** Server Action: Manually purge all logs from the database. Only accessible to Super Admins. */
 export async function purgeAuditLogsAction() {
   const admin = await getCurrentAdmin().catch(() => null)
   if (!admin || admin.role !== 'super_admin') {
     return { success: false, error: 'Only Super Admins can purge audit logs.' }
   }
   try {
-    await db.delete(adminAuditLog).where(sql`created_at < now() - interval '7 days'`)
+    await db.delete(adminAuditLog)
     
     // Log the purge action itself so admins know it was cleared
     await logAudit({
       category: 'system',
       action: 'system.logs_purged',
-      target: 'Logs older than 7 days'
+      target: 'All logs'
     })
     return { success: true }
   } catch (e: any) {
     console.error('Failed to purge logs:', e)
     return { success: false, error: e.message || 'Failed to purge logs.' }
+  }
+}
+
+/** Server Action: Get global live activity log feed status. */
+export async function getActivityLogLiveStatusAction() {
+  try {
+    const live = await isActivityLogLive()
+    return { success: true, live }
+  } catch (e: any) {
+    console.error('Failed to get activity log live status:', e)
+    return { success: false, error: e.message || 'Failed to query live status.' }
+  }
+}
+
+/** Server Action: Set global live activity log feed status. Only Super Admins can execute. */
+export async function setActivityLogLiveStatusAction(live: boolean) {
+  const admin = await getCurrentAdmin().catch(() => null)
+  if (!admin || admin.role !== 'super_admin') {
+    return { success: false, error: 'Only Super Admins can configure the live activity status.' }
+  }
+  try {
+    await setActivityLogLive(live)
+    await logAudit({
+      category: 'system',
+      action: live ? 'system.logs_live_enabled' : 'system.logs_live_paused',
+      target: 'Activity Log Feed'
+    })
+    return { success: true }
+  } catch (e: any) {
+    console.error('Failed to set activity log live status:', e)
+    return { success: false, error: e.message || 'Failed to update live status.' }
   }
 }
 

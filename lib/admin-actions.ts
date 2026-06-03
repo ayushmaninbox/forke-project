@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
 import { admins } from '@/lib/db/schema'
 import { eq, or } from 'drizzle-orm'
+import { logAudit } from '@/lib/actions/audit-actions'
 
 export async function adminLogin(formData: FormData) {
   const username = formData.get('username') as string
@@ -94,6 +95,16 @@ export async function adminLogin(formData: FormData) {
     } catch (e) {
       console.warn('Warning: Could not set admin_token cookie (running outside Next.js request scope).')
     }
+
+    // Record admin login event in the audit trail
+    await logAudit({
+      category: 'admin',
+      action: 'admin.login',
+      target: admin.name,
+      actorId: admin.id,
+      actorName: admin.name
+    })
+
     return { success: true }
   }
 
@@ -101,6 +112,20 @@ export async function adminLogin(formData: FormData) {
 }
 
 export async function adminLogout() {
+  try {
+    const admin = await getCurrentAdmin().catch(() => null)
+    if (admin) {
+      await logAudit({
+        category: 'admin',
+        action: 'admin.logout',
+        target: admin.name,
+        actorId: admin.id,
+        actorName: admin.name
+      })
+    }
+  } catch (err) {
+    console.error('Failed to log admin logout:', err)
+  }
   const cookieStore = await cookies()
   cookieStore.delete('admin_token')
 }

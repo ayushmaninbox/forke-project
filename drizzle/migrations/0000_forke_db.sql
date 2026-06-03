@@ -37,12 +37,19 @@ CREATE TABLE "admins" (
 --> statement-breakpoint
 CREATE TABLE "developers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid,
-	"github_id" integer NOT NULL,
+	"user_id" uuid NOT NULL,
+	"github_id" text NOT NULL,
 	"username" text NOT NULL,
-	"access_token" text NOT NULL,
+	"access_token" text,
+	"avatar_url" text,
+	"profile_url" text,
+	"repos" jsonb,
+	"languages" jsonb,
+	"raw_profile" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "developers_github_id_unique" UNIQUE("github_id")
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "developers_github_id_unique" UNIQUE("github_id"),
+	CONSTRAINT "developers_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "escrow" (
@@ -54,21 +61,7 @@ CREATE TABLE "escrow" (
 	CONSTRAINT "escrow_task_id_unique" UNIQUE("task_id")
 );
 --> statement-breakpoint
-CREATE TABLE "github_profiles" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"github_id" text NOT NULL,
-	"login" text NOT NULL,
-	"avatar_url" text,
-	"profile_url" text,
-	"repos" jsonb,
-	"languages" jsonb,
-	"raw_profile" jsonb,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "github_profiles_user_id_unique" UNIQUE("user_id")
-);
---> statement-breakpoint
+
 CREATE TABLE "messages" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"sender_id" uuid NOT NULL,
@@ -205,17 +198,9 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "verificationToken" (
-	"identifier" text NOT NULL,
-	"token" text NOT NULL,
-	"expires" timestamp NOT NULL,
-	CONSTRAINT "verificationToken_identifier_token_pk" PRIMARY KEY("identifier","token")
-);
---> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "developers" ADD CONSTRAINT "developers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "escrow" ADD CONSTRAINT "escrow_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "github_profiles" ADD CONSTRAINT "github_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_receiver_id_users_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

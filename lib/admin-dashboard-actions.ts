@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from './db'
-import { users, owners, subscribers, admins, developers, githubProfiles, accounts } from './db/schema'
+import { users, owners, subscribers, admins, developers, accounts } from './db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { sendBroadcastEmail, sendAdminInvitation } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
@@ -289,6 +289,13 @@ export async function updateAdminProfile(name: string, username: string, alterna
       })
       .where(eq(admins.id, current.id))
 
+    // Log the profile update action
+    await logAudit({
+      category: 'admin',
+      action: 'admin.profile_updated',
+      target: `${name.trim()} (@${cleanUsername})`
+    })
+
     revalidatePath('/admin')
     return { success: true }
   } catch (error) {
@@ -440,6 +447,14 @@ export async function changeAdminPasswordAction(oldPasswordPlain: string, newPas
       .update(admins)
       .set({ passwordHash: hash })
       .where(eq(admins.id, current.id))
+
+    // Log the password change action
+    await logAudit({
+      category: 'admin',
+      action: 'admin.password_changed',
+      target: current.name
+    })
+
     return { success: true }
   } catch (error) {
     console.error('Failed to change admin password:', error)

@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth'
 import { db } from '@/lib/db'
-import { users, accounts, githubProfiles } from '@/lib/db/schema'
+import { users, accounts, developers } from '@/lib/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { writeFile, mkdir } from 'fs/promises'
 import { join, extname } from 'path'
@@ -132,9 +132,9 @@ export async function getLinkedAvatars(): Promise<{ github: string | null; googl
     // If either is missing, resolve them via legacy/linked tables and cache them in users table
     if (!githubAvatar || !googleAvatar) {
       if (!githubAvatar) {
-        // GitHub avatar from the githubProfiles table
-        const ghProfile = await db.query.githubProfiles.findFirst({
-          where: eq(githubProfiles.userId, session.user.id),
+        // GitHub avatar from the developers table
+        const ghProfile = await db.query.developers.findFirst({
+          where: eq(developers.userId, session.user.id),
         })
         if (ghProfile?.avatarUrl) {
           githubAvatar = ghProfile.avatarUrl

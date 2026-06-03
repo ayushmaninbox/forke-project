@@ -4,7 +4,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { users, accounts, sessions, verificationTokens, githubProfiles, developers } from '@/lib/db/schema'
+import { users, accounts, sessions, developers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { processLoginStreak } from '@/lib/actions/auth-actions'
 import { authConfig } from './auth.config'
@@ -15,7 +15,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     usersTable: users,
     accountsTable: accounts,
     sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
   }),
   providers: [
     ...authConfig.providers,
@@ -156,8 +155,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
              token.githubUrl = githubUrl
 
-             const existingProfile = await db.query.githubProfiles.findFirst({
-               where: eq(githubProfiles.userId, token.id as string)
+             const existingDev = await db.query.developers.findFirst({
+               where: eq(developers.userId, token.id as string)
              })
 
              const languageCounts: Record<string, number> = {}
@@ -172,10 +171,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                .sort((a, b) => b[1] - a[1])
                .reduce((acc, [lang, count]) => ({ ...acc, [lang]: count }), {})
 
-             const profileData = {
+             const devPayload = {
                userId: token.id as string,
                githubId: githubData.id.toString(),
-               login: githubData.login,
+               username: githubData.login,
+               accessToken: account.access_token || '',
                avatarUrl: githubData.avatar_url,
                profileUrl: githubUrl,
                rawProfile: githubData,
@@ -184,32 +184,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                updatedAt: new Date(),
              }
 
-             if (existingProfile) {
-               await db.update(githubProfiles).set(profileData).where(eq(githubProfiles.id, existingProfile.id))
-             } else {
-               await db.insert(githubProfiles).values({
-                 ...profileData,
-                 createdAt: new Date(),
-               })
-             }
-
-             // Also sync to the developers table for compatibility with other systems (like the review engines)
-             const existingDev = await db.query.developers.findFirst({
-               where: eq(developers.githubId, Number(githubData.id))
-             })
-
              if (existingDev) {
-               await db.update(developers).set({
-                 userId: token.id as string,
-                 username: githubData.login,
-                 accessToken: account.access_token,
-               }).where(eq(developers.id, existingDev.id))
+               await db.update(developers).set(devPayload).where(eq(developers.id, existingDev.id))
              } else {
                await db.insert(developers).values({
-                 userId: token.id as string,
-                 githubId: Number(githubData.id),
-                 username: githubData.login,
-                 accessToken: account.access_token,
+                 ...devPayload,
+                 createdAt: new Date(),
                })
              }
            }

@@ -122,20 +122,7 @@ export const sessions = pgTable('session', {
   expires: timestamp('expires', { mode: 'date' }).notNull(),
 })
 
-export const verificationTokens = pgTable(
-  'verificationToken',
-  {
-    identifier: text('identifier').notNull(),
-    token: text('token').notNull(),
-    expires: timestamp('expires', { mode: 'date' }).notNull(),
-  },
-  (vt) => ({
-    compoundKey: {
-      columns: [vt.identifier, vt.token],
-      primaryKey: true,
-    },
-  })
-)
+
 
 export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -189,19 +176,7 @@ export const revisionRequests = pgTable('revision_requests', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-export const githubProfiles = pgTable('github_profiles', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
-  githubId: text('github_id').notNull(),
-  login: text('login').notNull(),
-  avatarUrl: text('avatar_url'),
-  profileUrl: text('profile_url'),
-  repos: jsonb('repos'),
-  languages: jsonb('languages'),
-  rawProfile: jsonb('raw_profile'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+// Note: github_profiles table has been merged into developers table below.
 
 export const supportEnquiries = pgTable('support_enquiries', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -242,11 +217,17 @@ export const adminAuditLog = pgTable('admin_audit_log', {
 
 export const developers = pgTable('developers', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
-  githubId: integer('github_id').notNull().unique(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  githubId: text('github_id').notNull().unique(),
   username: text('username').notNull(),
-  accessToken: text('access_token').notNull(),
+  accessToken: text('access_token'),
+  avatarUrl: text('avatar_url'),
+  profileUrl: text('profile_url'),
+  repos: jsonb('repos'),
+  languages: jsonb('languages'),
+  rawProfile: jsonb('raw_profile'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 export const messages = pgTable('messages', {
