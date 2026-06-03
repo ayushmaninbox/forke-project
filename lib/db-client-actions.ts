@@ -884,10 +884,16 @@ export async function getDatabaseMetrics() {
     const allDbsSizeBytes = Number(allDbsSizeRes[0]?.all_dbs_size || dbSizeBytes)
     const allDbsSizeMb = Number((allDbsSizeBytes / (1024 * 1024)).toFixed(2))
 
-    // Estimate CPU/RAM usage based on database stats (approximate since we cannot read OS CPU without extensions)
-    const cpuUsed = Math.min(100, Math.max(0.02, (active * 0.15) + (inserted + updated + deleted > 0 ? 0.2 : 0) + (Math.random() * 0.05)))
-    const ramUsed = Math.min(8.0, Math.max(0.4, 0.45 + (active * 0.05) + (dbSizeMb * 0.005) + (Math.random() * 0.01)))
-    const ramCached = Math.min(8.0, Math.max(0.2, ramUsed * 0.8 + (Math.random() * 0.05)))
+    // 7. Get transaction commits and rollbacks
+    const xactRes = await client.unsafe(`
+      SELECT 
+        COALESCE(xact_commit, 0)::bigint as commits,
+        COALESCE(xact_rollback, 0)::bigint as rollbacks
+      FROM pg_stat_database 
+      WHERE datname = current_database()
+    `)
+    const xactCommits = Number(xactRes[0]?.commits || 0)
+    const xactRollbacks = Number(xactRes[0]?.rollbacks || 0)
 
     return {
       success: true,
@@ -897,11 +903,7 @@ export async function getDatabaseMetrics() {
       cacheHitRate,
       dbSizeMb,
       allDbsSizeMb,
-      cpu: { used: cpuUsed, allocated: 2 }, // 2 vCPUs allocated
-      ram: { used: ramUsed, cached: ramCached, allocated: 8.0 }, // 8 GB allocated (2 CU limit)
-      workingSetSize: Math.min(dbSizeMb, Math.max(0.1, dbSizeMb * 0.6 + (Math.random() * 0.05))), // dynamic working set
-      poolerClient: { active, waiting, activeCancel: 0, waitingCancel: 0 },
-      poolerServer: { active, idle }
+      transactions: { commits: xactCommits, rollbacks: xactRollbacks }
     }
   } catch (error: any) {
     console.error('Failed to fetch database metrics:', error)
