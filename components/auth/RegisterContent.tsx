@@ -7,6 +7,7 @@ import { Eye, EyeOff, ArrowLeft, Zap, Plus, Info, CheckCircle2, ShieldCheck, Mai
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { cn } from '@/lib/utils/cn'
 
 import { submitOwnerApplication } from '@/lib/owner-actions'
 import { deleteCurrentUser } from '@/lib/actions/user-actions'
@@ -18,6 +19,7 @@ function RegisterContentInner() {
   const searchParams = useSearchParams()
   const [role, setRole] = useState<'developer' | 'owner' | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [lastUsed, setLastUsed] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -220,7 +222,10 @@ function RegisterContentInner() {
       </div>
 
       {/* Right Panel: Elegant Orangish Auth */}
-      <div className="w-full md:w-1/2 h-full flex flex-col items-center justify-between relative bg-[#0A0A0A] px-6 py-8 md:py-12 overflow-y-auto overflow-x-hidden">
+      <div className={cn(
+        "w-full md:w-1/2 h-full flex flex-col items-center justify-between relative bg-[#0A0A0A] px-6 py-8 md:py-12 overflow-x-hidden",
+        role === 'developer' ? "md:overflow-hidden overflow-y-auto" : "overflow-y-auto"
+      )}>
         
         {/* Back to Site Button */}
         {!isSubmitted && (
@@ -338,33 +343,33 @@ function RegisterContentInner() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">First Name</label>
                   <input required name="firstName" value={formData.firstName} onChange={(e) => updateField('firstName', e.target.value)} type="text" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="John" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Last Name</label>
                   <input required name="lastName" value={formData.lastName} onChange={(e) => updateField('lastName', e.target.value)} type="text" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="Doe" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Contact Number</label>
                   <input required name="contactNumber" value={formData.contactNumber} onChange={(e) => updateField('contactNumber', e.target.value)} type="tel" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="+91 00000 00000" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Contact Email</label>
                   <input required name="contactEmail" value={formData.contactEmail} onChange={(e) => updateField('contactEmail', e.target.value)} type="email" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="john@company.com" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Company Name</label>
                   <input required name="companyName" value={formData.companyName} onChange={(e) => updateField('companyName', e.target.value)} type="text" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="Acme Inc." />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1 flex items-center gap-1.5">
                     Company Website <span className="text-[9px] lowercase opacity-50 font-medium">(optional)</span>
                   </label>
@@ -373,26 +378,26 @@ function RegisterContentInner() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-white/5">
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Personal LinkedIn Page Link</label>
                   <input required name="personalLinkedIn" value={formData.personalLinkedIn} onChange={(e) => updateField('personalLinkedIn', e.target.value)} type="url" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="linkedin.com/in/johndoe" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Company LinkedIn Page Link</label>
                   <input required name="companyLinkedIn" value={formData.companyLinkedIn} onChange={(e) => updateField('companyLinkedIn', e.target.value)} type="url" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="linkedin.com/company/acme" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Designation</label>
                   <input required name="designation" value={formData.designation} onChange={(e) => updateField('designation', e.target.value)} type="text" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="CTO / Founder / Engineering Manager" />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1 flex flex-wrap items-center gap-1.5">
                     Other Relevant Links (like portfolio sites, media coverage, etc.)
                     <span className="text-[9px] lowercase opacity-40 font-medium">(optional)</span>
                   </label>
                   <input name="otherLinks" value={formData.otherLinks} onChange={(e) => updateField('otherLinks', e.target.value)} type="text" className="w-full h-12 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all" placeholder="Portfolio, GitHub Org, Press releases..." />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Message <span className="text-[9px] lowercase opacity-50 font-medium">(optional)</span></label>
                   <textarea name="message" value={formData.message} onChange={(e) => updateField('message', e.target.value)} className="w-full h-24 bg-white/[0.02] border border-white/5 rounded-2xl p-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all resize-none" placeholder="Tell us about the tasks you plan to post..." />
                 </div>
@@ -506,7 +511,7 @@ function RegisterContentInner() {
                     checked={true} 
                     readOnly 
                     onClick={(e) => e.preventDefault()}
-                    className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent cursor-not-allowed"
+                    className="mt-0.5 w-[18px] h-[18px] appearance-none rounded-full border border-white/20 bg-white/[0.02] checked:bg-accent checked:border-accent checked:shadow-[inset_0_0_0_3px_#0A0A0A] transition-colors cursor-not-allowed"
                   />
                   <span className="text-[11px] text-white/50 font-medium leading-tight">
                     I agree to the <Link href="/terms" className="text-white hover:text-accent underline underline-offset-2">Terms of Services</Link> and <Link href="/privacy" className="text-white hover:text-accent underline underline-offset-2">Privacy Policy</Link>
@@ -518,7 +523,7 @@ function RegisterContentInner() {
                     type="checkbox" 
                     checked={promoChecked} 
                     onChange={(e) => setPromoChecked(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent"
+                    className="mt-0.5 w-[18px] h-[18px] appearance-none rounded-full border border-white/20 bg-white/[0.02] checked:bg-accent checked:border-accent checked:shadow-[inset_0_0_0_3px_#0A0A0A] transition-colors"
                   />
                   <span className="text-[11px] text-white/50 font-medium leading-tight">
                     I would like to receive promotional emails, product updates, and special offers.
@@ -541,7 +546,7 @@ function RegisterContentInner() {
             </form>
           </div>
         ) : (
-          <div className="w-full max-w-[400px] space-y-6 relative z-10 my-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="w-full max-w-[400px] space-y-4 relative z-10 my-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             
             {/* Brand Header */}
             <div className="flex flex-col items-center">
@@ -629,10 +634,10 @@ function RegisterContentInner() {
               )}
 
               {/* Elegant Form Fields */}
-              <form onSubmit={handleDeveloperSubmit} className="space-y-4" noValidate>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
+              <form onSubmit={handleDeveloperSubmit} className="space-y-3" noValidate>
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="space-y-0.5">
                       <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">First Name</label>
                       <input 
                         required
@@ -642,7 +647,7 @@ function RegisterContentInner() {
                         className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Last Name</label>
                       <input 
                         required
@@ -654,7 +659,7 @@ function RegisterContentInner() {
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Email Address</label>
                     <input 
                       required
@@ -665,7 +670,7 @@ function RegisterContentInner() {
                     />
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Username</label>
                     <input 
                       required
@@ -680,7 +685,7 @@ function RegisterContentInner() {
 
 
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Password</label>
                     <div className="relative">
                       <input 
@@ -700,25 +705,34 @@ function RegisterContentInner() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Confirm Password</label>
-                    <input 
-                      required
-                      name="confirmPassword"
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="••••••••"
-                      className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
-                    />
+                    <div className="relative">
+                      <input 
+                        required
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"} 
+                        placeholder="••••••••"
+                        className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all pr-10"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/10 hover:text-white transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-3 pt-2 text-left">
+                <div className="space-y-2 pt-1 text-left">
                   <label className="flex items-start gap-3 cursor-pointer select-none">
                     <input 
                       type="checkbox" 
                       checked={true} 
                       readOnly 
                       onClick={(e) => e.preventDefault()}
-                      className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent cursor-not-allowed"
+                      className="mt-0.5 w-[18px] h-[18px] appearance-none rounded-full border border-white/20 bg-white/[0.02] checked:bg-accent checked:border-accent checked:shadow-[inset_0_0_0_3px_#0A0A0A] transition-colors cursor-not-allowed"
                     />
                     <span className="text-[11px] text-white/50 font-medium leading-tight">
                       I agree to the <Link href="/terms" className="text-white hover:text-accent underline underline-offset-2">Terms of Services</Link> and <Link href="/privacy" className="text-white hover:text-accent underline underline-offset-2">Privacy Policy</Link>
@@ -730,7 +744,7 @@ function RegisterContentInner() {
                       type="checkbox" 
                       checked={promoChecked} 
                       onChange={(e) => setPromoChecked(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-white/10 bg-white/[0.02] text-accent focus:ring-accent accent-accent"
+                      className="mt-0.5 w-[18px] h-[18px] appearance-none rounded-full border border-white/20 bg-white/[0.02] checked:bg-accent checked:border-accent checked:shadow-[inset_0_0_0_3px_#0A0A0A] transition-colors"
                     />
                     <span className="text-[11px] text-white/50 font-medium leading-tight">
                       I would like to receive promotional emails, product updates, and special offers.
@@ -756,12 +770,6 @@ function RegisterContentInner() {
           </div>
         )}
 
-        {/* Brand Legal Footer */}
-        <div className="w-full max-w-[500px] text-center relative z-10 pt-6">
-          <p className="text-[9px] md:text-[10px] text-white/20 font-bold uppercase tracking-widest leading-none whitespace-nowrap overflow-visible">
-            By using Forke, you are agreeing to the <Link href="/terms" className="text-white/40 hover:text-accent transition-colors underline underline-offset-4 decoration-white/5 hover:decoration-accent/40">Terms of Services</Link> and <Link href="/privacy" className="text-white/40 hover:text-accent transition-colors underline underline-offset-4 decoration-white/5 hover:decoration-accent/40">Privacy Policy</Link>
-          </p>
-        </div>
       </div>
     </div>
   )

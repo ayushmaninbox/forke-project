@@ -4,7 +4,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { users, accounts, sessions, developers } from '@/lib/db/schema'
+import { users, accounts, sessions, developers, subscribers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { processLoginStreak } from '@/lib/actions/auth-actions'
 import { authConfig } from './auth.config'
@@ -124,6 +124,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // Capture and cache OAuth profile pictures on sign in
       if (user && token.id) {
+        if (user.email) {
+          try {
+            await db.update(subscribers).set({ userId: token.id as string }).where(eq(subscribers.email, user.email))
+          } catch (e) {
+            console.error('Failed to link existing subscriber on sign in:', e)
+          }
+        }
         if (account?.provider === 'google' && user.image) {
           try {
             await db.update(users).set({ googleAvatarUrl: user.image }).where(eq(users.id, token.id as string))

@@ -78,7 +78,7 @@ export default function ToastContainer() {
   const visibleToasts = toasts.slice(-4)
 
   return (
-    <div className="fixed bottom-6 right-6 z-[99999] flex flex-col-reverse items-end gap-3 w-full max-w-sm pointer-events-none px-4 md:px-0">
+    <div className="fixed bottom-6 right-6 z-[99999] flex flex-col items-end gap-3 w-full max-w-sm pointer-events-none px-4 md:px-0">
       <Suspense fallback={null}>
         <QueryToastHandler />
       </Suspense>

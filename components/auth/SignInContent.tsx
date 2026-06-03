@@ -192,7 +192,7 @@ function SignInContentInner() {
 
             {/* Elegant Form Fields */}
             <form onSubmit={handleCredentialsSubmit} className="space-y-4" noValidate>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Email or Username</label>
                 <input 
                   name="email"
@@ -201,7 +201,7 @@ function SignInContentInner() {
                   className="w-full h-12 md:h-14 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
                 />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-[10px] text-white/40 font-black uppercase tracking-widest">Password</label>
                   <button type="button" className="text-[10px] text-accent/60 hover:text-accent font-black uppercase tracking-widest transition-colors whitespace-nowrap">Forgot Your Password?</button>
@@ -211,7 +211,7 @@ function SignInContentInner() {
                     name="password"
                     type={showPassword ? "text" : "password"} 
                     placeholder="••••••••"
-                    className="w-full h-12 md:h-14 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    className="w-full h-12 md:h-14 bg-white/[0.02] border border-white/5 rounded-2xl px-6 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all pr-12"
                   />
                   <button 
                     type="button"
@@ -236,12 +236,6 @@ function SignInContentInner() {
           </div>
         </div>
 
-        {/* Brand Legal Footer */}
-        <div className="w-full max-w-[500px] text-center relative z-10 pt-6">
-          <p className="text-[9px] md:text-[10px] text-white/20 font-bold uppercase tracking-widest leading-none whitespace-nowrap overflow-visible">
-            By using Forke, you are agreeing to the <Link href="/terms" className="text-white/40 hover:text-accent transition-colors underline underline-offset-4 decoration-white/5 hover:decoration-accent/40">Terms of Services</Link> and <Link href="/privacy" className="text-white/40 hover:text-accent transition-colors underline underline-offset-4 decoration-white/5 hover:decoration-accent/40">Privacy Policy</Link>
-          </p>
-        </div>
       </div>
     </div>
   )

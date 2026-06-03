@@ -9,6 +9,7 @@ import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
+import { resolveAvatarUrl } from './utils/avatar'
 
 async function ensureAdmin() {
   if (!await isAdminAuthenticated()) {
@@ -18,24 +19,40 @@ async function ensureAdmin() {
 
 export async function getPendingOwners() {
   await ensureAdmin()
-  return await db.select({
+  const rows = await db.select({
     user: users,
     owner: owners
   })
   .from(users)
   .innerJoin(owners, eq(users.id, owners.id))
   .where(eq(users.isApproved, false))
+
+  return rows.map((r) => ({
+    ...r,
+    user: {
+      ...r.user,
+      image: resolveAvatarUrl(r.user.image)
+    }
+  }))
 }
 
 export async function getApprovedOwners() {
   await ensureAdmin()
-  return await db.select({
+  const rows = await db.select({
     user: users,
     owner: owners
   })
   .from(users)
   .innerJoin(owners, eq(users.id, owners.id))
   .where(eq(users.isApproved, true))
+
+  return rows.map((r) => ({
+    ...r,
+    user: {
+      ...r.user,
+      image: resolveAvatarUrl(r.user.image)
+    }
+  }))
 }
 
 export async function getDevelopers() {
@@ -60,7 +77,10 @@ export async function getDevelopers() {
     )
     .orderBy(desc(developers.createdAt))
 
-  return rows
+  return rows.map((r) => ({
+    ...r,
+    image: resolveAvatarUrl(r.image)
+  }))
 }
 
 export async function approveOwner(userId: string) {

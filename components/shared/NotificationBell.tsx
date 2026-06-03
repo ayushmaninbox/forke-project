@@ -188,7 +188,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
                 <p className="text-[12px] text-white/30">No notifications yet</p>
               </div>
             ) : (
-              notifs.map(notif => (
+              [...notifs].reverse().map(notif => (
                 <div
                   key={notif.id}
                   onMouseEnter={() => setHoveredId(notif.id)}

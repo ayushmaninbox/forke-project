@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { updateProfileSettings, updateTelemetrySettings, setupPasswordAction, scheduleAccountDeletionAction, updatePromotionalSubscriptionAction } from '@/app/(app)/settings/actions'
+import { updateProfileSettings, updateTelemetrySettings, setupPasswordAction, scheduleAccountDeletionAction, updatePromotionalSubscriptionAction, changePasswordAction } from '@/app/(app)/settings/actions'
 import { Save, Sliders, Bell, Laptop, AlertTriangle, CheckCircle2, Link2, Check, Lock, Key, Trash2, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
@@ -80,8 +80,12 @@ export default function SettingsForm({
   const isOwner = role === 'owner'
 
   // New features state
+  const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showOldPass, setShowOldPass] = useState(false)
+  const [showNewPass, setShowNewPass] = useState(false)
+  const [showConfirmNewPass, setShowConfirmNewPass] = useState(false)
   const [showPass, setShowPass] = useState(false)
   const [passSubmitting, setPassSubmitting] = useState(false)
   const [hasLocalPassword, setHasLocalPassword] = useState(hasPassword)
@@ -166,6 +170,40 @@ export default function SettingsForm({
         setConfirmPassword('')
       } else {
         toast(res.error || 'Failed to setup password.', 'error')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred.', 'error')
+    } finally {
+      setPassSubmitting(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      toast('Please fill out all password fields.', 'error')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast('Passwords do not match.', 'error')
+      return
+    }
+    if (newPassword.length < 8) {
+      toast('Password must be at least 8 characters long.', 'error')
+      return
+    }
+
+    setPassSubmitting(true)
+    try {
+      const res = await changePasswordAction(userId, oldPassword, newPassword)
+      if (res.success) {
+        toast('Password updated successfully!', 'success')
+        setOldPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        toast(res.error || 'Failed to update password.', 'error')
       }
     } catch (err: any) {
       console.error(err)
@@ -361,11 +399,11 @@ export default function SettingsForm({
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5 text-left relative">
+              <div className="space-y-1 text-left relative">
                 <label className="text-xs font-medium text-[var(--color-text-muted)]">New Password</label>
                 <div className="relative">
                   <input
-                    type={showPass ? 'text' : 'password'}
+                    type={showNewPass ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
@@ -373,23 +411,32 @@ export default function SettingsForm({
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPass(!showPass)}
+                    onClick={() => setShowNewPass(!showNewPass)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                   >
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-1.5 text-left">
+              <div className="space-y-1 text-left relative">
                 <label className="text-xs font-medium text-[var(--color-text-muted)]">Confirm Password</label>
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmNewPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewPass(!showConfirmNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    {showConfirmNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -401,6 +448,92 @@ export default function SettingsForm({
                 className="h-8 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
               >
                 {passSubmitting ? 'Saving...' : 'Set Password'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Change Local Password */}
+        {hasLocalPassword && (
+          <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
+            <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+              <Key className="w-4 h-4 text-accent" /> Change Password
+            </h4>
+            
+            <p className="text-[11px] text-[var(--color-text-muted)] -mt-2 leading-relaxed">
+              Update your account password. You will need to enter your current password.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1 text-left relative">
+                <label className="text-xs font-medium text-[var(--color-text-muted)]">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showOldPass ? 'text' : 'password'}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPass(!showOldPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    {showOldPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-left relative">
+                <label className="text-xs font-medium text-[var(--color-text-muted)]">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-left relative">
+                <label className="text-xs font-medium text-[var(--color-text-muted)]">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmNewPass ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-xl px-4 pr-10 text-xs text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewPass(!showConfirmNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                  >
+                    {showConfirmNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={passSubmitting || !oldPassword || !newPassword || !confirmPassword}
+                className="h-8 px-4 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 text-xs font-black text-[#0a0a0a] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none select-none"
+              >
+                {passSubmitting ? 'Saving...' : 'Change Password'}
               </button>
             </div>
           </div>

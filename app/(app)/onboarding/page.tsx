@@ -21,6 +21,7 @@ export default function OnboardingPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -112,8 +113,10 @@ export default function OnboardingPage() {
 
     const result = await completeOnboarding(data)
     if (result.success) {
-      await update()
-      router.push('/dashboard')
+      await update({ username: cleanUsername })
+      // Hard navigation so the server layout re-runs with the fresh session
+      // (now that the username is set) and renders the sidebar.
+      window.location.href = '/dashboard'
     } else {
       setError(result.error || 'Failed to complete onboarding')
       setIsSubmitting(false)
@@ -151,7 +154,7 @@ export default function OnboardingPage() {
         <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
           {step === 1 ? (
             <form onSubmit={handleNextStep} className="space-y-5">
-              <div className="space-y-1.5">
+              <div className="space-y-0.5">
                 <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">Username</label>
                 <input
                   required
@@ -187,7 +190,7 @@ export default function OnboardingPage() {
           ) : (
             <div className="space-y-5">
               <div className="space-y-4">
-                <div className="space-y-1.5">
+                <div className="space-y-0.5">
                   <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">Password</label>
                   <div className="relative">
                     <input
@@ -208,16 +211,25 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-0.5">
                   <label className="text-xs font-medium text-[var(--color-text-muted)] ml-0.5">Confirm Password</label>
-                  <input
-                    name="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg px-3 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors"
-                  />
+                  <div className="relative">
+                    <input
+                      name="confirmPassword"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      className="w-full h-10 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-3 pr-10 text-[13px] text-white placeholder:text-white/20 focus:outline-none focus:border-accent transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

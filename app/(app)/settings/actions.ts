@@ -188,3 +188,35 @@ export async function updatePromotionalSubscriptionAction(userId: string, subscr
     return { success: false, error: 'Failed to update subscription.' }
   }
 }
+
+export async function changePasswordAction(userId: string, oldPass: string, newPass: string) {
+  if (!oldPass || !newPass || newPass.length < 8) {
+    return { success: false, error: 'Password must be at least 8 characters long.' }
+  }
+
+  try {
+    const userRecord = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { passwordHash: true }
+    })
+
+    if (!userRecord || !userRecord.passwordHash) {
+      return { success: false, error: 'No password set for this account. Set a password first.' }
+    }
+
+    const isValid = await bcrypt.compare(oldPass, userRecord.passwordHash)
+    if (!isValid) {
+      return { success: false, error: 'Incorrect current password.' }
+    }
+
+    const salt = await bcrypt.genSalt(10)
+    const passwordHash = await bcrypt.hash(newPass, salt)
+
+    await db.update(users).set({ passwordHash }).where(eq(users.id, userId))
+    revalidatePath('/settings')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to change password:', error)
+    return { success: false, error: 'Database update failed.' }
+  }
+}

@@ -419,10 +419,10 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
           <tr>
             <td align="center" style="padding:48px 16px;">
-              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(244,63,94,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
+              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
                 <tr>
                   <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(244,63,94,0.05);" />
+                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
                   </td>
                 </tr>
                 <tr>
@@ -436,7 +436,7 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
                     </table>
                     
                     <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
-                      Account deletion scheduled.<br><span style="color:#f43f5e;font-style:italic;">30 days remaining.</span>
+                      Account deletion scheduled.<br><span style="color:#FF7A00;font-style:italic;">30 days remaining.</span>
                     </h1>
                     
                     <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">

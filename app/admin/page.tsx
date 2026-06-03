@@ -80,15 +80,37 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring'
-  >('dashboard')
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | null
+  >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
+  // Synchronize activeTab with URL query parameter on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get('tab')
+      const validTabs = [
+        'dashboard', 'owner-approval', 'developer-ban', 'enquiries', 
+        'admins', 'subscribers', 'activity', 'database', 'db-overview', 'db-monitoring'
+      ]
+      if (tab && validTabs.includes(tab)) {
+        setActiveTab(tab as any)
+      } else {
+        setActiveTab('dashboard')
+      }
+    }
+  }, [])
+
   // Switch tab and close the mobile drawer
-  function selectTab(tab: typeof activeTab) {
+  function selectTab(tab: Exclude<typeof activeTab, null>) {
     setActiveTab(tab)
     setMobileNavOpen(false)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', tab)
+      window.history.pushState({}, '', url.pathname + url.search)
+    }
   }
 
   // Modal open states
@@ -159,6 +181,7 @@ export default function AdminDashboard() {
   }, [activeTab, currentAdmin])
 
   async function fetchData() {
+    if (activeTab === null) return
     setIsLoading(true)
     
     // Fetch waitlist config
@@ -626,6 +649,17 @@ export default function AdminDashboard() {
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (activeTab === null) {
+    return (
+      <div className="min-h-screen bg-[#070709] text-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[var(--color-text-muted)] font-medium font-mono animate-pulse">Loading Admin Panel...</p>
         </div>
       </div>
     )
