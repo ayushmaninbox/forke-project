@@ -15,6 +15,7 @@ export async function ensureProfileColumns() {
   try {
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "headline" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "location" text;`)
+    await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "college" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "website_url" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "linkedin_url" text;`)
     await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "github_avatar_url" text;`)
@@ -68,6 +69,7 @@ export interface ProfileUpdateInput {
   headline?: string
   bio?: string
   location?: string
+  college?: string
   githubUrl?: string
   linkedinUrl?: string
   websiteUrl?: string
@@ -89,6 +91,7 @@ export async function updateProfile(data: ProfileUpdateInput) {
     headline: clean(data.headline),
     bio: clean(data.bio),
     location: clean(data.location),
+    college: clean(data.college),
     githubUrl: clean(data.githubUrl),
     linkedinUrl: clean(data.linkedinUrl),
     websiteUrl: clean(data.websiteUrl),

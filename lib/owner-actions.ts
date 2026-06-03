@@ -5,6 +5,7 @@ import { users, owners } from './db/schema'
 import { auth } from '@/auth'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { logAudit } from './actions/audit-actions'
 
 export async function submitOwnerApplication(formData: any) {
   const session = await auth()
@@ -62,6 +63,16 @@ export async function submitOwnerApplication(formData: any) {
     })
 
     revalidatePath('/dashboard')
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'owner',
+      action: 'owner.applied',
+      target: `${formData.firstName} ${formData.lastName}`,
+      actorId: userId,
+      actorName: `${formData.firstName} ${formData.lastName}`
+    })
+
     return { success: true }
   } catch (error: any) {
     console.error('FULL SUBMISSION ERROR:', error)

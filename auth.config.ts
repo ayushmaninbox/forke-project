@@ -37,6 +37,7 @@ export const authConfig = {
         session.user.isBanned = token.isBanned as boolean
         session.user.githubUrl = token.githubUrl as string | null
         session.user.username = token.username as string | null
+        session.user.isGithubConnected = token.isGithubConnected as boolean
       }
       return session
     },
@@ -51,6 +52,7 @@ export const authConfig = {
         token.isBanned = user.isBanned
         token.githubUrl = user.githubUrl
         token.username = user.username
+        token.isGithubConnected = (user as any).isGithubConnected
       }
       if (trigger === 'update' && session) {
         return { ...token, ...session }

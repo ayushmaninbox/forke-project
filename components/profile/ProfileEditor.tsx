@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useState, useEffect } from 'react'
-import { Eye, EyeOff, Save, Upload, Loader2, Globe, Camera, X } from 'lucide-react'
+import { Eye, EyeOff, Save, Upload, Loader2, Globe, Camera, X, GraduationCap } from 'lucide-react'
 import { updateProfile, uploadAvatar, getLinkedAvatars } from '@/lib/actions/profile-actions'
 
 function Github({ className }: { className?: string }) {
@@ -49,6 +49,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
     headline: data.headline || '',
     bio: data.bio || '',
     location: data.location || '',
+    college: data.college || '',
     githubUrl: data.githubUrl || '',
     linkedinUrl: data.linkedinUrl || '',
     websiteUrl: data.websiteUrl || '',
@@ -153,7 +154,10 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
             <Field label="Display name" value={form.name} onChange={set('name')} placeholder="Your name" />
             <Field label="Location" value={form.location} onChange={set('location')} placeholder="e.g. Bengaluru, India" />
           </div>
-          <Field label="Headline" value={form.headline} onChange={set('headline')} placeholder="One line that describes you" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Headline" value={form.headline} onChange={set('headline')} placeholder="One line that describes you" />
+            <Field label="College / University" value={form.college} onChange={set('college')} placeholder="e.g. Stanford University" icon={<GraduationCap className="w-4 h-4" />} />
+          </div>
           <Field label="Bio" value={form.bio} onChange={set('bio')} placeholder="A few sentences about what you build…" textarea />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

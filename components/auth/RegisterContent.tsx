@@ -135,11 +135,10 @@ function RegisterContentInner() {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
       confirmPassword: formData.get('confirmPassword') as string,
-      githubUrl: formData.get('githubUrl') as string,
       username: devUsername,
     }
 
-    if (!data.firstName || !data.lastName || !data.email || !data.githubUrl || !data.password || !data.confirmPassword || !data.username) {
+    if (!data.firstName || !data.lastName || !data.email || !data.password || !data.confirmPassword || !data.username) {
       setError('Please fill out all required fields including username.')
       setIsSubmitting(false)
       return
@@ -649,28 +648,7 @@ function RegisterContentInner() {
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">GitHub Profile</label>
-                    <input 
-                      required
-                      name="githubUrl"
-                      type="url" 
-                      placeholder="github.com/username"
-                      onChange={(e) => {
-                        const val = e.target.value
-                        let ghUsername = ''
-                        if (val.includes('github.com/')) {
-                          ghUsername = val.split('github.com/')[1].split('/')[0]
-                        } else {
-                          ghUsername = val.trim()
-                        }
-                        if (ghUsername && /^[a-zA-Z0-9_-]+$/.test(ghUsername) && !devUsername) {
-                          setDevUsername(ghUsername)
-                        }
-                      }}
-                      className="w-full h-10 bg-white/[0.02] border border-white/5 rounded-2xl px-4 text-sm text-white placeholder:text-white/10 focus:outline-none focus:border-accent/40 focus:bg-accent/[0.02] transition-all"
-                    />
-                  </div>
+
 
                   <div className="space-y-1">
                     <label className="text-[10px] text-white/40 font-black uppercase tracking-widest ml-1">Password</label>

@@ -38,14 +38,15 @@ CREATE TABLE "admins" (
 CREATE TABLE "developers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
-	"github_id" text NOT NULL,
-	"username" text NOT NULL,
+	"github_id" text,
+	"username" text,
 	"access_token" text,
 	"avatar_url" text,
 	"profile_url" text,
 	"repos" jsonb,
 	"languages" jsonb,
 	"raw_profile" jsonb,
+	"is_github_connected" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "developers_github_id_unique" UNIQUE("github_id"),
@@ -192,6 +193,7 @@ CREATE TABLE "users" (
 	"is_banned" boolean DEFAULT false NOT NULL,
 	"email_alerts" boolean DEFAULT true,
 	"slack_webhooks" boolean DEFAULT false,
+	"college" text,
 	"last_active_at" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),
@@ -210,4 +212,23 @@ ALTER TABLE "session" ADD CONSTRAINT "session_userId_users_id_fk" FOREIGN KEY ("
 ALTER TABLE "submissions" ADD CONSTRAINT "submissions_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "submissions" ADD CONSTRAINT "submissions_developer_id_users_id_fk" FOREIGN KEY ("developer_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_client_id_users_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tasks" ADD CONSTRAINT "tasks_claimant_id_users_id_fk" FOREIGN KEY ("claimant_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "tasks" ADD CONSTRAINT "tasks_claimant_id_users_id_fk" FOREIGN KEY ("claimant_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_notifications_user_id" ON "notifications" ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_session_userId" ON "session" ("userId");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "idx_account_userId" ON "account" ("userId");--> statement-breakpoint
+ALTER TABLE "admins" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "escrow" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "messages" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "notifications" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "owners" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "revision_requests" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "session" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "submissions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "subscribers" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "support_enquiries" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "account" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "system_settings" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "tasks" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "developers" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "admin_audit_log" ENABLE ROW LEVEL SECURITY;

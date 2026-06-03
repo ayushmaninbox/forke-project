@@ -177,6 +177,7 @@ export default async function ProfilePage() {
     headline: dbUser.headline ?? null,
     bio: dbUser.bio ?? null,
     location: dbUser.location ?? null,
+    college: dbUser.college ?? null,
     avatarUrl: resolveAvatarUrl(dbUser.image),
     level,
     levelTitle,

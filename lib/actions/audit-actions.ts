@@ -166,35 +166,15 @@ export async function getActivityFeed(opts?: { category?: ActivityCategory | 'al
   try {
     await ensureAuditLogTable()
 
-    // 1) Logged admin actions
-    const logged = await db.select().from(adminAuditLog).orderBy(desc(adminAuditLog.createdAt)).limit(100)
+    // 1) Logged admin & system actions
+    const query = db.select().from(adminAuditLog).orderBy(desc(adminAuditLog.createdAt))
+    const logged = await query
+
     for (const r of logged) {
       events.push(ev(`log-${r.id}`, (r.category as ActivityCategory) || 'admin', r.action, r.actorName, r.target, r.createdAt))
     }
 
-    // 2) Derived system events from existing tables
-    const [devs, subs, enqs, owners, tsk, subm] = await Promise.all([
-      db.select({ id: users.id, name: users.name, username: users.username, createdAt: users.createdAt })
-        .from(users).where(eq(users.role, 'developer')).orderBy(desc(users.createdAt)).limit(40),
-      db.select().from(subscribers).orderBy(desc(subscribers.createdAt)).limit(40),
-      db.select().from(supportEnquiries).orderBy(desc(supportEnquiries.createdAt)).limit(25),
-      db.select({ id: users.id, name: users.name, isApproved: users.isApproved, createdAt: users.createdAt })
-        .from(users).where(eq(users.role, 'owner')).orderBy(desc(users.createdAt)).limit(25),
-      db.select({ id: tasks.id, title: tasks.title, status: tasks.status, createdAt: tasks.createdAt })
-        .from(tasks).orderBy(desc(tasks.createdAt)).limit(25).catch(() => []),
-      db.select({ id: submissions.id, status: submissions.status, createdAt: submissions.createdAt })
-        .from(submissions).orderBy(desc(submissions.createdAt)).limit(25).catch(() => []),
-    ])
-
-    for (const d of devs) events.push(ev(`dev-${d.id}`, 'user', 'developer.signup', d.username || d.name, d.username ? `@${d.username}` : d.name, d.createdAt))
-    for (const s of subs) events.push(ev(`sub-${s.id}`, 'system', 'subscriber.joined', null, s.email, s.createdAt))
-    for (const e of enqs) events.push(ev(`enq-${e.id}`, 'support', 'support.enquiry', `${e.firstName} ${e.lastName}`, e.errorType ? `${e.contactEmail} · ${e.errorType}` : e.contactEmail, e.createdAt))
-    for (const o of owners) events.push(ev(`own-${o.id}`, 'owner', o.isApproved ? 'owner.active' : 'owner.applied', o.name, o.name, o.createdAt))
-    for (const t of tsk) events.push(ev(`task-${t.id}`, 'task', 'task.posted', null, t.title, t.createdAt))
-    for (const s of subm) events.push(ev(`subm-${s.id}`, 'task', 'submission.created', null, `submission ${String(s.id).slice(0, 8)}`, s.createdAt))
-
-    // 3) Merge, sort newest-first, filter, limit
-    events.sort((a, b) => b.ts - a.ts)
+    // Filter by category if specified
     const filtered = !opts?.category || opts.category === 'all'
       ? events
       : events.filter((e) => e.category === opts.category)

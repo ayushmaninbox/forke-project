@@ -54,6 +54,7 @@ export const users = pgTable('users', {
   isBanned: boolean('is_banned').default(false).notNull(),
   emailAlerts: boolean('email_alerts').default(true),
   slackWebhooks: boolean('slack_webhooks').default(false),
+  college: text('college'),
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -218,14 +219,15 @@ export const adminAuditLog = pgTable('admin_audit_log', {
 export const developers = pgTable('developers', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
-  githubId: text('github_id').notNull().unique(),
-  username: text('username').notNull(),
+  githubId: text('github_id').unique(),
+  username: text('username'),
   accessToken: text('access_token'),
   avatarUrl: text('avatar_url'),
   profileUrl: text('profile_url'),
   repos: jsonb('repos'),
   languages: jsonb('languages'),
   rawProfile: jsonb('raw_profile'),
+  isGithubConnected: boolean('is_github_connected').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })

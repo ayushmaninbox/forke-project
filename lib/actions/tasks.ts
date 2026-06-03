@@ -1,6 +1,6 @@
 'use server'
 
-import { tasks, users, submissions, revisionRequests, escrow } from '@/lib/db/schema'
+import { tasks, users, submissions, revisionRequests, escrow, developers } from '@/lib/db/schema'
 import { createTaskSchema } from '@/lib/validations/task'
 import { getTaskById } from '@/lib/db/queries/tasks'
 import { redirect } from 'next/navigation'
@@ -16,6 +16,7 @@ import {
 import { XP_CLAIM_TASK } from '@/constants'
 import { z } from 'zod'
 import { createNotification } from '@/app/(app)/notifications/actions'
+import { logAudit } from './audit-actions'
 
 export type CreateTaskState = {
   errors?: {
@@ -134,6 +135,15 @@ export async function createTask(prevState: CreateTaskState, formData: FormData)
       body: `Your task "${title}" is now live and visible to developers.`,
       link: '/tasks',
     })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'task',
+      action: 'task.posted',
+      target: title,
+      actorId: user.id,
+      actorName: session?.user?.name
+    })
   } catch (error) {
     console.error('Database Error:', error)
     return { message: 'Something went wrong while posting the task. Please try again.' }
@@ -150,6 +160,14 @@ export async function claimTask(taskId: string) {
 
   if (!user || user.role !== 'developer') {
     throw new Error('Unauthorized: Only developers can claim tasks.')
+  }
+
+  // Enforce GitHub account connection
+  const devProfile = await db.query.developers.findFirst({
+    where: eq(developers.userId, user.id)
+  })
+  if (!devProfile || !devProfile.isGithubConnected) {
+    throw new Error('GitHubConnectionRequired')
   }
 
   // Get task to check level requirements
@@ -265,6 +283,15 @@ export async function submitWork(prevState: SubmitWorkState | null, formData: Fo
       title: '📤 Submission sent',
       body: `Your submission for "${taskResult.task.title}" is under review. You'll be notified once the client responds.`,
       link: `/tasks/${taskId}`,
+    })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'task',
+      action: 'submission.created',
+      target: `submission for task ${taskId.slice(0, 8)}`,
+      actorId: user.id,
+      actorName: devUser?.name
     })
   } catch (error) {
     console.error('Submission Error:', error)

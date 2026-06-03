@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   MapPin, Calendar, Flame, Link2, Globe,
-  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Sparkles, Pencil, Share2, X,
+  Star, ExternalLink, Trophy, Award, Zap, Crown, Target, Sparkles, Pencil, Share2, X, GraduationCap
 } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
 import CopyProfileButton from '@/components/shared/CopyProfileButton'
@@ -59,6 +59,7 @@ export interface ProfileData {
   headline: string | null
   bio: string | null
   location: string | null
+  college: string | null
   avatarUrl: string | null
   level: number
   levelTitle: string
@@ -143,6 +144,7 @@ export default function PublicProfileView({
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4 text-[12px] text-white/45 font-mono">
           {data.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-accent" />{data.location}</span>}
+          {data.college && <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 text-accent" />{data.college}</span>}
           <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-accent" />Joined {joined}</span>
           {data.currentStreak > 0 && <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 text-accent" />{data.currentStreak}-day streak</span>}
           {data.stats.completionRate != null && <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-accent" />{data.stats.completionRate}% completion</span>}

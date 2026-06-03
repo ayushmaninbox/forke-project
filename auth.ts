@@ -181,6 +181,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                rawProfile: githubData,
                repos: reposData,
                languages: languages,
+               isGithubConnected: true,
                updatedAt: new Date(),
              }
 
@@ -229,6 +230,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             token.githubUrl = dbUser.githubUrl
             token.username = dbUser.username
             token.role = dbUser.role
+
+            // Fetch GitHub Connection state
+            const devProfile = await db.query.developers.findFirst({
+              where: eq(developers.userId, token.id as string),
+            })
+            token.isGithubConnected = !!devProfile?.isGithubConnected
           }
         } catch (error) {
           console.error('Error fetching fresh user data in JWT:', error)

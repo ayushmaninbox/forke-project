@@ -4,6 +4,7 @@ import { subscribers } from '@/lib/db/schema'
 import { z } from 'zod'
 import { sendWelcomeEmail } from '@/lib/email'
 import { eq } from 'drizzle-orm'
+import { logAudit } from '@/lib/actions/audit-actions'
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -30,6 +31,14 @@ export async function POST(request: Request) {
     }
 
     await db.insert(subscribers).values({ email }).onConflictDoNothing()
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'system',
+      action: 'subscriber.joined',
+      target: email,
+      actorName: 'system'
+    })
 
     // Dispatch the welcome email synchronously to guarantee delivery and zero delays before responding
     await sendWelcomeEmail(email).catch((err) => {

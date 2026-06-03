@@ -12,6 +12,7 @@ declare module 'next-auth' {
       isBanned: boolean
       githubUrl?: string | null
       username?: string | null
+      isGithubConnected?: boolean
     } & DefaultSession['user']
   }
 
@@ -24,5 +25,6 @@ declare module 'next-auth' {
     isBanned?: boolean
     githubUrl?: string | null
     username?: string | null
+    isGithubConnected?: boolean
   }
 }

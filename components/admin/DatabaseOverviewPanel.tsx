@@ -12,7 +12,8 @@ import {
   Server, 
   Cpu, 
   Clock, 
-  Activity 
+  Activity,
+  Settings
 } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
 
@@ -285,7 +286,7 @@ export default function DatabaseOverviewPanel() {
             <div className="bg-accent/[0.02] border border-accent/20 rounded-xl p-4 flex items-center justify-between gap-4">
               <div className="space-y-0.5 text-left">
                 <div className="text-xs font-semibold text-accent flex items-center gap-2">
-                  <span>⚙️</span> PostgreSQL Version
+                  <Settings className="w-3.5 h-3.5 text-accent shrink-0" /> PostgreSQL Version
                 </div>
                 <p className="text-[11px] text-white/50 leading-relaxed max-w-xl">
                   {data?.version || 'Loading server version...'}

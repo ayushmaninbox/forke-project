@@ -3,6 +3,7 @@
 import { db } from '@/lib/db'
 import { supportEnquiries } from '@/lib/db/schema'
 import { desc } from 'drizzle-orm'
+import { logAudit } from './audit-actions'
 
 export async function submitEnquiry(formData: any) {
   const { firstName, lastName, contactNumber, contactEmail, message, relevantLinks, errorType } = formData
@@ -20,6 +21,14 @@ export async function submitEnquiry(formData: any) {
       message,
       relevantLinks: relevantLinks || null,
       errorType: errorType || null,
+    })
+
+    // Log the event explicitly for the activity feed
+    await logAudit({
+      category: 'support',
+      action: 'support.enquiry',
+      target: errorType ? `${contactEmail} · ${errorType}` : contactEmail,
+      actorName: `${firstName} ${lastName}`
     })
 
     return { success: true }

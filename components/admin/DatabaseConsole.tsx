@@ -285,10 +285,15 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setSelectedCell(null)
   }
 
-  // Toggle sorting direction or column
+  // Toggle sorting direction or column (3-state: asc -> desc -> unsorted)
   function handleSort(colName: string) {
     if (sortBy === colName) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      if (sortOrder === 'asc') {
+        setSortOrder('desc')
+      } else {
+        setSortBy('')
+        setSortOrder('asc')
+      }
     } else {
       setSortBy(colName)
       setSortOrder('asc')
@@ -572,7 +577,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
                     <span className="truncate">{t.name}</span>
                     {t.rlsEnabled && (
-                      <span className="text-amber-500 text-[10px] shrink-0" title="Row Level Security (RLS) Active">🔒</span>
+                      <span className="shrink-0" title="Row Level Security (RLS) Active">
+                        <Lock className="w-3 h-3 text-amber-500" />
+                      </span>
                     )}
                   </div>
                   
