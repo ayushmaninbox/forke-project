@@ -58,9 +58,14 @@ import {
   EyeOff,
   Database,
   Menu,
-  X
+  X,
+  Activity,
+  Table
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
+import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
+import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
+import DatabaseSqlEditorPanel from '@/components/admin/DatabaseSqlEditorPanel'
 
 const maskToken = (token: string) => {
   if (!token) return 'N/A'
@@ -73,7 +78,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'database'
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'database' | 'db-overview' | 'db-monitoring' | 'db-sql-editor'
   >('dashboard')
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -757,7 +762,53 @@ export default function AdminDashboard() {
               )}
             </button>
 
-            {/* Database Console */}
+            {/* Database Section */}
+            <div className="pt-3 pb-1.5 px-2.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                Database Console
+              </span>
+            </div>
+
+            {/* Overview */}
+            <button
+              onClick={() => selectTab('db-overview')}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                activeTab === 'db-overview'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              }`}
+            >
+              <Globe className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'db-overview' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+              <span>Overview</span>
+            </button>
+
+            {/* Monitoring */}
+            <button
+              onClick={() => selectTab('db-monitoring')}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                activeTab === 'db-monitoring'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              }`}
+            >
+              <Activity className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'db-monitoring' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+              <span>Monitoring</span>
+            </button>
+
+            {/* SQL Editor */}
+            <button
+              onClick={() => selectTab('db-sql-editor')}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                activeTab === 'db-sql-editor'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              }`}
+            >
+              <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'db-sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+              <span>SQL Editor</span>
+            </button>
+
+            {/* Tables */}
             <button
               onClick={() => selectTab('database')}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
@@ -767,8 +818,8 @@ export default function AdminDashboard() {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <Database className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'database' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>Database</span>
+                <Table className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'database' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+                <span>Tables</span>
               </div>
               <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-accent/15 border border-accent/25 text-accent leading-none">
                 Live DB
@@ -1608,9 +1659,30 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ==================== DATABASE CONSOLE PANEL ==================== */}
+          {/* ==================== DATABASE OVERVIEW PANEL ==================== */}
+          {activeTab === 'db-overview' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <DatabaseOverviewPanel />
+            </div>
+          )}
+
+          {/* ==================== DATABASE MONITORING PANEL ==================== */}
+          {activeTab === 'db-monitoring' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <DatabaseMonitoringPanel />
+            </div>
+          )}
+
+          {/* ==================== DATABASE SQL EDITOR PANEL ==================== */}
+          {activeTab === 'db-sql-editor' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <DatabaseSqlEditorPanel />
+            </div>
+          )}
+
+          {/* ==================== DATABASE TABLES PANEL ==================== */}
           {activeTab === 'database' && (
-            <div className="flex-1 min-h-0">
+            <div className="flex-grow min-h-0 h-full flex flex-col">
               <DatabaseConsole currentAdmin={currentAdmin} />
             </div>
           )}

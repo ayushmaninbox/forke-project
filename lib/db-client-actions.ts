@@ -42,15 +42,37 @@ export async function getDatabaseTables() {
   await ensureAdmin()
   try {
     const result: any = await db.execute(sql`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-      ORDER BY table_name;
+      SELECT 
+        c.relname AS name,
+        c.relrowsecurity AS rls_enabled
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' 
+        AND c.relkind = 'r'
+      ORDER BY c.relname;
     `)
+
+    const tables = result.map((row: any) => ({
+      name: row.name as string,
+      rlsEnabled: row.rls_enabled as boolean,
+      rowCount: 0
+    }))
+
+    // Query exact row counts for all tables in parallel
+    await Promise.all(
+      tables.map(async (t: any) => {
+        try {
+          const countRes = await client.unsafe(`SELECT count(*)::int FROM public."${t.name}"`)
+          t.rowCount = countRes[0]?.count ?? 0
+        } catch (err) {
+          console.error(`Failed to get exact count for table ${t.name}:`, err)
+        }
+      })
+    )
+
     return { 
       success: true, 
-      tables: result.map((row: any) => row.table_name as string)
+      tables
     }
   } catch (error: any) {
     console.error('Failed to get database tables:', error)
@@ -115,6 +137,7 @@ export async function getTableData(
     sortOrder?: 'asc' | 'desc'
     filterColumn?: string
     filterValue?: string
+    filtersJson?: string
   }
 ) {
   await ensureAdmin()
@@ -141,19 +164,69 @@ export async function getTableData(
       }
     }
 
+    // Fetch active columns for validation
+    const colsResult: any = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_schema = 'public' 
+        AND table_name = ${validTable};
+    `)
+    const validColumns = colsResult.map((row: any) => row.column_name as string)
+
     // Validate and sanitize filter column if provided
     let whereSql = ''
     const params: any[] = []
-    if (options.filterColumn && options.filterValue !== undefined && options.filterValue.trim() !== '') {
-      const isColValid: any = await db.execute(sql`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-          AND table_name = ${validTable} 
-          AND column_name = ${options.filterColumn}
-        LIMIT 1;
-      `)
-      if (isColValid.length > 0) {
+
+    if (options.filtersJson) {
+      try {
+        const parsedFilters = JSON.parse(options.filtersJson)
+        if (Array.isArray(parsedFilters) && parsedFilters.length > 0) {
+          const clauses: string[] = []
+          for (const filter of parsedFilters) {
+            const { column, operator, value } = filter
+            if (!validColumns.includes(column)) continue
+
+            let clause = ''
+            if (operator === 'is_null') {
+              clause = `"${column}" IS NULL`
+            } else if (operator === 'is_not_null') {
+              clause = `"${column}" IS NOT NULL`
+            } else if (value !== undefined && value !== null) {
+              const valStr = String(value).trim()
+              params.push(valStr)
+              const paramIdx = `$${params.length}`
+
+              if (operator === 'equals') {
+                clause = `CAST("${column}" AS TEXT) = ${paramIdx}`
+              } else if (operator === 'contains') {
+                params[params.length - 1] = `%${valStr}%`
+                clause = `CAST("${column}" AS TEXT) ILIKE ${paramIdx}`
+              } else if (operator === 'starts_with') {
+                params[params.length - 1] = `${valStr}%`
+                clause = `CAST("${column}" AS TEXT) ILIKE ${paramIdx}`
+              } else if (operator === 'ends_with') {
+                params[params.length - 1] = `%${valStr}`
+                clause = `CAST("${column}" AS TEXT) ILIKE ${paramIdx}`
+              } else if (operator === 'greater_than') {
+                clause = `"${column}" > ${paramIdx}`
+              } else if (operator === 'less_than') {
+                clause = `"${column}" < ${paramIdx}`
+              }
+            }
+
+            if (clause) {
+              clauses.push(clause)
+            }
+          }
+          if (clauses.length > 0) {
+            whereSql = `WHERE ${clauses.join(' AND ')}`
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse filtersJson:', err)
+      }
+    } else if (options.filterColumn && options.filterValue !== undefined && options.filterValue.trim() !== '') {
+      if (validColumns.includes(options.filterColumn)) {
         whereSql = `WHERE CAST("${options.filterColumn}" AS TEXT) ILIKE $1`
         params.push(`%${options.filterValue.trim()}%`)
       }
@@ -322,5 +395,174 @@ export async function deleteTableRecords(
   } catch (error: any) {
     console.error(`Failed to delete records from table ${tableName}:`, error)
     return { success: false, error: error.message || 'Failed to delete records.' }
+  }
+}
+
+// 8. Get Database Overview info (actual statistics from pg catalog)
+export async function getDatabaseOverview() {
+  await ensureAdmin()
+  try {
+    // 1. Get database name
+    const dbNameRes = await client.unsafe(`SELECT current_database() as dbname`)
+    const dbName = dbNameRes[0]?.dbname || 'neondb'
+
+    // 2. Get database size
+    const dbSizeRes = await client.unsafe(`SELECT pg_database_size(current_database()) as size`)
+    const dbSizeBytes = Number(dbSizeRes[0]?.size || 0)
+    const dbSizePretty = (dbSizeBytes / (1024 * 1024)).toFixed(2) + ' MB'
+
+    // 3. Get active connections
+    const connRes = await client.unsafe(`SELECT count(*)::int as active_conns FROM pg_stat_activity`)
+    const activeConnections = connRes[0]?.active_conns || 1
+
+    // 4. Get total tables count in public schema
+    const tablesCountRes = await client.unsafe(`
+      SELECT count(*)::int as count 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    `)
+    const tablesCount = tablesCountRes[0]?.count || 0
+
+    // 5. Get database version
+    const versionRes = await client.unsafe(`SELECT version()`)
+    const version = versionRes[0]?.version || 'PostgreSQL'
+
+    // 6. Fetch all public tables and their sizes
+    const tableSizes = await client.unsafe(`
+      SELECT 
+        relname AS name, 
+        pg_total_relation_size(c.oid) AS total_bytes,
+        pg_relation_size(c.oid) AS table_bytes,
+        pg_indexes_size(c.oid) AS index_bytes
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' AND c.relkind = 'r'
+      ORDER BY pg_total_relation_size(c.oid) DESC
+    `)
+    
+    // Fetch count for each table in public schema
+    const tableDetails = await Promise.all(
+      tableSizes.map(async (row: any) => {
+        const name = row.name as string
+        let count = 0
+        try {
+          const countRes = await client.unsafe(`SELECT count(*)::int FROM public."${name}"`)
+          count = countRes[0]?.count || 0
+        } catch (e) {}
+        
+        return {
+          name,
+          totalSize: (Number(row.total_bytes) / (1024 * 1024) > 0.1) 
+            ? (Number(row.total_bytes) / (1024 * 1024)).toFixed(2) + ' MB' 
+            : (Number(row.total_bytes) / 1024).toFixed(1) + ' KB',
+          tableSize: (Number(row.table_bytes) / (1024 * 1024) > 0.1)
+            ? (Number(row.table_bytes) / (1024 * 1024)).toFixed(2) + ' MB'
+            : (Number(row.table_bytes) / 1024).toFixed(1) + ' KB',
+          indexSize: (Number(row.index_bytes) / (1024 * 1024) > 0.1)
+            ? (Number(row.index_bytes) / (1024 * 1024)).toFixed(2) + ' MB'
+            : (Number(row.index_bytes) / 1024).toFixed(1) + ' KB',
+          rowCount: count
+        }
+      })
+    )
+
+    // 7. Get Roles List
+    const rolesRes = await client.unsafe(`
+      SELECT rolname as name FROM pg_roles WHERE rolcanlogin = true AND rolname NOT LIKE 'pg_%'
+    `)
+    const rolesList = rolesRes.map((r: any) => r.name)
+
+    // 8. Get Database List
+    const dbListRes = await client.unsafe(`
+      SELECT datname as name FROM pg_database WHERE datistemplate = false AND datname NOT LIKE 'pg_%'
+    `)
+    const dbList = dbListRes.map((d: any) => d.name)
+
+    return {
+      success: true,
+      dbName,
+      dbSize: dbSizePretty,
+      activeConnections,
+      tablesCount,
+      version,
+      tableDetails,
+      rolesList,
+      dbList
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch database overview:', error)
+    return { success: false, error: error.message || 'Failed to fetch database overview.' }
+  }
+}
+
+// 9. Get running active queries in the database
+export async function getActiveQueries() {
+  await ensureAdmin()
+  try {
+    const result = await client.unsafe(`
+      SELECT 
+        pid, 
+        query, 
+        state, 
+        now() - query_start AS duration,
+        usename AS user
+      FROM pg_stat_activity 
+      WHERE state IS NOT NULL 
+        AND query NOT LIKE '%pg_stat_activity%'
+        AND query <> ''
+      ORDER BY query_start DESC
+      LIMIT 15
+    `)
+    return {
+      success: true,
+      queries: result.map((r: any) => {
+        // Format PG interval to human readable text
+        let durationStr = '0s'
+        if (r.duration) {
+          const secs = Math.round(Number(r.duration.seconds || 0))
+          const mins = Math.round(Number(r.duration.minutes || 0))
+          if (mins > 0) {
+            durationStr = `${mins}m ${secs}s`
+          } else {
+            durationStr = `${secs}s`
+          }
+        }
+        return {
+          pid: r.pid,
+          query: r.query,
+          state: r.state,
+          duration: durationStr,
+          user: r.user || 'system'
+        }
+      })
+    }
+  } catch (error: any) {
+    console.error('Failed to fetch active queries:', error)
+    return { success: false, error: error.message || 'Failed to fetch active queries.' }
+  }
+}
+
+// 10. Execute custom SQL query (restricted to super_admin)
+export async function executeSQLQuery(query: string) {
+  await ensureSuperAdmin()
+  try {
+    const startTime = performance.now()
+    const result = await client.unsafe(query)
+    const endTime = performance.now()
+    const durationMs = Math.round(endTime - startTime)
+
+    const rows = Array.isArray(result) ? result : []
+    const headers = rows.length > 0 ? Object.keys(rows[0]) : []
+
+    return {
+      success: true,
+      headers,
+      rows,
+      affectedRows: result.count !== undefined ? result.count : rows.length,
+      duration: durationMs
+    }
+  } catch (error: any) {
+    console.error('SQL Execution failed:', error)
+    return { success: false, error: error.message || 'Query execution failed.' }
   }
 }

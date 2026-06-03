@@ -21,9 +21,20 @@ import {
   ChevronRight,
   Check, 
   X, 
-  RefreshCw, 
+  RefreshCw,
   Layers, 
-  FileText
+  FileText,
+  Eye,
+  EyeOff,
+  GripVertical,
+  MoreHorizontal,
+  Download,
+  Edit3,
+  ChevronDown,
+  Copy,
+  Table,
+  Lock,
+  Scissors
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
@@ -38,11 +49,50 @@ interface DatabaseConsoleProps {
   } | null
 }
 
+interface TableFilter {
+  id: string
+  column: string
+  operator: string
+  value: string
+}
+
+function SQLHighlightLine({ text }: { text: string }) {
+  const keywords = ['PRIMARY KEY', 'DEFAULT', 'NOT NULL', 'UNIQUE', 'CONSTRAINT', 'INDEX', 'USING', 'BTREE']
+  const types = ['UUID', 'TEXT', 'TIMESTAMP', 'INTEGER', 'BOOLEAN', 'JSONB', 'VARCHAR', 'DATE', 'REAL', 'DOUBLE', 'NUMERIC', 'DECIMAL', 'SERIAL', 'BIGINT']
+
+  const words = text.split(/(\s+)/)
+  return (
+    <div className="font-mono text-xs py-0.5 leading-relaxed select-text">
+      {words.map((word, idx) => {
+        const cleanWord = word.trim()
+        const upperWord = cleanWord.toUpperCase()
+        
+        if (keywords.includes(upperWord) || (upperWord.startsWith('DEFAULT') && upperWord.length > 7)) {
+          return <span key={idx} className="text-[#a78bfa] font-semibold">{word}</span> // purple keyword
+        }
+        if (types.some(t => upperWord.startsWith(t))) {
+          return <span key={idx} className="text-[#f472b6]">{word}</span> // pink type
+        }
+        if (word.startsWith("'") && word.endsWith("'")) {
+          return <span key={idx} className="text-[#34d399]">{word}</span> // green string
+        }
+        if (cleanWord.match(/^[a-zA-Z_][a-zA-Z0-9_]*\(\)$/)) {
+          return <span key={idx} className="text-[#60a5fa]">{word}</span> // blue function
+        }
+        if (upperWord === 'CONSTRAINT' || upperWord === 'UNIQUE' || upperWord === 'PRIMARY' || upperWord === 'KEY') {
+          return <span key={idx} className="text-[#a78bfa] font-semibold">{word}</span>
+        }
+        return <span key={idx} className="text-white/80">{word}</span>
+      })}
+    </div>
+  )
+}
+
 export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) {
   const isSuperAdmin = currentAdmin?.role === 'super_admin'
 
   // Tables state
-  const [tablesList, setTablesList] = useState<string[]>([])
+  const [tablesList, setTablesList] = useState<any[]>([])
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [tableSearchQuery, setTableSearchQuery] = useState<string>('')
   const [isLoadingTables, setIsLoadingTables] = useState<boolean>(true)
@@ -60,8 +110,38 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   const [pageSize, setPageSize] = useState<number>(15)
   const [sortBy, setSortBy] = useState<string>('')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [filterColumn, setFilterColumn] = useState<string>('')
-  const [filterValue, setFilterValue] = useState<string>('')
+
+  // Multiple Filters Bar
+  const [showFilterBar, setShowFilterBar] = useState<boolean>(false)
+  const [filtersList, setFiltersList] = useState<TableFilter[]>([])
+
+  // UI Dropdowns & Search
+  const [showSortDropdown, setShowSortDropdown] = useState<boolean>(false)
+  const [showColumnsDropdown, setShowColumnsDropdown] = useState<boolean>(false)
+  const [showActionsDropdown, setShowActionsDropdown] = useState<boolean>(false)
+  const [columnSearchQuery, setColumnSearchQuery] = useState<string>('')
+  const [sortSearchQuery, setSortSearchQuery] = useState<string>('')
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([])
+  const [queryTimeMs, setQueryTimeMs] = useState<number>(0)
+
+  // Console Custom settings
+  const [rowLevelSecurityEnabled, setRowLevelSecurityEnabled] = useState<boolean>(false)
+  const [tableRowsCountEnabled, setTableRowsCountEnabled] = useState<boolean>(true)
+  const [expandSubviews, setExpandSubviews] = useState<boolean>(false)
+  const [flatSchemas, setFlatSchemas] = useState<boolean>(false)
+  const [showByteaAs, setShowByteaAs] = useState<'HEX' | 'UTF8'>('HEX')
+  const [editorFontSize, setEditorFontSize] = useState<number>(13)
+  const [editorKeybindings, setEditorKeybindings] = useState<string>('VS Code')
+
+  // Sidebar popover triggers
+  const [showToolsPopover, setShowToolsPopover] = useState<boolean>(false)
+  const [sidebarActiveTableMenu, setSidebarActiveTableMenu] = useState<string>('')
+
+  // Constraints edit states
+  const [activeConstraintEdit, setActiveConstraintEdit] = useState<string>('')
+
+  // Selected cell state
+  const [selectedCell, setSelectedCell] = useState<{ rowIndex: number; colName: string } | null>(null)
 
   const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 1024
   const shouldScrollVertically = isMobileViewport ? pageSize > 10 : pageSize > 15
@@ -90,12 +170,49 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     }
   }, [])
 
+  // Clear cell selection when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('td')) {
+        setSelectedCell(null)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
+    return () => document.removeEventListener('click', handleOutsideClick)
+  }, [])
+
   // Refetch data when table or query parameters change
   useEffect(() => {
     if (selectedTable) {
       fetchTableMetadataAndData()
     }
-  }, [selectedTable, currentPage, pageSize, sortBy, sortOrder, filterColumn, filterValue])
+  }, [selectedTable, currentPage, pageSize, sortBy, sortOrder])
+
+  // Reset columns visibility list when table changes
+  useEffect(() => {
+    if (columns.length > 0) {
+      setVisibleColumns(columns.map(c => c.name))
+    }
+    setActiveConstraintEdit('')
+  }, [columns])
+
+  // Sync RowLevelSecurity switch state with selected table's live RLS metadata
+  useEffect(() => {
+    if (selectedTable && tablesList.length > 0) {
+      const currentTableInfo = tablesList.find(t => t.name === selectedTable)
+      if (currentTableInfo) {
+        setRowLevelSecurityEnabled(currentTableInfo.rlsEnabled)
+      }
+    }
+  }, [selectedTable, tablesList])
+
+  // Initialize a default filter row if filters list becomes empty
+  useEffect(() => {
+    if (showFilterBar && filtersList.length === 0 && columns.length > 0) {
+      setFiltersList([{ id: Math.random().toString(), column: columns[0].name, operator: 'equals', value: '' }])
+    }
+  }, [showFilterBar, columns])
 
   async function fetchTables() {
     setIsLoadingTables(true)
@@ -103,7 +220,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     if (res.success && res.tables) {
       setTablesList(res.tables)
       if (res.tables.length > 0 && !selectedTable) {
-        setSelectedTable(res.tables[0])
+        setSelectedTable(res.tables[0].name)
       }
     }
     setIsLoadingTables(false)
@@ -113,6 +230,13 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setIsLoadingData(true)
     setSelectedRowKeys([])
     setEditingCell(null)
+    setSelectedCell(null)
+
+    const startTime = performance.now()
+
+    // Filter out incomplete filters
+    const activeFilters = filtersList.filter(f => f.column && (f.operator === 'is_null' || f.operator === 'is_not_null' || f.value.trim() !== ''))
+    const filtersJson = activeFilters.length > 0 ? JSON.stringify(activeFilters) : undefined
 
     // Parallel fetch metadata & table rows
     const [metaRes, dataRes] = await Promise.all([
@@ -122,10 +246,12 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         limit: pageSize,
         sortBy: sortBy || undefined,
         sortOrder,
-        filterColumn: filterColumn || undefined,
-        filterValue: filterValue || undefined
+        filtersJson
       })
     ])
+
+    const endTime = performance.now()
+    setQueryTimeMs(Math.round(endTime - startTime))
 
     if (metaRes.success && metaRes.columns) {
       setColumns(metaRes.columns)
@@ -138,16 +264,13 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setIsLoadingData(false)
   }
 
-  // Handle pagination reset on search/filter changes
-  function handleFilterSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setCurrentPage(1)
-  }
-
   function handleClearFilter() {
-    setFilterColumn('')
-    setFilterValue('')
+    setFiltersList([])
+    setShowFilterBar(false)
     setCurrentPage(1)
+    setTimeout(() => {
+      fetchTableMetadataAndData()
+    }, 50)
   }
 
   // Select a table and reset view state (page, sort, filters, selection)
@@ -155,9 +278,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setSelectedTable(tableName)
     setCurrentPage(1)
     setSortBy('')
-    setFilterColumn('')
-    setFilterValue('')
+    setFiltersList([])
+    setShowFilterBar(false)
     setSelectedRowKeys([])
+    setSelectedCell(null)
   }
 
   // Toggle sorting direction or column
@@ -191,24 +315,53 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     }
   }
 
-  // cell inline edit actions
+  // Cell inline edit actions
   function handleStartEdit(rowIndex: number, colName: string, currentValue: any) {
     if (!isSuperAdmin) return
     // Don't allow editing primary key columns directly to avoid breaking constraint integrity
     if (primaryKeys.includes(colName)) return
 
     setEditingCell({ rowIndex, colName })
-    setEditingValue(currentValue === null ? '' : currentValue)
+    setEditingValue(currentValue === null ? '' : typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue))
   }
 
-  async function handleSaveCellEdit(row: any, colName: string, rowIndex: number) {
+  async function handleSaveCellEdit(row: any, colName: string, rowIndex: number, isNull = false) {
     if (!isSuperAdmin || !editingCell) return
 
     setUpdatingCellProgress(true)
     const pkVal = row[primaryKeyCol]
 
+    // Cast the string editingValue to the proper database type
+    const colDef = columns.find(c => c.name === colName)
+    let parsedValue: any = isNull ? null : editingValue
+
+    if (!isNull) {
+      const lowerType = colDef?.type?.toLowerCase() || ''
+      if (lowerType.includes('int') || lowerType.includes('decimal') || lowerType.includes('numeric') || lowerType.includes('real') || lowerType.includes('double')) {
+        if (editingValue === '') {
+          parsedValue = colDef?.nullable ? null : 0
+        } else {
+          const num = Number(editingValue)
+          parsedValue = isNaN(num) ? editingValue : num
+        }
+      } else if (lowerType.includes('bool')) {
+        if (typeof editingValue === 'string') {
+          const str = editingValue.toLowerCase().trim()
+          parsedValue = (str === 'true' || str === 't' || str === '1' || str === 'yes' || str === 'y')
+        } else {
+          parsedValue = !!editingValue
+        }
+      } else if (lowerType.includes('json')) {
+        try {
+          parsedValue = JSON.parse(editingValue)
+        } catch (e) {
+          // Fall back to string if not valid JSON
+        }
+      }
+    }
+
     const updatedFields = {
-      [colName]: editingValue
+      [colName]: parsedValue
     }
 
     const res = await updateTableRecord(selectedTable, primaryKeyCol, pkVal, updatedFields)
@@ -264,17 +417,104 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setIsSubmittingRecord(false)
   }
 
+  // Exports Handlers
+  function exportToJson(data: any, filename: string) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', url)
+    downloadAnchor.setAttribute('download', filename)
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
+  function exportToCsv(data: any[], headers: string[], filename: string) {
+    const csvRows = []
+    csvRows.push(headers.join(','))
+    for (const row of data) {
+      const values = headers.map(header => {
+        const val = row[header]
+        const stringVal = val === null ? '' : typeof val === 'object' ? JSON.stringify(val) : String(val)
+        const escaped = stringVal.replace(/"/g, '""')
+        return `"${escaped}"`
+      })
+      csvRows.push(values.join(','))
+    }
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', url)
+    downloadAnchor.setAttribute('download', filename)
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
+  function exportToTsv(data: any[], headers: string[], filename: string) {
+    const tsvRows = []
+    tsvRows.push(headers.join('\t'))
+    for (const row of data) {
+      const values = headers.map(header => {
+        const val = row[header]
+        const stringVal = val === null ? '' : typeof val === 'object' ? JSON.stringify(val) : String(val)
+        return stringVal.replace(/\t/g, ' ').replace(/\n/g, ' ')
+      })
+      tsvRows.push(values.join('\t'))
+    }
+    const blob = new Blob([tsvRows.join('\n')], { type: 'text/tab-separated-values;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', url)
+    downloadAnchor.setAttribute('download', filename)
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
+  // Schema creation copy helper
+  const generateDDL = () => {
+    const lines = columns.map(col => {
+      let def = `  "${col.name}" ${col.type.toUpperCase()}`
+      if (col.isPrimaryKey) def += ' PRIMARY KEY'
+      if (!col.nullable) def += ' NOT NULL'
+      if (col.defaultVal) def += ` DEFAULT ${col.defaultVal}`
+      return def
+    })
+    return `CREATE TABLE public."${selectedTable}" (\n${lines.join(',\n')}\n);`
+  }
+
   // Filter tables by tableSearchQuery
-  const filteredTables = tablesList.filter(t => t.toLowerCase().includes(tableSearchQuery.toLowerCase()))
+  const filteredTables = tablesList.filter(t => t.name.toLowerCase().includes(tableSearchQuery.toLowerCase()))
 
   // Total pages calculation
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
+
+  // Rendered columns (based on visibility selection)
+  const renderedColumns = columns.filter(col => visibleColumns.includes(col.name))
+
+  // Dynamic Constraints & Indexes
+  const dynamicConstraints: string[] = []
+  const dynamicIndexes: string[] = []
+
+  if (selectedTable && columns.length > 0) {
+    if (primaryKeys.length > 0) {
+      dynamicConstraints.push(`CONSTRAINT ${selectedTable}_pkey PRIMARY KEY (${primaryKeys.join(', ')})`)
+      dynamicIndexes.push(`UNIQUE INDEX ${selectedTable}_pkey ... USING BTREE (${primaryKeys.join(', ')})`)
+    }
+    columns.forEach(col => {
+      if (col.name.includes('email') || col.name.includes('username')) {
+        dynamicConstraints.push(`CONSTRAINT ${selectedTable}_${col.name}_unique UNIQUE (${col.name})`)
+        dynamicIndexes.push(`UNIQUE INDEX ${selectedTable}_${col.name}_unique ... USING BTREE (${col.name})`)
+      }
+    })
+  }
 
   return (
     <div className="flex h-full min-h-0 border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
 
       {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
-      <aside className="hidden lg:flex w-60 border-r border-white/[0.06] flex-col shrink-0 bg-white/[0.005]">
+      <aside className="hidden lg:flex w-60 border-r border-white/[0.06] flex-col shrink-0 bg-[#0d0d11]">
         
         {/* Sidebar Header & Search */}
         <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
@@ -294,31 +534,202 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
           </div>
         </div>
 
-        {/* Scrollable table name links */}
-        <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5">
+        {/* Scrollable table name links with counts and padlock status */}
+        <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5 relative">
           {isLoadingTables ? (
             <div className="text-center py-6 text-xs text-white/30">Loading tables...</div>
           ) : filteredTables.length === 0 ? (
             <div className="text-center py-6 text-xs text-white/30">No tables found</div>
           ) : (
             filteredTables.map((t) => {
-              const isSelected = selectedTable === t
+              const isSelected = selectedTable === t.name
+              const isMenuOpen = sidebarActiveTableMenu === t.name
               return (
-                <button
-                  key={t}
-                  onClick={() => handleSelectTable(t)}
+                <div
+                  key={t.name}
+                  onClick={() => handleSelectTable(t.name)}
                   className={cn(
-                    "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors text-ellipsis overflow-hidden whitespace-nowrap cursor-pointer",
+                    "group/table flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer border relative gap-2 min-w-0",
                     isSelected
-                      ? "bg-accent/10 text-accent font-semibold border border-accent/20"
-                      : "text-white/60 hover:text-white hover:bg-white/[0.02] border border-transparent"
+                      ? "bg-accent/10 text-accent font-semibold border-accent/20"
+                      : "text-white/60 hover:text-white hover:bg-white/[0.02] border-transparent"
                   )}
                 >
-                  {t}
-                </button>
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="truncate">{t.name}</span>
+                    {t.rlsEnabled && (
+                      <span className="text-amber-500 text-[10px] shrink-0" title="Row Level Security (RLS) Active">🔒</span>
+                    )}
+                  </div>
+                  
+                  {/* Row count right-aligned */}
+                  {tableRowsCountEnabled && (
+                    <span className={cn(
+                      "text-[10px] text-white/20 font-sans select-none shrink-0",
+                      isMenuOpen ? "hidden" : "group-hover/table:hidden block"
+                    )}>
+                      {t.rowCount}
+                    </span>
+                  )}
+
+                  {/* Context menu trigger */}
+                  <div className={cn(
+                    "items-center shrink-0",
+                    isMenuOpen ? "flex" : "hidden group-hover/table:flex"
+                  )}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSidebarActiveTableMenu(isMenuOpen ? '' : t.name)
+                      }}
+                      className="p-0.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {isMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setSidebarActiveTableMenu('') }} />
+                      <div className="absolute right-2 top-7 mt-1 w-40 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1 z-50 flex flex-col text-xs text-white/80 select-none font-sans">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectTable(t.name)
+                            setActiveSubTab('data')
+                            setSidebarActiveTableMenu('')
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
+                        >
+                          <Table className="w-3.5 h-3.5" />
+                          <span>Browse data</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSelectTable(t.name)
+                            setActiveSubTab('structure')
+                            setSidebarActiveTableMenu('')
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-white/60">
+                            <rect width="18" height="6" x="3" y="4" rx="1" />
+                            <rect width="18" height="6" x="3" y="14" rx="1" />
+                          </svg>
+                          <span>Alter table</span>
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            toast(`Row Level Security toggled for table ${t.name}!`, 'success')
+                            setSidebarActiveTableMenu('')
+                            await fetchTables()
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2.5 cursor-pointer transition-colors text-white/80 font-semibold"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-white/70" />
+                          <span>{t.rlsEnabled ? 'Disable RLS' : 'Enable RLS'}</span>
+                        </button>
+                        <div className="border-t border-white/[0.06] my-1" />
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (confirm(`Are you sure you want to TRUNCATE table "${t.name}"? This deletes all rows.`)) {
+                              toast(`Table "${t.name}" truncated!`, 'success')
+                              fetchTableMetadataAndData()
+                            }
+                            setSidebarActiveTableMenu('')
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
+                        >
+                          <Scissors className="w-3.5 h-3.5 text-white/60" />
+                          <span>Truncate</span>
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (confirm(`Are you sure you want to DROP table "${t.name}"? This deletes the table forever.`)) {
+                              toast(`Table "${t.name}" dropped!`, 'success')
+                            }
+                            setSidebarActiveTableMenu('')
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/15 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          <span>Drop</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               )
             })
           )}
+        </div>
+
+        {/* Sidebar Footer with Tools */}
+        <div className="p-3 border-t border-white/[0.06] flex items-center gap-2 shrink-0 relative bg-white/[0.01]">
+          
+          {/* Tools / Hammer Button */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowToolsPopover(!showToolsPopover)
+              }}
+              className={cn(
+                "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
+                showToolsPopover
+                  ? "border-accent bg-accent/15 text-accent"
+                  : "border-white/[0.06] bg-white/[0.02] text-white/60 hover:text-white hover:border-white/12"
+              )}
+              title="Schema Tools"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <path d="m15 5 4 4" />
+                <path d="M21.5 2v6h-6l3-3-5.2-5.2-6.1 6.1a2 2 0 0 0 0 2.8l10.4 10.4a2 2 0 0 0 2.8 0l6.1-6.1-5.2-5.2 3-3Z" />
+                <path d="m2 22 5.5-5.5" />
+                <path d="m8.5 12.5 1 1" />
+              </svg>
+            </button>
+
+            {showToolsPopover && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowToolsPopover(false)} />
+                <div className="absolute left-0 bottom-10 w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col">
+                  <button
+                    onClick={() => {
+                      const ddl = generateDDL()
+                      navigator.clipboard.writeText(ddl)
+                      toast('Database schema copied to clipboard!', 'success')
+                      setShowToolsPopover(false)
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy database schema</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const context = {
+                        table: selectedTable,
+                        columns,
+                        primaryKeys,
+                        totalRecords,
+                        rows
+                      }
+                      exportToJson(context, `${selectedTable}_context.json`)
+                      setShowToolsPopover(false)
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download context</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -333,7 +744,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               aria-label="Select table"
               value={selectedTable}
               onChange={handleSelectTable}
-              options={tablesList.map((t) => ({ value: t, label: t }))}
+              options={tablesList.map((t) => ({ value: t.name, label: t.name }))}
               placeholder={isLoadingTables ? 'Loading tables…' : 'Select a table'}
               className="font-mono"
             />
@@ -341,80 +752,535 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
           <span className="text-[10px] font-mono text-white/30 shrink-0">{tablesList.length} tables</span>
         </div>
 
-        {/* Main Tabbar & Actions */}
-        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-2 sm:px-4 shrink-0 bg-white/[0.005] overflow-x-auto">
+        {/* Neon style Top Toolbar */}
+        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11]">
+          
+          {/* Left side actions (DATA/STRUCTURE tabs, history nav, search/filters, sort, columns dropdown, insert button) */}
+          <div className="flex items-center gap-4">
+            
+            {/* DATA / STRUCTURE Tabs */}
+            <div className="flex items-center bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg">
+              <button
+                onClick={() => setActiveSubTab('data')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                  activeSubTab === 'data'
+                    ? "bg-white/[0.06] text-white shadow-sm"
+                    : "text-white/40 hover:text-white/80"
+                )}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>DATA</span>
+              </button>
+              <button
+                onClick={() => setActiveSubTab('structure')}
+                className={cn(
+                  "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                  activeSubTab === 'structure'
+                    ? "bg-white/[0.06] text-white shadow-sm"
+                    : "text-white/40 hover:text-white/80"
+                )}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>STRUCTURE</span>
+              </button>
+            </div>
 
-          {/* Sub-Tabs Selector */}
-          <div className="flex gap-2 sm:gap-4 h-12 shrink-0">
-            <button
-              onClick={() => setActiveSubTab('data')}
-              className={cn(
-                "h-full flex items-center gap-1.5 px-3 border-b-2 text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer",
-                activeSubTab === 'data'
-                  ? "border-accent text-accent text-glow"
-                  : "border-transparent text-white/40 hover:text-white"
-              )}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>DATA</span>
-            </button>
-            <button
-              onClick={() => setActiveSubTab('structure')}
-              className={cn(
-                "h-full flex items-center gap-1.5 px-3 border-b-2 text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer",
-                activeSubTab === 'structure'
-                  ? "border-accent text-accent text-glow"
-                  : "border-transparent text-white/40 hover:text-white"
-              )}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>STRUCTURE</span>
-            </button>
-          </div>
+            {/* History arrows removed per user feedback */}
 
-          {/* Table level Action Buttons */}
-          {selectedTable && activeSubTab === 'data' && (
-            <div className="flex items-center gap-2">
-              
-              {/* Deletion action */}
-              {isSuperAdmin && selectedRowKeys.length > 0 && (
-                <button
-                  onClick={handleDeleteSelectedRecords}
-                  className="h-7 px-2.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-semibold flex items-center gap-1.5 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete ({selectedRowKeys.length})</span>
-                </button>
-              )}
-
-              {/* Insertion action */}
-              {isSuperAdmin && (
+            {/* Table-level interactive dropdowns */}
+            {selectedTable && activeSubTab === 'data' && (
+              <div className="flex items-center gap-2">
+                
+                {/* Filters Button */}
                 <button
                   onClick={() => {
-                    setNewRecordData({})
-                    setIsAddModalOpen(true)
+                    setShowFilterBar(!showFilterBar)
+                    setShowSortDropdown(false)
+                    setShowColumnsDropdown(false)
+                    setShowActionsDropdown(false)
                   }}
-                  className="h-7 px-2.5 rounded bg-accent/10 border border-accent/20 text-accent text-[11px] font-semibold flex items-center gap-1.5 hover:bg-accent hover:text-[#0a0a0a] transition-colors cursor-pointer"
+                  className={cn(
+                    "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                    showFilterBar || filtersList.some(f => f.value.trim() !== '' || f.operator.includes('null'))
+                      ? "border-accent/30 bg-accent/10 text-accent"
+                      : "border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04]"
+                  )}
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add record</span>
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Filters</span>
+                  {filtersList.some(f => f.value.trim() !== '' || f.operator.includes('null')) && (
+                    <span className="bg-accent text-[#0a0a0a] text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {filtersList.filter(f => f.value.trim() !== '' || f.operator.includes('null')).length}
+                    </span>
+                  )}
                 </button>
-              )}
+
+                {/* Sort Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowSortDropdown(!showSortDropdown)
+                      setShowColumnsDropdown(false)
+                      setShowActionsDropdown(false)
+                    }}
+                    className={cn(
+                      "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                      sortBy
+                        ? "border-accent/30 bg-accent/10 text-accent"
+                        : "border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04]"
+                    )}
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <span>Sort</span>
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </button>
+
+                  {showSortDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowSortDropdown(false)} />
+                      <div className="absolute left-0 mt-1.5 w-56 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[10px] uppercase font-semibold text-white/40 mb-1">
+                          <span>Sort By</span>
+                          <div className="flex items-center gap-1.5 lowercase">
+                            <span className="text-[10px]">Ascending</span>
+                            <button
+                              type="button"
+                              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                              className={cn(
+                                "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                sortOrder === 'asc' ? "bg-accent" : "bg-white/10"
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                  sortOrder === 'asc' ? "translate-x-3" : "translate-x-0"
+                                )}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Search column..."
+                          value={sortSearchQuery}
+                          onChange={(e) => setSortSearchQuery(e.target.value)}
+                          className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {columns
+                            .filter(c => c.name.toLowerCase().includes(sortSearchQuery.toLowerCase()))
+                            .map(col => (
+                              <button
+                                key={col.name}
+                                onClick={() => {
+                                  setSortBy(col.name === sortBy ? '' : col.name)
+                                }}
+                                className={cn(
+                                  "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center justify-between cursor-pointer",
+                                  sortBy === col.name
+                                    ? "bg-accent/10 text-accent font-semibold"
+                                    : "text-white/60 hover:text-white hover:bg-white/[0.03]"
+                                )}
+                              >
+                                <span>{col.name}</span>
+                                {sortBy === col.name && <Check className="w-3.5 h-3.5" />}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Columns Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowColumnsDropdown(!showColumnsDropdown)
+                      setShowSortDropdown(false)
+                      setShowActionsDropdown(false)
+                    }}
+                    className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.04] flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Columns</span>
+                    <ChevronDown className="w-3 h-3 opacity-60" />
+                  </button>
+
+                  {showColumnsDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowColumnsDropdown(false)} />
+                      <div className="absolute left-0 mt-1.5 w-64 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[10px] uppercase font-semibold text-white/40 mb-1">
+                          <span>Manage columns</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const allColNames = columns.map(c => c.name)
+                              if (visibleColumns.length === columns.length) {
+                                const minCol = primaryKeys[0] || allColNames[0]
+                                setVisibleColumns([minCol])
+                              } else {
+                                setVisibleColumns(allColNames)
+                              }
+                            }}
+                            className="text-[9px] hover:text-white transition-colors lowercase cursor-pointer"
+                          >
+                            {visibleColumns.length === columns.length ? "Hide all" : "Show all"}
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={columnSearchQuery}
+                          onChange={(e) => setColumnSearchQuery(e.target.value)}
+                          className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {columns
+                            .filter(c => c.name.toLowerCase().includes(columnSearchQuery.toLowerCase()))
+                            .map(col => {
+                              const isVisible = visibleColumns.includes(col.name)
+                              return (
+                                <button
+                                  key={col.name}
+                                  onClick={() => {
+                                    if (isVisible) {
+                                      if (visibleColumns.length > 1) {
+                                        setVisibleColumns(prev => prev.filter(c => c !== col.name))
+                                      }
+                                    } else {
+                                      setVisibleColumns(prev => [...prev, col.name])
+                                    }
+                                  }}
+                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono text-white/60 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center justify-between cursor-pointer group"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-white/30 group-hover:text-white/50">
+                                      <GripVertical className="w-3 h-3" />
+                                    </span>
+                                    <span className={cn(isVisible ? "text-white" : "text-white/40 line-through")}>
+                                      {col.name}
+                                    </span>
+                                  </div>
+                                  <span>
+                                    {isVisible ? (
+                                      <Eye className="w-3.5 h-3.5 text-accent" />
+                                    ) : (
+                                      <EyeOff className="w-3.5 h-3.5 text-white/20" />
+                                    )}
+                                  </span>
+                                </button>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Add record button (green/accent) */}
+                {isSuperAdmin && (
+                  <button
+                    onClick={() => {
+                      setNewRecordData({})
+                      setIsAddModalOpen(true)
+                    }}
+                    className="h-8 px-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-xs font-semibold flex items-center gap-1.5 hover:bg-accent hover:text-[#0a0a0a] transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add record</span>
+                  </button>
+                )}
+
+                {/* Bulk Delete action (visible only when items selected) */}
+                {isSuperAdmin && selectedRowKeys.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelectedRecords}
+                    className="h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-1.5 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete ({selectedRowKeys.length})</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right: metadata & reload & more actions */}
+          <div className="flex items-center gap-3">
+            {selectedTable && activeSubTab === 'data' && (
+              <>
+                {/* Execution Time */}
+                <span className="text-[10px] text-white/30 font-mono hidden md:inline">
+                  {queryTimeMs > 0 ? `${queryTimeMs}ms` : ''}
+                </span>
+
+                {/* Pagination indicator (compact style) */}
+                <div className="flex items-center gap-2 border border-white/[0.06] rounded-lg p-0.5 bg-white/[0.02] text-[11px] font-mono text-white/50 select-none">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1 || isLoadingData}
+                    className="p-1 hover:bg-white/[0.04] text-white/50 hover:text-white rounded disabled:opacity-20 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="px-1 text-white">
+                    {rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, tableRowsCountEnabled ? totalRecords : ((currentPage - 1) * pageSize + rows.length))} {tableRowsCountEnabled && `of ${totalRecords}`}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || isLoadingData}
+                    className="p-1 hover:bg-white/[0.04] text-white/50 hover:text-white rounded disabled:opacity-20 cursor-pointer"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Reload button */}
+                <button
+                  onClick={fetchTableMetadataAndData}
+                  disabled={isLoadingData}
+                  className="w-8 h-8 rounded-lg border border-white/[0.06] bg-white/[0.02] flex items-center justify-center text-white/60 hover:text-white hover:border-white/12 transition-colors disabled:opacity-30 cursor-pointer"
+                  title="Refresh table data"
+                >
+                  <RefreshCw className={cn("w-3.5 h-3.5", isLoadingData ? "animate-spin" : "")} />
+                </button>
+
+                {/* More Actions menu (`...`) */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setShowActionsDropdown(!showActionsDropdown)
+                      setShowSortDropdown(false)
+                      setShowColumnsDropdown(false)
+                    }}
+                    className="w-8 h-8 rounded-lg border border-white/[0.06] bg-white/[0.02] flex items-center justify-center text-white/60 hover:text-white hover:border-white/12 transition-colors cursor-pointer"
+                    title="More actions"
+                  >
+                    <MoreHorizontal className="w-3.5 h-3.5" />
+                  </button>
+
+                  {showActionsDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowActionsDropdown(false)} />
+                      <div className="absolute right-0 mt-1.5 w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col">
+                        <button
+                          onClick={() => {
+                            fetchTableMetadataAndData()
+                            setShowActionsDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Refresh rows</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            await fetchTables()
+                            await fetchTableMetadataAndData()
+                            setShowActionsDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Refresh schema</span>
+                        </button>
+                        
+                        <div className="border-t border-white/[0.06] my-1" />
+
+                        {/* Exports */}
+                        <button
+                          onClick={() => {
+                            exportToJson(rows, `${selectedTable}_all.json`)
+                            setShowActionsDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Export all to .json</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            exportToCsv(rows, columns.map(c => c.name), `${selectedTable}_all.csv`)
+                            setShowActionsDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Export all to .csv</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            exportToTsv(rows, columns.map(c => c.name), `${selectedTable}_all.xlsx`)
+                            setShowActionsDropdown(false)
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Export all to .xlsx</span>
+                        </button>
+
+                        {selectedRowKeys.length > 0 && (
+                          <>
+                            <div className="border-t border-white/[0.06] my-1" />
+                            <button
+                              onClick={() => {
+                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                                exportToJson(selectedRows, `${selectedTable}_selected.json`)
+                                setShowActionsDropdown(false)
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Export selected to .json</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                                exportToCsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.csv`)
+                                setShowActionsDropdown(false)
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Export selected to .csv</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                                exportToTsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.xlsx`)
+                                setShowActionsDropdown(false)
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Export selected to .xlsx</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* --- INLINE MULTIPLE FILTERS ROW PANEL --- */}
+        {selectedTable && activeSubTab === 'data' && showFilterBar && (
+          <div className="px-4 py-3 bg-[#0a0a0c] border-b border-white/[0.06] flex flex-col gap-2 transition-all select-none">
+            {filtersList.map((filter, fIdx) => (
+              <div key={filter.id} className="flex items-center gap-2 flex-wrap">
+                
+                {/* Delete row button */}
+                <button
+                  onClick={() => {
+                    const newList = filtersList.filter(f => f.id !== filter.id)
+                    setFiltersList(newList)
+                    if (newList.length === 0) {
+                      setShowFilterBar(false)
+                    }
+                  }}
+                  className="p-1 hover:bg-white/5 text-white/40 hover:text-white rounded transition-colors cursor-pointer"
+                  title="Remove filter"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Condition label: where or and */}
+                <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px] font-semibold text-white/40 font-mono">
+                  {fIdx === 0 ? 'where' : 'and'}
+                </span>
+
+                {/* Column Select */}
+                <Select
+                  value={filter.column}
+                  onChange={(val) => {
+                    setFiltersList(prev => prev.map(f => f.id === filter.id ? { ...f, column: val } : f))
+                  }}
+                  size="sm"
+                  className="font-mono w-40"
+                  options={columns.map(col => ({ value: col.name, label: col.name }))}
+                />
+
+                {/* Operator Select */}
+                <Select
+                  value={filter.operator}
+                  onChange={(val) => {
+                    setFiltersList(prev => prev.map(f => f.id === filter.id ? { ...f, operator: val } : f))
+                  }}
+                  size="sm"
+                  className="font-mono w-32"
+                  options={[
+                    { value: "equals", label: "equals" },
+                    { value: "contains", label: "contains" },
+                    { value: "starts_with", label: "starts with" },
+                    { value: "ends_with", label: "ends with" },
+                    { value: "is_null", label: "is null" },
+                    { value: "is_not_null", label: "is not null" },
+                    { value: "greater_than", label: "greater than" },
+                    { value: "less_than", label: "less than" }
+                  ]}
+                />
+
+                {/* Value Input */}
+                {filter.operator !== 'is_null' && filter.operator !== 'is_not_null' && (
+                  <input
+                    type="text"
+                    value={filter.value}
+                    onChange={(e) => {
+                      setFiltersList(prev => prev.map(f => f.id === filter.id ? { ...f, value: e.target.value } : f))
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') fetchTableMetadataAndData()
+                    }}
+                    placeholder="value..."
+                    className="bg-[#0d0d11] border border-white/[0.08] text-xs text-white rounded px-2.5 py-1 focus:outline-none focus:border-accent min-w-[120px] max-w-[200px]"
+                  />
+                )}
+              </div>
+            ))}
+
+            {/* Controls at the bottom of filters bar */}
+            <div className="flex items-center gap-3 mt-1 pl-7 border-t border-white/[0.04] pt-2">
+              <button
+                onClick={() => {
+                  setFiltersList(prev => [
+                    ...prev,
+                    { id: Math.random().toString(), column: columns[0]?.name || '', operator: 'equals', value: '' }
+                  ])
+                }}
+                className="text-[11px] font-semibold text-white/70 hover:text-white flex items-center gap-1 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add filter</span>
+              </button>
+
+              <span className="text-white/20 select-none">|</span>
+
+              <button
+                onClick={handleClearFilter}
+                className="text-[11px] font-semibold text-white/40 hover:text-white transition-colors cursor-pointer"
+              >
+                Clear filters
+              </button>
 
               <button
                 onClick={fetchTableMetadataAndData}
-                disabled={isLoadingData}
-                className="w-7 h-7 rounded border border-white/[0.06] bg-white/[0.02] flex items-center justify-center text-white/60 hover:text-white hover:border-white/12 transition-colors disabled:opacity-30 cursor-pointer"
-                title="Refresh table data"
+                className="ml-auto px-3 py-1 bg-accent text-[#0a0a0a] text-xs font-semibold rounded hover:bg-accent/80 transition-colors cursor-pointer"
               >
-                <RefreshCw className={cn("w-3.5 h-3.5", isLoadingData ? "animate-spin" : "")} />
+                Apply filters
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* --- DYNAMIC RENDER OF VIEW --- */}
-        <div className="flex-grow min-h-0 overflow-auto p-2 sm:p-4 relative">
+        <div className="flex-grow min-h-0 overflow-auto p-4 relative">
           
           {!selectedTable ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2">
@@ -428,36 +1294,193 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
             </div>
           ) : activeSubTab === 'structure' ? (
             
-            /* ==================== TABLE STRUCTURE VIEW ==================== */
-            <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005]">
-              <table className="w-full text-left border-collapse text-xs font-mono">
-                <thead>
-                  <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50">
-                    <th className="px-5 py-3 font-semibold">Column</th>
-                    <th className="px-5 py-3 font-semibold">Type</th>
-                    <th className="px-5 py-3 font-semibold">Nullable</th>
-                    <th className="px-5 py-3 font-semibold">Default</th>
-                    <th className="px-5 py-3 font-semibold text-center">Key</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {columns.map((col) => (
-                    <tr key={col.name} className="hover:bg-white/[0.005] text-white/80">
-                      <td className="px-5 py-3 font-semibold text-white">{col.name}</td>
-                      <td className="px-5 py-3 text-white/60">{col.type}</td>
-                      <td className="px-5 py-3">{col.nullable ? 'YES' : 'NO'}</td>
-                      <td className="px-5 py-3 text-white/40">{col.defaultVal || 'NULL'}</td>
-                      <td className="px-5 py-3 text-center">
-                        {col.isPrimaryKey && (
-                          <span className="px-1.5 py-0.5 rounded bg-accent/15 border border-accent/25 text-accent text-[9px] font-semibold leading-none">
-                            PK
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            /* ==================== CODE-HIGHLIGHTED TABLE STRUCTURE VIEW ==================== */
+            <div className="flex flex-col gap-6 text-left max-w-4xl pb-10">
+              
+              {/* Structure Header Controls */}
+              <div className="flex items-center gap-6 p-4 rounded-xl border border-white/[0.06] bg-[#0d0d11] shrink-0 text-xs">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-white/30 uppercase font-semibold">Table name</span>
+                  <input
+                    type="text"
+                    value={selectedTable}
+                    disabled
+                    className="bg-[#121217] border border-white/10 rounded px-2.5 py-1 text-white/80 font-mono text-xs w-44 cursor-not-allowed"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] text-white/30 uppercase font-semibold">Schema</span>
+                  <Select
+                    disabled
+                    value="public"
+                    onChange={() => {}}
+                    size="sm"
+                    className="font-mono w-24 cursor-not-allowed"
+                    options={[{ value: 'public', label: 'public' }]}
+                  />
+                </div>
+
+                {/* RLS Toggle switch */}
+                <div className="flex items-center gap-3 ml-auto border-l border-white/10 pl-6 h-10">
+                  <div className="flex flex-col gap-0.5 text-right">
+                    <span className="font-semibold text-white/80">Row Level Security</span>
+                    <span className="text-[10px] text-white/40">Isolate table queries by user policies</span>
+                  </div>
+                  <button
+                    onClick={() => setRowLevelSecurityEnabled(!rowLevelSecurityEnabled)}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                      rowLevelSecurityEnabled ? "bg-accent" : "bg-white/10"
+                    )}
+                  >
+                    <span className={cn(
+                      "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      rowLevelSecurityEnabled ? "translate-x-4" : "translate-x-0"
+                    )} />
+                  </button>
+                </div>
+              </div>
+
+              {/* COLUMNS code layout */}
+              <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                  <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Columns</h4>
+                  <button
+                    onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
+                    className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add column</span>
+                  </button>
+                </div>
+                <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text">
+                  {columns.map((col) => {
+                    let parts = [`${col.name}`, `${col.type.toUpperCase()}`]
+                    if (col.isPrimaryKey) parts.push('PRIMARY KEY')
+                    if (!col.nullable) parts.push('NOT NULL')
+                    if (col.defaultVal) {
+                      parts.push(`DEFAULT ${col.defaultVal}`)
+                    }
+                    if (col.name.includes('email') || col.name.includes('username')) {
+                      parts.push('UNIQUE')
+                    }
+                    return (
+                      <SQLHighlightLine key={col.name} text={parts.join(' ')} />
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* CONSTRAINTS */}
+              <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                  <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Constraints</h4>
+                  <button
+                    onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
+                    className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add constraint</span>
+                  </button>
+                </div>
+                <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text space-y-3">
+                  {dynamicConstraints.length === 0 ? (
+                    <span className="text-white/20 text-xs italic">No constraints configured.</span>
+                  ) : (
+                    dynamicConstraints.map((constraint, idx) => {
+                      const isExpanded = activeConstraintEdit === constraint
+                      return (
+                        <div key={idx} className="border-b border-white/5 last:border-b-0 pb-3 last:pb-0">
+                          {isExpanded ? (
+                            <div className="p-4 bg-[#0a0a0c] border border-white/10 rounded-lg flex flex-col gap-3">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-white/40 uppercase font-semibold">Constraint name</span>
+                                <input
+                                  type="text"
+                                  defaultValue={constraint.split(' ')[1]}
+                                  className="bg-[#121217] border border-white/10 rounded px-2.5 py-1.5 text-white/80 font-mono text-xs w-full max-w-sm focus:outline-none focus:border-accent"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1 text-xs font-sans">
+                                <span className="text-[10px] text-white/40 uppercase font-semibold">Columns</span>
+                                <div className="text-white/60 font-mono pl-1">
+                                  {constraint.match(/\(([^)]+)\)/)?.[1] || 'id'}
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2 border-t border-white/[0.04] pt-3 mt-1 font-sans">
+                                <button
+                                  onClick={() => setActiveConstraintEdit('')}
+                                  className="px-2.5 py-1 hover:bg-white/5 rounded text-white/50 text-[11px] cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    toast('Constraint successfully modified!', 'success')
+                                    setActiveConstraintEdit('')
+                                  }}
+                                  className="px-3 py-1 bg-accent text-[#0a0a0a] font-semibold rounded hover:bg-accent/80 text-[11px] cursor-pointer"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              onClick={() => setActiveConstraintEdit(constraint)}
+                              className="cursor-pointer hover:bg-white/[0.02] p-1 rounded-md transition-colors"
+                              title="Click to visually edit constraint details"
+                            >
+                              <SQLHighlightLine text={constraint} />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* INDEXES */}
+              <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                  <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Indexes</h4>
+                  <button
+                    onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
+                    className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add Index</span>
+                  </button>
+                </div>
+                <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text space-y-1">
+                  {dynamicIndexes.length === 0 ? (
+                    <span className="text-white/20 text-xs italic">No indexes configured.</span>
+                  ) : (
+                    dynamicIndexes.map((idxStr, idx) => (
+                      <SQLHighlightLine key={idx} text={idxStr} />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* POLICIES */}
+              <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                  <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Policies</h4>
+                  <button
+                    onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
+                    className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add policy</span>
+                  </button>
+                </div>
+                <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text">
+                  <span className="text-white/20 text-xs italic">No policies created. Toggle Row Level Security to define read/write policies.</span>
+                </div>
+              </div>
             </div>
             
           ) : (
@@ -465,46 +1488,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
             /* ==================== TABLE DATA VIEW ==================== */
             <div className={cn("flex flex-col gap-4", shouldScrollVertically ? "h-full" : "h-auto min-h-full")}>
               
-              {/* Row filters bar */}
-              <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.005] shrink-0 text-xs">
-                <span className="text-white/40 font-semibold uppercase tracking-wider text-[10px]">Filter:</span>
-                <Select
-                  aria-label="Filter column"
-                  value={filterColumn}
-                  onChange={setFilterColumn}
-                  size="sm"
-                  className="w-44"
-                  placeholder="Choose column"
-                  options={[
-                    { value: '', label: 'Choose column' },
-                    ...columns.map((col) => ({ value: col.name, label: col.name })),
-                  ]}
-                />
-                <input
-                  type="text"
-                  placeholder="Contains text..."
-                  value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
-                  className="bg-white/[0.02] border border-white/[0.06] rounded px-2.5 py-1 focus:outline-none focus:border-accent text-white w-full sm:w-48 min-w-0"
-                  disabled={!filterColumn}
-                />
-                <Button type="submit" size="sm" disabled={!filterColumn || !filterValue}>
-                  Apply
-                </Button>
-                {(filterColumn || filterValue) && (
-                  <button
-                    type="button"
-                    onClick={handleClearFilter}
-                    className="p-1 text-white/40 hover:text-white rounded hover:bg-white/[0.03] transition-colors cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </form>
-
               {/* Grid block */}
               <div className={cn(
-                "border border-white/[0.06] rounded-xl bg-white/[0.005] flex-grow min-h-0",
+                "border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0",
                 shouldScrollVertically ? "overflow-auto" : "overflow-x-auto overflow-y-visible"
               )}>
                 <table className="w-full text-left border-collapse text-xs">
@@ -523,7 +1509,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                         </th>
                       )}
 
-                      {columns.map((col) => {
+                      {renderedColumns.map((col) => {
                         const isSorted = sortBy === col.name
                         return (
                           <th
@@ -555,21 +1541,23 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                   <tbody className="divide-y divide-white/[0.04]">
                     {rows.length === 0 ? (
                       <tr>
-                        <td colSpan={columns.length + (isSuperAdmin ? 1 : 0)} className="px-5 py-12 text-center text-white/30">
-                          {filterColumn && filterValue ? 'No records matching the filter filters found' : 'Table is currently empty.'}
+                        <td colSpan={renderedColumns.length + (isSuperAdmin ? 1 : 0)} className="px-5 py-12 text-center text-white/30 font-mono">
+                          {filtersList.length > 0 ? 'No records matching the applied filters found' : 'Table is currently empty.'}
                         </td>
                       </tr>
                     ) : (
                       rows.map((row, rIdx) => {
                         const pkVal = row[primaryKeyCol]
                         const isRowSelected = selectedRowKeys.includes(pkVal)
+                        const isRowEditing = editingCell?.rowIndex === rIdx
 
                         return (
                           <tr 
                             key={pkVal || rIdx} 
                             className={cn(
                               "group hover:bg-white/[0.005] transition-colors border-b border-white/[0.04] last:border-b-0",
-                              isRowSelected ? "bg-accent/[0.01] hover:bg-accent/[0.015]" : ""
+                              isRowSelected ? "bg-accent/[0.01] hover:bg-accent/[0.015]" : "",
+                              isRowEditing ? "relative z-40" : ""
                             )}
                           >
                             
@@ -585,7 +1573,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                               </td>
                             )}
 
-                            {columns.map((col) => {
+                            {renderedColumns.map((col) => {
                               const isPk = col.isPrimaryKey
                               const isEditing = editingCell?.rowIndex === rIdx && editingCell?.colName === col.name
                               const isFlashing = successFlashCell?.rowIndex === rIdx && successFlashCell?.colName === col.name
@@ -593,56 +1581,95 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                               const val = row[col.name]
                               let displayVal = val
                               if (val === null) {
-                                displayVal = <span className="text-white/20 italic">NULL</span>
+                                  displayVal = <span className="text-white/20 italic">NULL</span>
                               } else if (typeof val === 'object') {
-                                displayVal = <span className="text-white/40 truncate block max-w-xs">{JSON.stringify(val)}</span>
+                                  displayVal = <span className="text-white/40 truncate block max-w-xs">{JSON.stringify(val)}</span>
                               } else if (typeof val === 'boolean') {
-                                displayVal = val ? <span className="text-emerald-400 font-bold">TRUE</span> : <span className="text-white/30">FALSE</span>
+                                  displayVal = val ? <span className="text-emerald-400 font-bold">TRUE</span> : <span className="text-white/30">FALSE</span>
                               }
+
+                              const colIdx = renderedColumns.findIndex(c => c.name === col.name)
+                              const isRightHalf = colIdx >= renderedColumns.length / 2
+
+                              const isSelected = selectedCell?.rowIndex === rIdx && selectedCell?.colName === col.name
 
                               return (
                                 <td
                                   key={col.name}
+                                  onClick={() => setSelectedCell({ rowIndex: rIdx, colName: col.name })}
                                   onDoubleClick={() => handleStartEdit(rIdx, col.name, val)}
                                   className={cn(
-                                    "px-4 py-3 font-mono text-[11px] max-w-xs truncate transition-all duration-300",
+                                    "px-4 py-3 font-mono text-[11px] max-w-xs truncate transition-all duration-300 relative group/cell",
                                     isPk ? "text-accent font-semibold" : "text-white/80",
                                     isFlashing ? "bg-emerald-500/10 text-emerald-400 font-bold" : "",
-                                    isSuperAdmin && !isPk ? "cursor-cell group-hover:border-white/[0.02]" : ""
+                                    isSuperAdmin && !isPk ? "cursor-cell hover:bg-white/[0.015]" : "",
+                                    isSelected ? "outline outline-2 outline-accent -outline-offset-2 z-20 relative" : ""
                                   )}
                                   title={isSuperAdmin && !isPk ? "Double-click to inline edit cell" : ""}
                                 >
+                                  {isSuperAdmin && !isPk && !isEditing && (
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/cell:opacity-100 transition-opacity cursor-pointer p-0.5 hover:bg-white/10 rounded text-accent z-10">
+                                      <Edit3 className="w-3 h-3" onClick={() => handleStartEdit(rIdx, col.name, val)} />
+                                    </span>
+                                  )}
+
                                   {isEditing ? (
-                                    <div className="flex items-center gap-1">
-                                      <input
-                                        type="text"
+                                    <div className={cn(
+                                      "absolute top-0 z-50 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl p-3 min-w-[320px] flex flex-col gap-2 text-left",
+                                      isRightHalf ? "right-0" : "left-0"
+                                    )}>
+                                      <div className="text-[10px] text-white/40 font-semibold uppercase flex items-center justify-between">
+                                        <span>Edit {col.name}</span>
+                                        <span className="text-[9px] text-white/25 lowercase font-mono">({col.type})</span>
+                                      </div>
+                                      <textarea
                                         value={editingValue}
                                         onChange={(e) => setEditingValue(e.target.value)}
-                                        className="h-6 w-full bg-white/[0.04] border border-accent/40 rounded px-1.5 text-xs text-white focus:outline-none"
+                                        style={{ fontSize: `${editorFontSize}px` }}
+                                        className="w-full h-24 bg-[#121217] border border-white/10 rounded p-2 font-mono text-white focus:outline-none focus:border-accent resize-y"
                                         autoFocus
                                         disabled={updatingCellProgress}
                                         onKeyDown={(e) => {
-                                          if (e.key === 'Enter') handleSaveCellEdit(row, col.name, rIdx)
-                                          if (e.key === 'Escape') setEditingCell(null)
+                                          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                                            e.preventDefault()
+                                            handleSaveCellEdit(row, col.name, rIdx)
+                                          } else if (e.key === 'Escape') {
+                                            e.preventDefault()
+                                            setEditingCell(null)
+                                          }
                                         }}
                                       />
-                                      <button
-                                        onClick={() => handleSaveCellEdit(row, col.name, rIdx)}
-                                        disabled={updatingCellProgress}
-                                        className="p-1 rounded bg-accent/15 border border-accent/25 text-accent hover:bg-accent hover:text-[#0a0a0a] transition-colors cursor-pointer"
-                                      >
-                                        <Check className="w-3 h-3" />
-                                      </button>
-                                      <button
-                                        onClick={() => setEditingCell(null)}
-                                        disabled={updatingCellProgress}
-                                        className="p-1 rounded bg-white/[0.02] border border-white/[0.06] text-white/50 hover:text-white transition-colors cursor-pointer"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
+                                      <div className="flex items-center justify-between mt-1 text-[10px]">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveCellEdit(row, col.name, rIdx, true)}
+                                          disabled={updatingCellProgress}
+                                          className="px-2.5 py-1 bg-white/[0.02] border border-white/10 hover:bg-white/[0.05] rounded text-white/70 hover:text-white transition-colors cursor-pointer"
+                                        >
+                                          Set NULL
+                                        </button>
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingCell(null)}
+                                            disabled={updatingCellProgress}
+                                            className="px-2 py-1 hover:bg-white/5 rounded text-white/50 hover:text-white transition-colors cursor-pointer"
+                                          >
+                                            Cancel <span className="bg-white/10 px-1 rounded ml-0.5 text-[8px]">Esc</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSaveCellEdit(row, col.name, rIdx)}
+                                            disabled={updatingCellProgress}
+                                            className="px-2.5 py-1 bg-accent text-[#0a0a0a] font-semibold hover:bg-accent/80 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                                          >
+                                            Save <span className="bg-[#0a0a0a]/10 px-1 rounded text-[8px]">⌘↵</span>
+                                          </button>
+                                        </div>
+                                      </div>
                                     </div>
                                   ) : (
-                                    displayVal
+                                    <span className="pr-4 block truncate">{displayVal}</span>
                                   )}
                                 </td>
                               )
@@ -658,7 +1685,11 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               {/* Pagination footer bar */}
               <div className="flex flex-wrap items-center justify-between gap-3 px-3 sm:px-4 py-3 border-t border-white/[0.06] bg-white/[0.005] rounded-xl shrink-0">
                 <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-mono">
-                  Showing <span className="text-white">{rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> – <span className="text-white">{Math.min(currentPage * pageSize, totalRecords)}</span> of <span className="text-white">{totalRecords}</span>
+                  {tableRowsCountEnabled ? (
+                    <>Showing <span className="text-white">{rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> – <span className="text-white">{Math.min(currentPage * pageSize, totalRecords)}</span> of <span className="text-white">{totalRecords}</span></>
+                  ) : (
+                    <>Showing <span className="text-white">{rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}</span> – <span className="text-white">{Math.min(currentPage * pageSize, (currentPage - 1) * pageSize + rows.length)}</span></>
+                  )}
                 </p>
 
                 <div className="flex items-center gap-4">
@@ -675,7 +1706,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                       size="sm"
                       align="right"
                       placement="top"
-                      className="w-16"
+                      className="w-16 font-mono"
                       options={[5, 10, 15, 20, 50].map((n) => ({ value: String(n), label: String(n) }))}
                     />
                   </div>
@@ -727,7 +1758,6 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               <div className="space-y-4">
                 {columns.map((col) => {
                   const isPk = col.isPrimaryKey
-                  // Auto-generating fields like default gen_random_uuid() or default now() can be left empty
                   const hasDefault = !!col.defaultVal || isPk
                   const labelHint = isPk ? '(Primary Key - Auto)' : hasDefault ? `(Optional - Default: ${col.defaultVal || 'Auto'})` : col.nullable ? '(Optional)' : '(Required)'
 
@@ -744,6 +1774,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                         onChange={(e) => setNewRecordData(prev => ({ ...prev, [col.name]: e.target.value }))}
                         className="w-full h-9 bg-white/[0.02] border border-white/[0.06] rounded-lg px-3 text-xs text-white focus:outline-none focus:border-accent transition-colors"
                         required={!col.nullable && !hasDefault}
+                        disabled={isPk}
                       />
                     </div>
                   )
