@@ -604,6 +604,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                           <Table className="w-3.5 h-3.5" />
                           <span>Browse data</span>
                         </button>
+                        {isSuperAdmin && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -619,6 +620,8 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                           </svg>
                           <span>Alter table</span>
                         </button>
+                        )}
+                        {isSuperAdmin && (
                         <button
                           onClick={async (e) => {
                             e.stopPropagation()
@@ -631,7 +634,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                           <Lock className="w-3.5 h-3.5 text-white/70" />
                           <span>{t.rlsEnabled ? 'Disable RLS' : 'Enable RLS'}</span>
                         </button>
+                        )}
                         <div className="border-t border-white/[0.06] my-1" />
+                        {isSuperAdmin && (
+                        <>
                         <button
                           onClick={async (e) => {
                             e.stopPropagation()
@@ -659,6 +665,8 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                           <Trash2 className="w-3.5 h-3.5 text-red-500" />
                           <span>Drop</span>
                         </button>
+                        </>
+                        )}
                       </div>
                     </>
                   )}
@@ -1351,6 +1359,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                   <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Columns</h4>
+                  {isSuperAdmin && (
                   <button
                     onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
                     className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
@@ -1358,6 +1367,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     <Plus className="w-3 h-3" />
                     <span>Add column</span>
                   </button>
+                  )}
                 </div>
                 <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text">
                   {columns.map((col) => {
@@ -1381,6 +1391,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                   <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Constraints</h4>
+                  {isSuperAdmin && (
                   <button
                     onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
                     className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
@@ -1388,6 +1399,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     <Plus className="w-3 h-3" />
                     <span>Add constraint</span>
                   </button>
+                  )}
                 </div>
                 <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text space-y-3">
                   {dynamicConstraints.length === 0 ? (
@@ -1433,9 +1445,9 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                             </div>
                           ) : (
                             <div 
-                              onClick={() => setActiveConstraintEdit(constraint)}
-                              className="cursor-pointer hover:bg-white/[0.02] p-1 rounded-md transition-colors"
-                              title="Click to visually edit constraint details"
+                              onClick={() => { if (isSuperAdmin) setActiveConstraintEdit(constraint) }}
+                              className={cn("p-1 rounded-md transition-colors", isSuperAdmin ? "cursor-pointer hover:bg-white/[0.02]" : "cursor-default")}
+                              title={isSuperAdmin ? "Click to visually edit constraint details" : "View-only mode"}
                             >
                               <SQLHighlightLine text={constraint} />
                             </div>
@@ -1451,6 +1463,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                   <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Indexes</h4>
+                  {isSuperAdmin && (
                   <button
                     onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
                     className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
@@ -1458,6 +1471,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     <Plus className="w-3 h-3" />
                     <span>Add Index</span>
                   </button>
+                  )}
                 </div>
                 <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text space-y-1">
                   {dynamicIndexes.length === 0 ? (
@@ -1474,6 +1488,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
               <div className="border border-white/[0.06] rounded-xl overflow-hidden bg-[#0d0d11] p-5 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                   <h4 className="text-xs uppercase font-bold text-white/45 tracking-wider">Policies</h4>
+                  {isSuperAdmin && (
                   <button
                     onClick={() => toast('Schema migrations are disabled in visual override mode.', 'info')}
                     className="text-[11px] font-semibold text-accent hover:underline flex items-center gap-1 cursor-pointer"
@@ -1481,6 +1496,7 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     <Plus className="w-3 h-3" />
                     <span>Add policy</span>
                   </button>
+                  )}
                 </div>
                 <div className="bg-[#070709]/50 border border-white/[0.04] rounded-lg p-4 font-mono select-text">
                   <span className="text-white/20 text-xs italic">No policies created. Toggle Row Level Security to define read/write policies.</span>
