@@ -1,7 +1,7 @@
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
 import { db } from '@/lib/db'
-import { users, owners } from '@/lib/db/schema'
+import { users, owners, accounts } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import SettingsForm from '@/components/settings/SettingsForm'
 import { ensureTelemetrySettingsColumns, getSystemSpecs } from '@/app/(app)/settings/actions'
@@ -54,6 +54,18 @@ export default async function SettingsPage() {
     }
   }
 
+  // Fetch connected OAuth accounts
+  let connectedAccounts: string[] = []
+  try {
+    const userAccounts = await db
+      .select({ provider: accounts.provider })
+      .from(accounts)
+      .where(eq(accounts.userId, sessionUser.id))
+    connectedAccounts = userAccounts.map(a => a.provider)
+  } catch (e) {
+    console.error('Failed to fetch connected accounts:', e)
+  }
+
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
       <TopBar title="Settings" />
@@ -86,6 +98,7 @@ export default async function SettingsPage() {
           initialEmailAlerts={dbUser.emailAlerts ?? true}
           initialSlackWebhooks={dbUser.slackWebhooks ?? false}
           systemSpecs={systemSpecs}
+          connectedAccounts={connectedAccounts}
         />
        </div>
       </div>

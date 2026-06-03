@@ -89,13 +89,12 @@ export default auth(async (req) => {
     return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
   }
 
-  // Onboarding redirection for developers without githubUrl or username
+  // Onboarding redirection for developers without username
   const role = (req.auth?.user as any)?.role
-  const githubUrl = (req.auth?.user as any)?.githubUrl
   const username = (req.auth?.user as any)?.username
   const isOnboardingPage = req.nextUrl.pathname === '/onboarding'
 
-  const needsOnboarding = role === 'developer' && (!githubUrl || !username)
+  const needsOnboarding = role === 'developer' && !username
 
   if (isLoggedIn && needsOnboarding && !isOnboardingPage && isAppPage) {
     return NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin))

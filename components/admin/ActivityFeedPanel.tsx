@@ -243,10 +243,7 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
       <div className="flex-grow min-h-0 rounded-xl border border-white/[0.06] bg-[#060608] overflow-hidden flex flex-col">
         <div className="shrink-0 h-9 px-4 flex items-center justify-between border-b border-white/[0.05] bg-white/[0.01]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/40" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/40" />
-            <span className="ml-2 text-[10px] font-mono text-white/30 uppercase tracking-wider">forke://activity.log</span>
+            <span className="text-[10px] font-mono text-white/30 uppercase tracking-wider">forke://activity.log</span>
           </div>
           <span className="text-[10px] font-mono text-white/30">
             {events.length} events{lastUpdated ? ` · synced ${clockTime(lastUpdated.toISOString())}` : ''}

@@ -95,6 +95,20 @@ export default async function AppLayout({
     }
   }
 
+  // If user has not completed onboarding (no username), hide the sidebar.
+  if (!user.username) {
+    return (
+      <DashboardProvider>
+        <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
+          <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
+            {children}
+          </main>
+        </div>
+        <ToastContainer />
+      </DashboardProvider>
+    )
+  }
+
   return (
     <DashboardProvider>
       <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember relative">
