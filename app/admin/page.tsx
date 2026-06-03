@@ -1676,7 +1676,7 @@ export default function AdminDashboard() {
           {/* ==================== DATABASE SQL EDITOR PANEL ==================== */}
           {activeTab === 'db-sql-editor' && (
             <div className="flex-grow min-h-0 h-full flex flex-col">
-              <DatabaseSqlEditorPanel />
+              <DatabaseSqlEditorPanel currentAdmin={currentAdmin} />
             </div>
           )}
 

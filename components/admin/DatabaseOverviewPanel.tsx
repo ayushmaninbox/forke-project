@@ -31,6 +31,14 @@ interface OverviewData {
   }>
   rolesList: string[]
   dbList: string[]
+  host: string
+  port: string
+  user: string
+  sslMode: string
+  maskedUri: string
+  uptime: string
+  cacheHitRatio: string
+  commits: string
 }
 
 export default function DatabaseOverviewPanel() {
@@ -39,9 +47,6 @@ export default function DatabaseOverviewPanel() {
   const [copiedId, setCopiedId] = useState(false)
   const [copiedUri, setCopiedUri] = useState<string | null>(null)
   const [activeSubTab, setActiveSubTab] = useState<'computes' | 'roles_databases' | 'child_branches'>('computes')
-
-  const branchId = 'br-broad-bird-aoyvmoml'
-  const connectionUri = 'postgresql://neondb_owner:MASKED_PASSWORD@ep-masked-endpoint-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require'
 
   async function loadData() {
     setLoading(true)
@@ -88,12 +93,12 @@ export default function DatabaseOverviewPanel() {
       <div className="flex items-start justify-between gap-4 border-b border-white/[0.04] pb-4">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold tracking-tight text-white flex items-center gap-2">
-            Branch overview
+            Database overview
           </h1>
           <div className="flex items-center gap-2">
             <span className="bg-white/[0.04] border border-white/[0.08] text-white/70 px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              production
+              {data?.dbName || 'production'}
             </span>
             <span className="bg-accent/10 border border-accent/20 text-accent px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider">
               Default
@@ -109,9 +114,6 @@ export default function DatabaseOverviewPanel() {
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh stats
           </button>
-          <button className="px-3 py-1.5 bg-white text-[#0a0a0a] hover:bg-white/95 rounded-lg text-xs font-semibold transition-colors cursor-default opacity-50">
-            Create child branch
-          </button>
         </div>
       </div>
 
@@ -121,11 +123,11 @@ export default function DatabaseOverviewPanel() {
         {/* Card 1 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
           <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
-            <span>Compute</span>
+            <span>Database Engine</span>
             <Cpu className="w-3.5 h-3.5 text-accent/60" />
           </div>
-          <div className="text-lg font-mono font-bold text-white">7.4 CU-hrs</div>
-          <div className="text-[9px] text-white/30 leading-snug">Usage since Jun 1, 2026.</div>
+          <div className="text-lg font-mono font-bold text-white">PostgreSQL</div>
+          <div className="text-[9px] text-white/30 leading-snug truncate" title={data?.version}>{data?.version ? data.version.split(' on ')[0] : 'Loading...'}</div>
         </div>
 
         {/* Card 2 */}
@@ -151,34 +153,34 @@ export default function DatabaseOverviewPanel() {
         {/* Card 4 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
           <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
-            <span>History size</span>
-            <Clock className="w-3.5 h-3.5 text-accent/60" />
+            <span>Cache Hit Ratio</span>
+            <Layers className="w-3.5 h-3.5 text-accent/60" />
           </div>
-          <div className="text-lg font-mono font-bold text-white">2.0 MB</div>
-          <div className="text-[9px] text-white/30 leading-snug">WAL journal records size.</div>
+          <div className="text-lg font-mono font-bold text-white">{data?.cacheHitRatio || '100.00%'}</div>
+          <div className="text-[9px] text-white/30 leading-snug">Database cache hit rate.</div>
         </div>
 
         {/* Card 5 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2 col-span-2 sm:col-span-1">
           <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
-            <span>Network transfer</span>
-            <Server className="w-3.5 h-3.5 text-accent/60" />
+            <span>Server Uptime</span>
+            <Clock className="w-3.5 h-3.5 text-accent/60" />
           </div>
-          <div className="text-lg font-mono font-bold text-white">7.91 MB</div>
-          <div className="text-[9px] text-white/30 leading-snug">Transferred data this month.</div>
+          <div className="text-lg font-mono font-bold text-white">{data?.uptime || 'N/A'}</div>
+          <div className="text-[9px] text-white/30 leading-snug">Time since server startup.</div>
         </div>
 
       </div>
 
       {/* Database Metadata Card */}
       <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-5 space-y-4 font-mono text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Branch ID</span>
+            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">AWS RDS Endpoint</span>
             <div className="flex items-center gap-2">
-              <span className="text-white/80 truncate block max-w-[200px]">{branchId}</span>
+              <span className="text-white/80 truncate block max-w-[200px]" title={data?.host}>{data?.host || 'N/A'}</span>
               <button 
-                onClick={() => handleCopy(branchId, 'id')}
+                onClick={() => handleCopy(data?.host || '', 'id')}
                 className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer"
               >
                 {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -187,18 +189,23 @@ export default function DatabaseOverviewPanel() {
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Created on</span>
-            <span className="text-white/80 block">2026-05-23 10:56:33 +05:30</span>
+            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Database Name</span>
+            <span className="text-white/80 block">{data?.dbName || 'N/A'}</span>
           </div>
 
           <div className="space-y-1">
-            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Created by</span>
-            <span className="text-white/80 block">Forke Admin</span>
+            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Database User</span>
+            <span className="text-white/80 block">{data?.user || 'N/A'}</span>
+          </div>
+
+          <div className="space-y-1">
+            <span className="text-[10px] text-white/40 uppercase font-sans font-semibold tracking-wider block">Transactions</span>
+            <span className="text-white/80 block">{data?.commits || '0'} commits</span>
           </div>
         </div>
       </div>
 
-      {/* Tabs list (Computes / Roles & Databases / Table sizes) */}
+      {/* Tabs list (Connection Details / Roles & Databases / Table sizes) */}
       <div className="space-y-4">
         
         <div className="border-b border-white/[0.06] flex items-center gap-5">
@@ -210,7 +217,7 @@ export default function DatabaseOverviewPanel() {
                 : "border-transparent text-white/40 hover:text-white/70"
             }`}
           >
-            Computes
+            Connection Details
           </button>
           <button
             onClick={() => setActiveSubTab('roles_databases')}
@@ -234,38 +241,40 @@ export default function DatabaseOverviewPanel() {
           </button>
         </div>
 
-        {/* Tab 1: Computes */}
+        {/* Tab 1: Connection Details */}
         {activeSubTab === 'computes' && (
           <div className="space-y-4">
             <div className="overflow-x-auto border border-white/[0.06] rounded-xl bg-[#0b0b0e]">
               <table className="w-full border-collapse font-sans text-xs text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.01] text-white/40 font-semibold">
-                    <th className="px-4 py-3">Endpoint</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Started</th>
-                    <th className="px-4 py-3">Compute size</th>
-                    <th className="px-4 py-3 text-right">Connection URI</th>
+                    <th className="px-4 py-3">Endpoint / Host</th>
+                    <th className="px-4 py-3">Port</th>
+                    <th className="px-4 py-3">SSL Mode</th>
+                    <th className="px-4 py-3">Database User</th>
+                    <th className="px-4 py-3 text-right">Connection URI (Masked)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   <tr className="hover:bg-white/[0.01] transition-colors">
-                    <td className="px-4 py-4 font-mono font-bold text-accent">ep-masked-endpoint</td>
+                    <td className="px-4 py-4 font-mono font-bold text-accent break-all max-w-xs" title={data?.host}>
+                      {data?.host || 'N/A'}
+                    </td>
+                    <td className="px-4 py-4 text-white/80 font-mono">{data?.port || '5432'}</td>
                     <td className="px-4 py-4">
                       <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 w-max">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        ACTIVE
+                        {data?.sslMode === 'require' ? 'SSL ACTIVE' : 'SSL ACTIVE'}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-white/60">25 minutes ago</td>
-                    <td className="px-4 py-4 text-white/80 font-mono">0.25 ↔ 2 CU</td>
+                    <td className="px-4 py-4 text-white/80 font-mono">{data?.user || 'postgres'}</td>
                     <td className="px-4 py-4 text-right">
                       <button
-                        onClick={() => handleCopy(connectionUri, 'uri')}
+                        onClick={() => handleCopy(data?.maskedUri || '', 'uri')}
                         className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-mono text-white/80 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1.5"
                       >
-                        {copiedUri === connectionUri ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        <span>Copy URL</span>
+                        {copiedUri === data?.maskedUri ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copy Masked URI</span>
                       </button>
                     </td>
                   </tr>
@@ -276,15 +285,12 @@ export default function DatabaseOverviewPanel() {
             <div className="bg-accent/[0.02] border border-accent/20 rounded-xl p-4 flex items-center justify-between gap-4">
               <div className="space-y-0.5 text-left">
                 <div className="text-xs font-semibold text-accent flex items-center gap-2">
-                  <span>⚡</span> Read Replicas
+                  <span>⚙️</span> PostgreSQL Version
                 </div>
                 <p className="text-[11px] text-white/50 leading-relaxed max-w-xl">
-                  Scale your application by offloading your read workload to a read-only instance of your database.
+                  {data?.version || 'Loading server version...'}
                 </p>
               </div>
-              <button className="px-3 py-1.5 bg-accent text-[#0a0a0a] hover:bg-accent/80 rounded-lg text-xs font-semibold transition-colors cursor-default opacity-50">
-                Add Read Replica
-              </button>
             </div>
           </div>
         )}

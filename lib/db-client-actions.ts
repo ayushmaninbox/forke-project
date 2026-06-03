@@ -478,6 +478,94 @@ export async function getDatabaseOverview() {
     `)
     const dbList = dbListRes.map((d: any) => d.name)
 
+    // 9. Parse actual host and connection details from DATABASE_URL
+    const dbUrl = process.env.DATABASE_URL || ''
+    let host = 'localhost'
+    let port = '5432'
+    let user = 'postgres'
+    let sslMode = 'disable'
+    let maskedUri = dbUrl
+
+    try {
+      const cleanUri = dbUrl.split('?')[0] || ''
+      const queryParams = dbUrl.split('?')[1] || ''
+      
+      if (queryParams.includes('sslmode=require') || queryParams.includes('ssl=true') || queryParams.includes('sslmode=verify-full')) {
+        sslMode = 'require'
+      }
+      
+      const parts = cleanUri.replace('postgresql://', '').split('@')
+      if (parts.length === 2) {
+        const credentials = parts[0] || ''
+        const serverAndDb = parts[1] || ''
+        const credParts = credentials.split(':')
+        user = credParts[0] || 'postgres'
+        
+        const serverParts = serverAndDb.split('/')
+        const serverHostAndPort = serverParts[0] || ''
+        const hostParts = serverHostAndPort.split(':')
+        host = hostParts[0] || 'localhost'
+        port = hostParts[1] || '5432'
+      }
+      maskedUri = dbUrl.replace(/postgresql:\/\/([^:]+):([^@]+)@/, 'postgresql://$1:••••••••@')
+    } catch (err) {
+      console.error('Failed to parse connection URI:', err)
+    }
+
+    // 10. Query server uptime
+    let uptime = 'N/A'
+    try {
+      const uptimeRes = await client.unsafe(`SELECT pg_postmaster_start_time() as start_time`)
+      const startTimeVal = uptimeRes[0]?.start_time
+      if (startTimeVal) {
+        const diffMs = Date.now() - new Date(startTimeVal).getTime()
+        const diffSecs = Math.floor(diffMs / 1000)
+        const diffMins = Math.floor(diffSecs / 60)
+        const diffHours = Math.floor(diffMins / 60)
+        const diffDays = Math.floor(diffHours / 24)
+        
+        if (diffDays > 0) {
+          uptime = `${diffDays}d ${diffHours % 24}h`
+        } else if (diffHours > 0) {
+          uptime = `${diffHours}h ${diffMins % 60}m`
+        } else {
+          uptime = `${diffMins}m`
+        }
+      }
+    } catch (e) {
+      console.error('Failed to query server uptime:', e)
+    }
+
+    // 11. Query Cache Hit Ratio & Transactions Commits count
+    let cacheHitRatio = '100.00%'
+    let commits = '0'
+    try {
+      const cacheRes = await client.unsafe(`
+        SELECT 
+          COALESCE(round(sum(blks_hit) * 100.0 / nullif(sum(blks_hit) + sum(blks_read), 0), 2), 100.0) as hit_ratio
+        FROM pg_stat_database 
+        WHERE datname = current_database()
+      `)
+      cacheHitRatio = Number(cacheRes[0]?.hit_ratio || 100).toFixed(2) + '%'
+
+      const xactRes = await client.unsafe(`
+        SELECT 
+          sum(xact_commit) as commits
+        FROM pg_stat_database 
+        WHERE datname = current_database()
+      `)
+      const commitsCount = Number(xactRes[0]?.commits || 0)
+      if (commitsCount > 1000000) {
+        commits = (commitsCount / 1000000).toFixed(1) + 'M'
+      } else if (commitsCount > 1000) {
+        commits = (commitsCount / 1000).toFixed(0) + 'K'
+      } else {
+        commits = commitsCount.toString()
+      }
+    } catch (e) {
+      console.error('Failed to query cache ratio/commits:', e)
+    }
+
     return {
       success: true,
       dbName,
@@ -487,7 +575,15 @@ export async function getDatabaseOverview() {
       version,
       tableDetails,
       rolesList,
-      dbList
+      dbList,
+      host,
+      port,
+      user,
+      sslMode,
+      maskedUri,
+      uptime,
+      cacheHitRatio,
+      commits
     }
   } catch (error: any) {
     console.error('Failed to fetch database overview:', error)
@@ -542,23 +638,180 @@ export async function getActiveQueries() {
   }
 }
 
+// Helper to safely split multi-statement SQL strings
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = []
+  let current = ''
+  let inSingleQuote = false
+  let inDoubleQuote = false
+  let inDollarQuote = false
+  let dollarQuoteTag = ''
+  let inLineComment = false
+  let inBlockComment = false
+  
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i]
+    const nextChar = sql[i + 1] || ''
+    
+    // Handle comments
+    if (inLineComment) {
+      if (char === '\n') {
+        inLineComment = false
+      }
+      current += char
+      continue
+    }
+    if (inBlockComment) {
+      if (char === '*' && nextChar === '/') {
+        inBlockComment = false
+        current += '*/'
+        i++
+      } else {
+        current += char
+      }
+      continue
+    }
+    
+    // Check for comments start
+    if (char === '-' && nextChar === '-') {
+      inLineComment = true
+      current += '--'
+      i++
+      continue
+    }
+    if (char === '/' && nextChar === '*') {
+      inBlockComment = true
+      current += '/*'
+      i++
+      continue
+    }
+    
+    // Handle quotes
+    if (inSingleQuote) {
+      if (char === "'") {
+        if (nextChar === "'") {
+          current += "''"
+          i++
+        } else {
+          inSingleQuote = false
+          current += "'"
+        }
+      } else {
+        current += char
+      }
+      continue
+    }
+    if (inDoubleQuote) {
+      if (char === '"') {
+        inDoubleQuote = false
+        current += '"'
+      } else {
+        current += char
+      }
+      continue
+    }
+    if (inDollarQuote) {
+      if (char === '$') {
+        const sub = sql.slice(i, i + dollarQuoteTag.length)
+        if (sub === dollarQuoteTag) {
+          inDollarQuote = false
+          current += dollarQuoteTag
+          i += dollarQuoteTag.length - 1
+        } else {
+          current += char
+        }
+      } else {
+        current += char
+      }
+      continue
+    }
+    
+    // Check for quotes start
+    if (char === "'") {
+      inSingleQuote = true
+      current += "'"
+      continue
+    }
+    if (char === '"') {
+      inDoubleQuote = true
+      current += '"'
+      continue
+    }
+    if (char === '$' && nextChar === '$') {
+      inDollarQuote = true
+      dollarQuoteTag = '$$'
+      current += '$$'
+      i++
+      continue
+    }
+    if (char === '$') {
+      const match = sql.slice(i).match(/^(\$[a-zA-Z0-9_]*\$)/)
+      if (match) {
+        inDollarQuote = true
+        dollarQuoteTag = match[1]
+        current += dollarQuoteTag
+        i += dollarQuoteTag.length - 1
+        continue
+      }
+    }
+    
+    // Semicolon split
+    if (char === ';') {
+      if (current.trim()) {
+        statements.push(current.trim())
+      }
+      current = ''
+    } else {
+      current += char
+    }
+  }
+  
+  if (current.trim()) {
+    statements.push(current.trim())
+  }
+  
+  return statements
+}
+
 // 10. Execute custom SQL query (restricted to super_admin)
 export async function executeSQLQuery(query: string) {
   await ensureSuperAdmin()
   try {
     const startTime = performance.now()
-    const result = await client.unsafe(query)
+    
+    // Split the query into statements and run them in sequence
+    const statements = splitSqlStatements(query)
+    if (statements.length === 0) {
+      return {
+        success: true,
+        headers: [],
+        rows: [],
+        affectedRows: 0,
+        duration: 0
+      }
+    }
+
+    let lastResult: any = null
+    let totalAffectedRows = 0
+
+    for (const stmt of statements) {
+      lastResult = await client.unsafe(stmt)
+      if (lastResult && lastResult.count !== undefined) {
+        totalAffectedRows += lastResult.count
+      }
+    }
+
     const endTime = performance.now()
     const durationMs = Math.round(endTime - startTime)
 
-    const rows = Array.isArray(result) ? result : []
+    const rows = Array.isArray(lastResult) ? lastResult : []
     const headers = rows.length > 0 ? Object.keys(rows[0]) : []
 
     return {
       success: true,
       headers,
       rows,
-      affectedRows: result.count !== undefined ? result.count : rows.length,
+      affectedRows: lastResult?.count !== undefined ? lastResult.count : rows.length,
       duration: durationMs
     }
   } catch (error: any) {

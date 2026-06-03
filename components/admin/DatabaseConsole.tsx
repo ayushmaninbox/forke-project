@@ -1328,9 +1328,14 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                     <span className="text-[10px] text-white/40">Isolate table queries by user policies</span>
                   </div>
                   <button
-                    onClick={() => setRowLevelSecurityEnabled(!rowLevelSecurityEnabled)}
+                    disabled={!isSuperAdmin}
+                    onClick={() => {
+                      if (!isSuperAdmin) return
+                      setRowLevelSecurityEnabled(!rowLevelSecurityEnabled)
+                    }}
                     className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                      "relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                      isSuperAdmin ? "cursor-pointer" : "cursor-not-allowed opacity-50",
                       rowLevelSecurityEnabled ? "bg-accent" : "bg-white/10"
                     )}
                   >

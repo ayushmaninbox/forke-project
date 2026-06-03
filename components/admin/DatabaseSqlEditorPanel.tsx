@@ -5,6 +5,8 @@ import { executeSQLQuery } from '@/lib/db-client-actions'
 import { Play, Copy, Check, Clock, Save, FileText, Code, ChevronRight, Terminal, RefreshCw } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
 
+import { cn } from '@/lib/utils/cn'
+
 interface SavedQuery {
   id: string
   name: string
@@ -12,7 +14,17 @@ interface SavedQuery {
   timestamp: string
 }
 
-export default function DatabaseSqlEditorPanel() {
+interface DatabaseSqlEditorPanelProps {
+  currentAdmin: {
+    id: string
+    name: string
+    role: 'super_admin' | 'admin'
+  } | null
+}
+
+export default function DatabaseSqlEditorPanel({ currentAdmin }: DatabaseSqlEditorPanelProps) {
+  const isSuperAdmin = currentAdmin?.role === 'super_admin'
+  
   const [queryName, setQueryName] = useState('Untitled Query')
   const [sqlQuery, setSqlQuery] = useState<string>(
     '-- Write your SQL query here...\nSELECT * FROM public.users LIMIT 10;'
@@ -52,6 +64,10 @@ export default function DatabaseSqlEditorPanel() {
   }
 
   async function handleRunQuery() {
+    if (!isSuperAdmin) {
+      toast('Unauthorized: Only Super Admins can execute custom SQL commands.', 'error')
+      return
+    }
     if (!sqlQuery.trim()) return
     setIsRunning(true)
     setResults(null)
@@ -215,10 +231,11 @@ export default function DatabaseSqlEditorPanel() {
           <textarea
             value={sqlQuery}
             onChange={(e) => setSqlQuery(e.target.value)}
-            className="w-full h-full pl-14 pr-4 py-4 bg-transparent resize-none font-mono text-[13px] leading-relaxed text-white focus:outline-none focus:ring-0"
+            readOnly={!isSuperAdmin}
+            className="w-full h-full pl-14 pr-4 py-4 bg-transparent resize-none font-mono text-[13px] leading-relaxed text-white focus:outline-none focus:ring-0 disabled:opacity-50"
             spellCheck={false}
             onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              if (isSuperAdmin && (e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                 e.preventDefault()
                 handleRunQuery()
               }
@@ -228,17 +245,39 @@ export default function DatabaseSqlEditorPanel() {
           {/* Float Play Button */}
           <button
             onClick={handleRunQuery}
-            disabled={isRunning}
-            className="absolute right-4 bottom-4 h-9 px-4 rounded-lg bg-accent text-[#0a0a0a] hover:bg-accent/80 transition-all font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg disabled:opacity-50"
+            disabled={isRunning || !isSuperAdmin}
+            className={cn(
+              "absolute right-4 bottom-4 h-9 px-4 rounded-lg font-semibold text-xs flex items-center gap-1.5 shadow-lg transition-all",
+              isSuperAdmin 
+                ? "bg-accent text-[#0a0a0a] hover:bg-accent/80 cursor-pointer disabled:opacity-50" 
+                : "bg-white/10 text-white/40 cursor-not-allowed"
+            )}
+            title={!isSuperAdmin ? "Only Super Admins can execute SQL commands" : ""}
           >
             {isRunning ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Play className="w-3.5 h-3.5 fill-[#0a0a0a]" />
+              <Play className={cn("w-3.5 h-3.5", isSuperAdmin ? "fill-[#0a0a0a]" : "text-white/40")} />
             )}
             <span>Run</span>
-            <span className="bg-[#0a0a0a]/10 px-1 rounded text-[8px] font-sans font-bold">⌘↵</span>
+            {isSuperAdmin && (
+              <span className="bg-[#0a0a0a]/10 px-1 rounded text-[8px] font-sans font-bold">⌘↵</span>
+            )}
           </button>
+
+          {!isSuperAdmin && (
+            <div className="absolute inset-0 bg-[#070709]/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none select-none">
+              <div className="bg-[#0a0a0a] border border-white/[0.08] px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-2xl max-w-sm text-center flex-col pointer-events-auto">
+                <Terminal className="w-5 h-5 text-accent animate-pulse" />
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-white/80">View Only Console</div>
+                  <p className="text-[10px] text-white/40 leading-normal">
+                    You are logged in as an Admin. Only Super Admins have permission to write queries and execute database transactions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Results/Error Panel */}
