@@ -65,6 +65,7 @@ import {
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
 import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
+import ActivityFeedPanel from '@/components/admin/ActivityFeedPanel'
 
 
 const maskToken = (token: string) => {
@@ -78,7 +79,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'database' | 'db-overview' | 'db-monitoring'
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring'
   >('dashboard')
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -760,6 +761,22 @@ export default function AdminDashboard() {
                   {subscribersList.length}
                 </span>
               )}
+            </button>
+
+            {/* Activity / audit log */}
+            <button
+              onClick={() => selectTab('activity')}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                activeTab === 'activity'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              }`}
+            >
+              <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'activity' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+              <span>Activity</span>
+              <span className="ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 leading-none">
+                Live
+              </span>
             </button>
 
             {/* Database Section */}
@@ -1644,6 +1661,13 @@ export default function AdminDashboard() {
                 </table>
               </div>
 
+            </div>
+          )}
+
+          {/* ==================== ACTIVITY / AUDIT LOG PANEL ==================== */}
+          {activeTab === 'activity' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <ActivityFeedPanel />
             </div>
           )}
 

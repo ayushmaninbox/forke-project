@@ -3,6 +3,7 @@
 import { db, client } from './db'
 import { sql } from 'drizzle-orm'
 import { getCurrentAdmin, isAdminAuthenticated } from './admin-actions'
+import { logAudit } from './actions/audit-actions'
 
 // Helper to check standard admin authentication
 async function ensureAdmin() {
@@ -299,6 +300,7 @@ export async function insertTableRecord(tableName: string, record: Record<string
     const queryText = `INSERT INTO public."${validTable}" (${columnsList}) VALUES (${placeholdersList}) RETURNING *`
 
     const inserted = await client.unsafe(queryText, valuesToInsert)
+    await logAudit({ category: 'db', action: 'db.insert', target: `${validTable} (1 row)` })
     return { success: true, record: inserted[0] }
   } catch (error: any) {
     console.error(`Failed to insert record in table ${tableName}:`, error)
@@ -352,6 +354,7 @@ export async function updateTableRecord(
     `
 
     const updated = await client.unsafe(queryText, params)
+    await logAudit({ category: 'db', action: 'db.update', target: `${validTable} · ${primaryKeyName}=${String(primaryKeyValue).slice(0, 12)}` })
     return { success: true, record: updated[0] }
   } catch (error: any) {
     console.error(`Failed to update record in table ${tableName}:`, error)
@@ -391,6 +394,7 @@ export async function deleteTableRecords(
     const queryText = `DELETE FROM public."${validTable}" WHERE "${primaryKeyName}" IN (${placeholders})`
 
     await client.unsafe(queryText, primaryKeyValues)
+    await logAudit({ category: 'db', action: 'db.delete', target: `${validTable} (${primaryKeyValues.length} row${primaryKeyValues.length === 1 ? '' : 's'})` })
     return { success: true }
   } catch (error: any) {
     console.error(`Failed to delete records from table ${tableName}:`, error)

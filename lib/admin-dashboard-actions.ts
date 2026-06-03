@@ -5,6 +5,7 @@ import { users, owners, subscribers, admins, developers, githubProfiles, account
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { sendBroadcastEmail, sendAdminInvitation } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
+import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
@@ -64,22 +65,32 @@ export async function getDevelopers() {
 
 export async function approveOwner(userId: string) {
   await ensureAdmin()
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, email: true } })
   await db.update(users).set({ isApproved: true }).where(eq(users.id, userId))
+  await logAudit({ category: 'owner', action: 'owner.approved', target: u?.name || u?.email || userId })
   revalidatePath('/admin')
   return { success: true }
 }
 
 export async function declineOwner(userId: string) {
   await ensureAdmin()
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, email: true } })
   // This will cascade delete from owners table due to FK
   await db.delete(users).where(eq(users.id, userId))
+  await logAudit({ category: 'owner', action: 'owner.declined', target: u?.name || u?.email || userId })
   revalidatePath('/admin')
   return { success: true }
 }
 
 export async function toggleDeveloperBan(userId: string, shouldBan: boolean) {
   await ensureAdmin()
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, username: true, email: true } })
   await db.update(users).set({ isBanned: shouldBan }).where(eq(users.id, userId))
+  await logAudit({
+    category: 'user',
+    action: shouldBan ? 'developer.banned' : 'developer.unbanned',
+    target: u?.username ? `@${u.username}` : u?.name || u?.email || userId,
+  })
   revalidatePath('/admin')
   return { success: true }
 }
@@ -104,6 +115,7 @@ export async function updateWaitlistConfig(enabled: boolean, bypassPassword?: st
   if (enabled && bypassPassword !== undefined) {
     await setWaitlistBypassPassword(bypassPassword)
   }
+  await logAudit({ category: 'system', action: enabled ? 'waitlist.enabled' : 'waitlist.disabled', target: 'Waitlist gate' })
   revalidatePath('/admin')
   return { success: true }
 }
@@ -122,7 +134,9 @@ export async function getSubscribers() {
 export async function deleteSubscriber(id: string) {
   await ensureAdmin()
   try {
+    const sub = await db.query.subscribers.findFirst({ where: eq(subscribers.id, id), columns: { email: true } })
     await db.delete(subscribers).where(eq(subscribers.id, id))
+    await logAudit({ category: 'system', action: 'subscriber.deleted', target: sub?.email || id })
     revalidatePath('/admin')
     return { success: true }
   } catch (error) {
@@ -200,6 +214,7 @@ export async function inviteAdmin(
       console.warn('Admin record created, but invitation email failed to send.')
     }
 
+    await logAudit({ category: 'admin', action: 'admin.invited', target: `${name.trim()} (${role})` })
     revalidatePath('/admin')
     return { success: true }
   } catch (error) {
@@ -221,7 +236,9 @@ export async function deleteAdmin(id: string) {
   }
 
   try {
+    const target = await db.query.admins.findFirst({ where: eq(admins.id, id), columns: { name: true, email: true } })
     await db.delete(admins).where(eq(admins.id, id))
+    await logAudit({ category: 'admin', action: 'admin.deleted', target: target?.name || target?.email || id })
     revalidatePath('/admin')
     return { success: true }
   } catch (error) {
@@ -360,10 +377,12 @@ export async function toggleAdminDisabledAction(targetAdminId: string, isDisable
     return { success: false, error: 'System restriction: You cannot disable your own administrative account.' }
   }
   try {
+    const target = await db.query.admins.findFirst({ where: eq(admins.id, targetAdminId), columns: { name: true } })
     await db
       .update(admins)
       .set({ isDisabled })
       .where(eq(admins.id, targetAdminId))
+    await logAudit({ category: 'admin', action: isDisabled ? 'admin.disabled' : 'admin.enabled', target: target?.name || targetAdminId })
     revalidatePath('/admin')
     return { success: true }
   } catch (error) {
@@ -383,10 +402,12 @@ export async function resetAdminPasswordAction(targetAdminId: string, newPasswor
   }
   try {
     const hash = await bcrypt.hash(newPasswordPlain, 10)
+    const target = await db.query.admins.findFirst({ where: eq(admins.id, targetAdminId), columns: { name: true } })
     await db
       .update(admins)
       .set({ passwordHash: hash })
       .where(eq(admins.id, targetAdminId))
+    await logAudit({ category: 'admin', action: 'admin.password_reset', target: target?.name || targetAdminId })
     return { success: true }
   } catch (error) {
     console.error('Failed to reset admin password:', error)

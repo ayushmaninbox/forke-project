@@ -228,6 +228,18 @@ export const systemSettings = pgTable('system_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// Audit trail of admin actions (the "activity terminal" in the admin panel).
+export const adminAuditLog = pgTable('admin_audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id'),                       // admin who did it (null = system)
+  actorName: text('actor_name'),                   // snapshot of the admin's name
+  category: text('category').notNull().default('admin'), // admin | user | db | system | error
+  action: text('action').notNull(),                // e.g. owner.approved, developer.banned
+  target: text('target'),                          // human-readable subject (email / name / table)
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const developers = pgTable('developers', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
