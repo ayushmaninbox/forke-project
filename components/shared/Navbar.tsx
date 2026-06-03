@@ -26,9 +26,9 @@ export default function Navbar() {
   const navLinks = [
     { name: "What's Forke?", href: '/whats-forke' },
     { name: 'Bounties', href: '/bounties' },
-    { name: 'Leaderboards', href: '/leaderboard' },
     { name: 'Levels', href: '/levels' },
     { name: 'Blog', href: '/blog' },
+    { name: 'Contact Us', href: '/contact' },
   ]
 
   return (

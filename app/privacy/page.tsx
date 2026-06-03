@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white/80 selection:bg-accent selection:text-white">
+    <div className="min-h-screen bg-[#0A0A0A] text-white/80 selection:bg-accent/20 selection:text-accent">
       <Navbar />
 
       {/* Header */}
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           Privacy <span className="text-accent italic">Policy</span>
         </h1>
         <p className="text-sm text-white/30 font-mono">
-          Effective 16 May 2025 · v1.0.0
+          Effective June 2026 · v1.1.0
         </p>
       </header>
 
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
         {/* Intro */}
         <div className="border-l-2 border-accent/20 pl-6">
           <p className="text-base text-white/60 leading-relaxed">
-            At Forke, your privacy matters. This Privacy Policy explains how we collect, use, store, and protect your information when you use the Forke platform.
+            At Forke, your privacy matters. This Privacy Policy explains how we collect, use, store, and protect your information when you use the Forke platform, compliant with the India Digital Personal Data Protection (DPDP) Act, 2023 and modern data privacy practices.
           </p>
         </div>
 
@@ -46,10 +46,10 @@ export default function PrivacyPage() {
         <section className="space-y-4">
           <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">01</span>
-            Introduction
+            Introduction & Consent
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            Forke operates a developer micro-task and bounty platform that connects builders with real-world coding tasks. This policy covers what data we collect, how we use it, and your rights.
+            Forke operates a developer micro-task and bounty platform that connects independent developers with technical projects. By registering an account, linking third-party authentication services, or interacting with our platform, you explicitly consent to the collection, processing, and storage of your personal data as outlined in this policy.
           </p>
         </section>
 
@@ -64,22 +64,33 @@ export default function PrivacyPage() {
             <div className="space-y-3">
               <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Personal Data</h3>
               <ul className="space-y-2 text-sm text-white/50">
-                {['Name or Username', 'Email Address', 'GitHub Profile Information', 'Payment details (UPI/Payout)', 'Profile Avatar & Bio'].map((item) => (
+                {[
+                  'Full Name & Username',
+                  'Email Address (via OAuth providers)',
+                  'GitHub Profile Information & Repositories list',
+                  'Payout Details (UPI ID / VPA, Bank account details)',
+                  'Profile Avatar image & Bio details',
+                ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
-                    {item}
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent/60 shrink-0" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Usage Info</h3>
+              <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Usage & Technical Info</h3>
               <ul className="space-y-2 text-sm text-white/50">
-                {['Browser & Device type', 'IP Address', 'Pages visited & time spent', 'Click interactions & logs'].map((item) => (
+                {[
+                  'Browser type & Operating System',
+                  'IP Address & general geo-location',
+                  'Pages visited, time spent, & navigation paths',
+                  'Click interactions, transaction logs, & claims history',
+                ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
-                    <div className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
-                    {item}
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent/60 shrink-0" />
+                    <span>{item}</span>
                   </li>
                 ))}
               </ul>
@@ -87,60 +98,103 @@ export default function PrivacyPage() {
           </div>
         </section>
 
-        {/* 03. How We Use Information */}
+        {/* 03. Third-Party Integrations */}
         <section className="space-y-4">
           <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">03</span>
-            How We Use Information
+            Third-Party Sub-Processors
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            We use collected information to operate the platform, match developers with tasks, process payouts, prevent fraud, and improve user experience.{' '}
-            <span className="text-accent font-medium">We do not sell your personal data.</span>
+            We integrate with trusted third-party services to deliver key application functionalities. These providers process data in accordance with their own privacy protocols:
           </p>
+          <ul className="space-y-3 text-sm text-white/50 pl-4">
+            <li>
+              <strong>Authentication & Session Management (NextAuth):</strong> Handles secure credentials-based login as well as third-party OAuth authentication via GitHub and Google.
+            </li>
+            <li>
+              <strong>Database Infrastructure (AWS RDS PostgreSQL & Drizzle ORM):</strong> Stores user profiles, task details, active claims, and transaction histories securely on Amazon Web Services (AWS) database instances.
+            </li>
+            <li>
+              <strong>Payment Gateway & Settlements (Razorpay):</strong> Processes task bounty deposits, payouts, and UPI settlements. We do not store full credit card numbers or banking secrets on our servers.
+            </li>
+          </ul>
         </section>
 
-        {/* 04. Cookies */}
+        {/* 04. Data Storage, Transfers & Security */}
         <section className="space-y-4">
           <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">04</span>
-            Cookies & Tracking
+            Storage, Security & Location
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            Forke uses cookies to keep you signed in, remember preferences, analyze traffic, and improve performance. You can disable cookies in your browser settings.
+            Our primary databases are hosted securely on AWS cloud infrastructure located in <strong>India</strong> to ensure compliance with local server-residency requirements under the DPDP Act 2023. 
+          </p>
+          <p className="text-sm text-white/50 leading-relaxed">
+            We implement SSL/TLS encryption for all data in transit, restrict database access to authenticated administrators, and run automated security scanners. However, no internet service is 100% secure, and you are responsible for maintaining the privacy of your account access credentials.
           </p>
         </section>
 
-        {/* 05. Data Security */}
+        {/* 05. Data Retention */}
         <section className="space-y-4">
           <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">05</span>
-            Data Security
+            Data Retention
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            We implement industry-standard security measures to protect your data. However, no internet service is completely secure. Users are responsible for maintaining account password security.
+            We retain your personal information for as long as your account is active on Forke. If you delete your account, we will erase or anonymize your personal data within 30 days, except where we are legally required to retain certain records (such as tax invoices, payment settlement audits, or dispute history logs) for up to 5 years under applicable Indian fiscal regulations.
           </p>
         </section>
 
-        {/* 06. Your Rights */}
+        {/* 06. Cookies & Tracking */}
         <section className="space-y-4">
           <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">06</span>
-            Your Rights
+            Cookies & Tracking
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            You may request to access your personal data, correct inaccurate information, delete your account, or request data removal. Contact support for any requests.
+            Forke uses persistent and session cookies to keep you signed in, preserve your interface theme settings, and analyze anonymous traffic performance. You may disable cookies in your web browser, but doing so will prevent you from claiming bounties or accessing private dashboards.
           </p>
         </section>
 
-        {/* Contact */}
+        {/* 07. User Rights (DPDP 2023 & GDPR) */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+            <span className="text-accent/40 text-sm font-mono">07</span>
+            Your Privacy Rights
+          </h2>
+          <p className="text-sm text-white/50 leading-relaxed">
+            Under India&apos;s DPDP Act 2023 and global standards, you possess the following rights regarding your personal data:
+          </p>
+          <ul className="space-y-3 text-sm text-white/50 pl-4">
+            <li>
+              <strong>Right to Access & Portability:</strong> You may request a copy of the personal data we hold about you in a readable format.
+            </li>
+            <li>
+              <strong>Right to Rectification:</strong> You may request corrections to any inaccurate, outdated, or incomplete personal data.
+            </li>
+            <li>
+              <strong>Right to Erasure (&quot;Right to be Forgotten&quot;):</strong> You can request that we delete your account and associated personal info.
+            </li>
+            <li>
+              <strong>Right to Withdraw Consent:</strong> You may withdraw your consent to process your data at any time, which will result in account closure.
+            </li>
+          </ul>
+        </section>
+
+        {/* Contact / Grievance Officer */}
         <div className="pt-8 border-t border-white/[0.06] space-y-4 text-center">
-          <p className="text-sm text-white/40">For any privacy-related questions or data requests:</p>
+          <p className="text-sm text-white/40">
+            To exercise your rights, submit a grievance, or file a data deletion request:
+          </p>
           <a
             href="mailto:support@forke.space"
-            className="inline-block px-6 py-3 bg-accent text-white text-sm font-bold rounded-xl hover:brightness-110 transition-all"
+            className="inline-block px-6 py-3 bg-accent text-[#0A0A0A] text-sm font-bold rounded-xl hover:brightness-110 transition-all shadow-glow"
           >
             support@forke.space
           </a>
+          <p className="text-[10px] text-white/30 font-mono pt-2">
+            Grievances will be reviewed and addressed within 15 business days.
+          </p>
         </div>
 
       </main>
