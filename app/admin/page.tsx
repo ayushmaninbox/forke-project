@@ -639,7 +639,7 @@ export default function AdminDashboard() {
         "w-64 max-w-[80vw] border-r border-[var(--color-border)] bg-[#070709] shrink-0 flex flex-col justify-between h-screen fixed lg:sticky top-0 left-0 z-50 transition-transform duration-300 select-none",
         mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="flex-grow flex flex-col overflow-y-auto pt-4">
+        <div className="flex-grow flex flex-col overflow-y-auto pt-4 min-h-0">
           
           {/* Logo & Header */}
           <div className="h-14 flex items-center gap-2.5 px-5 border-b border-[var(--color-border)] mb-4 shrink-0">
@@ -872,7 +872,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* User Card & Logout at bottom */}
-        <div className="p-3 border-t border-[var(--color-border)] flex flex-col gap-2">
+        <div className="p-3 border-t border-[var(--color-border)] flex flex-col gap-2 shrink-0">
           <div className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.02]">
             <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent text-xs shrink-0">
               {currentAdmin?.name
@@ -900,7 +900,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* --- MAIN PAGE CONTENT --- */}
-      <main className="flex-grow h-screen overflow-y-auto bg-[#0b0b0e] flex flex-col text-left">
+      <main className="flex-grow h-screen overflow-hidden bg-[#0b0b0e] flex flex-col text-left">
         
         {/* --- HEADER (mobile only — desktop uses sidebar for context) --- */}
         <header className="lg:hidden h-14 px-4 sm:px-6 border-b border-[var(--color-border)] flex items-center justify-between shrink-0">
@@ -927,7 +927,7 @@ export default function AdminDashboard() {
 
           {/* ==================== DASHBOARD PANEL ==================== */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
+            <div className="space-y-6 overflow-y-auto flex-grow min-h-0 pr-1">
               
               {/* Waitlist Control Card */}
               <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
@@ -1069,7 +1069,7 @@ export default function AdminDashboard() {
 
           {/* ==================== OWNER APPROVAL PANEL ==================== */}
           {activeTab === 'owner-approval' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
               {/* Search & filters */}
               <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between bg-white/[0.005]">
@@ -1086,7 +1086,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table list */}
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-grow min-h-0">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
@@ -1177,7 +1177,7 @@ export default function AdminDashboard() {
 
           {/* ==================== DEVELOPERS PANEL ==================== */}
           {activeTab === 'developer-ban' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
               {/* Search */}
               <div className="p-4 border-b border-[var(--color-border)] bg-white/[0.005]">
@@ -1194,7 +1194,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table list */}
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-grow min-h-0">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
@@ -1331,7 +1331,7 @@ export default function AdminDashboard() {
 
           {/* ==================== ENQUIRIES PANEL ==================== */}
           {activeTab === 'enquiries' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
               {/* Search */}
               <div className="p-4 border-b border-[var(--color-border)] bg-white/[0.005]">
@@ -1348,7 +1348,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-grow min-h-0">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
@@ -1415,7 +1415,7 @@ export default function AdminDashboard() {
 
           {/* ==================== SUBSCRIBERS PANEL ==================== */}
           {activeTab === 'subscribers' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
               {/* Search & Action Buttons */}
               <div className="p-4 border-b border-[var(--color-border)] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.005] gap-4">
@@ -1440,7 +1440,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-grow min-h-0">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
@@ -1494,7 +1494,7 @@ export default function AdminDashboard() {
 
           {/* ==================== ADMINS PANEL ==================== */}
           {activeTab === 'admins' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden">
+            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
               {/* Search & Action Buttons */}
               <div className="p-4 border-b border-[var(--color-border)] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.005] gap-4">
@@ -1521,7 +1521,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-auto flex-grow min-h-0">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
