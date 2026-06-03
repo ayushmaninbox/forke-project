@@ -1119,3 +1119,15 @@ export async function getDatabaseAdvisors() {
     return { success: false, error: error.message || 'Failed to fetch database advisors.' }
   }
 }
+
+// 14. Log database table export action
+export async function logTableExportAction(tableName: string, format: string, count: number) {
+  await ensureAdmin()
+  await logAudit({
+    category: 'db',
+    action: `db.export_${format.toLowerCase()}`,
+    target: `${tableName} (${count} row${count === 1 ? '' : 's'})`
+  })
+  return { success: true }
+}
+

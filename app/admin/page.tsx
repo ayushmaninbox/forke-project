@@ -20,7 +20,8 @@ import {
   updateAdminProfile,
   toggleAdminDisabledAction,
   resetAdminPasswordAction,
-  changeAdminPasswordAction
+  changeAdminPasswordAction,
+  logSubscribersExportAction
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -476,7 +477,7 @@ export default function AdminDashboard() {
     }
   }
 
-  function handleExportCSV() {
+  async function handleExportCSV() {
     const headers = ['ID', 'Email', 'Created At']
     const rows = filteredSubscribers.map((sub) => [
       sub.id,
@@ -498,6 +499,12 @@ export default function AdminDashboard() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+
+    try {
+      await logSubscribersExportAction(filteredSubscribers.length)
+    } catch (e) {
+      console.error('Failed to log subscriber CSV export:', e)
+    }
   }
 
   // Real-time filtering logic
@@ -1667,7 +1674,7 @@ export default function AdminDashboard() {
           {/* ==================== ACTIVITY / AUDIT LOG PANEL ==================== */}
           {activeTab === 'activity' && (
             <div className="flex-grow min-h-0 h-full flex flex-col">
-              <ActivityFeedPanel />
+              <ActivityFeedPanel currentAdmin={currentAdmin} />
             </div>
           )}
 

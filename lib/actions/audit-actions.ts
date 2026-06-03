@@ -33,6 +33,9 @@ export async function ensureAuditLogTable() {
         "created_at" timestamp NOT NULL DEFAULT now()
       );
     `)
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS "admin_audit_log_created_at_idx" ON "admin_audit_log" ("created_at");
+    `)
   } catch (e) {
     console.error('ensureAuditLogTable failed:', e)
   }
@@ -68,10 +71,38 @@ export async function logAudit(entry: LogEntry) {
       target: entry.target ?? null,
       metadata: entry.metadata ?? null,
     })
+
+    // Continuous background pruning of logs older than 7 days (168 hours) - best effort
+    db.delete(adminAuditLog)
+      .where(sql`created_at < now() - interval '7 days'`)
+      .catch((err) => console.error('Failed to auto-prune audit logs:', err))
   } catch (e) {
     console.error('logAudit failed:', e)
   }
 }
+
+/** Server Action: Manually purge logs older than 7 days. Only accessible to Super Admins. */
+export async function purgeAuditLogsAction() {
+  const admin = await getCurrentAdmin().catch(() => null)
+  if (!admin || admin.role !== 'super_admin') {
+    return { success: false, error: 'Only Super Admins can purge audit logs.' }
+  }
+  try {
+    await db.delete(adminAuditLog).where(sql`created_at < now() - interval '7 days'`)
+    
+    // Log the purge action itself so admins know it was cleared
+    await logAudit({
+      category: 'system',
+      action: 'system.logs_purged',
+      target: 'Logs older than 7 days'
+    })
+    return { success: true }
+  } catch (e: any) {
+    console.error('Failed to purge logs:', e)
+    return { success: false, error: e.message || 'Failed to purge logs.' }
+  }
+}
+
 
 const ev = (
   id: string,

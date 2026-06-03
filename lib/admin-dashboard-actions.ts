@@ -446,3 +446,15 @@ export async function changeAdminPasswordAction(oldPasswordPlain: string, newPas
     return { success: false, error: 'Database transaction failed.' }
   }
 }
+
+export async function logSubscribersExportAction(count: number) {
+  await ensureAdmin()
+  await logAudit({
+    category: 'admin',
+    action: 'subscribers.export_csv',
+    target: `${count} subscriber${count === 1 ? '' : 's'}`
+  })
+  revalidatePath('/admin')
+  return { success: true }
+}
+

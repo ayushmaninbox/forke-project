@@ -3,10 +3,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
   Shield, User, Briefcase, Database, MessageSquare, Zap, Settings, AlertTriangle,
-  RefreshCw, Pause, Play, Terminal,
+  RefreshCw, Pause, Play, Terminal, Trash2
 } from 'lucide-react'
-import { getActivityFeed, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
+import { getActivityFeed, purgeAuditLogsAction, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
 import { cn } from '@/lib/utils/cn'
+import { toast } from '@/components/shared/Toast'
 
 type IconType = React.ComponentType<{ className?: string }>
 const CATEGORY: Record<ActivityCategory, { label: string; icon: IconType; color: string; dot: string }> = {
@@ -45,13 +46,44 @@ function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour12: false })
 }
 
-export default function ActivityFeedPanel() {
+interface ActivityFeedPanelProps {
+  currentAdmin?: {
+    id: string
+    name: string
+    role: string
+  } | null
+}
+
+export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelProps) {
+  const isSuperAdmin = currentAdmin?.role === 'super_admin'
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [filter, setFilter] = useState<ActivityCategory | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [, forceTick] = useState(0) // re-render to refresh relative timestamps
+  const [purging, setPurging] = useState(false)
+
+  const handlePurge = async () => {
+    if (!confirm('Are you sure you want to manually purge logs older than 7 days? This action cannot be undone.')) {
+      return
+    }
+    setPurging(true)
+    try {
+      const res = await purgeAuditLogsAction()
+      if (res.success) {
+        toast('Logs older than 7 days have been successfully purged.', 'success')
+        load(true)
+      } else {
+        toast(res.error || 'Failed to purge logs.', 'error')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred while purging logs.', 'error')
+    } finally {
+      setPurging(false)
+    }
+  }
 
   const filterRef = useRef(filter)
   filterRef.current = filter
@@ -118,6 +150,17 @@ export default function ActivityFeedPanel() {
             >
               <RefreshCw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
             </button>
+            {isSuperAdmin && (
+              <button
+                onClick={handlePurge}
+                disabled={purging}
+                className="h-8 px-3 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-bold"
+                title="Purge logs older than 7 days"
+              >
+                <Trash2 className={cn('w-3.5 h-3.5', purging && 'animate-spin')} />
+                <span>Purge Logs</span>
+              </button>
+            )}
           </div>
         </div>
 

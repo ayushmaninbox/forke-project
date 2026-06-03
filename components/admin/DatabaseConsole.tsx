@@ -7,7 +7,8 @@ import {
   getTableData, 
   insertTableRecord, 
   updateTableRecord, 
-  deleteTableRecords 
+  deleteTableRecords,
+  logTableExportAction
 } from '@/lib/db-client-actions'
 import { 
   Database, 
@@ -427,6 +428,11 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     document.body.appendChild(downloadAnchor)
     downloadAnchor.click()
     downloadAnchor.remove()
+
+    const count = Array.isArray(data) ? data.length : 1
+    logTableExportAction(selectedTable, 'JSON', count).catch((err) =>
+      console.error('Failed to log JSON export:', err)
+    )
   }
 
   function exportToCsv(data: any[], headers: string[], filename: string) {
@@ -449,6 +455,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     document.body.appendChild(downloadAnchor)
     downloadAnchor.click()
     downloadAnchor.remove()
+
+    logTableExportAction(selectedTable, 'CSV', data.length).catch((err) =>
+      console.error('Failed to log CSV export:', err)
+    )
   }
 
   function exportToTsv(data: any[], headers: string[], filename: string) {
@@ -470,6 +480,10 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     document.body.appendChild(downloadAnchor)
     downloadAnchor.click()
     downloadAnchor.remove()
+
+    logTableExportAction(selectedTable, 'XLSX/TSV', data.length).catch((err) =>
+      console.error('Failed to log TSV export:', err)
+    )
   }
 
   // Schema creation copy helper
