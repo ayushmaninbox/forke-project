@@ -698,7 +698,9 @@ export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reas
   return sendResendEmail(toEmail, 'Update on your Forke owner application', html, 'owner decline')
 }
 
-export async function sendOwnerBannedEmail(toEmail: string, name: string): Promise<boolean> {
+// Shared suspension email used for both owners and developers — identical copy,
+// links to the existing /auth-error unban-request form.
+async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owner' | 'developer'): Promise<boolean> {
   const baseUrl = resolveBaseUrl()
   const reviewLink = `${baseUrl}/auth-error?error=AccessDenied`
   const html = ownerEmailShell({
@@ -709,7 +711,7 @@ export async function sendOwnerBannedEmail(toEmail: string, name: string): Promi
     bodyHtml: `
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-        Your Forke owner account has been <strong style="color:#ffffff;">suspended</strong> and access has been temporarily restricted. This may be the result of a policy review or activity that requires further verification.
+        Your Forke ${accountKind} account has been <strong style="color:#ffffff;">suspended</strong> and access has been temporarily restricted. This may be the result of a policy review or activity that requires further verification.
       </p>
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
         If you believe this was a mistake, you can submit a request for review using the form below and our team will look into it:
@@ -721,5 +723,13 @@ export async function sendOwnerBannedEmail(toEmail: string, name: string): Promi
       </p>
     `,
   })
-  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, 'owner ban')
+  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, `${accountKind} ban`)
+}
+
+export async function sendOwnerBannedEmail(toEmail: string, name: string): Promise<boolean> {
+  return sendBannedEmail(toEmail, name, 'owner')
+}
+
+export async function sendDeveloperBannedEmail(toEmail: string, name: string): Promise<boolean> {
+  return sendBannedEmail(toEmail, name, 'developer')
 }

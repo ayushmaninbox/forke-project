@@ -8,6 +8,7 @@ import {
 import { getActivityFeed, purgeAuditLogsAction, getActivityLogLiveStatusAction, setActivityLogLiveStatusAction, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
+import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 
 type IconType = React.ComponentType<{ className?: string }>
 const CATEGORY: Record<ActivityCategory, { label: string; icon: IconType; color: string; dot: string }> = {
@@ -63,11 +64,9 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [, forceTick] = useState(0) // re-render to refresh relative timestamps
   const [purging, setPurging] = useState(false)
+  const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null)
 
-  const handlePurge = async () => {
-    if (!confirm('Are you sure you want to manually purge ALL logs? This action cannot be undone.')) {
-      return
-    }
+  const doPurge = async () => {
     setPurging(true)
     try {
       const res = await purgeAuditLogsAction()
@@ -83,6 +82,16 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
     } finally {
       setPurging(false)
     }
+  }
+
+  const handlePurge = () => {
+    setConfirmState({
+      title: 'Purge All Logs',
+      message: 'This permanently deletes every activity log entry and cannot be undone. Continue?',
+      confirmLabel: 'Purge Logs',
+      tone: 'danger',
+      onConfirm: doPurge,
+    })
   }
 
   const toggleLive = async () => {
@@ -172,6 +181,7 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
 
   return (
     <div className="flex flex-col h-full min-h-0">
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
       {/* Header */}
       <div className="shrink-0 space-y-4 pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">

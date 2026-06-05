@@ -3,7 +3,7 @@
 import { db } from './db'
 import { users, owners, subscribers, admins, developers, accounts } from './db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
-import { sendBroadcastEmail, sendAdminInvitation, sendOwnerApprovedEmail, sendOwnerDeclinedEmail, sendOwnerBannedEmail } from './email'
+import { sendBroadcastEmail, sendAdminInvitation, sendOwnerApprovedEmail, sendOwnerDeclinedEmail, sendOwnerBannedEmail, sendDeveloperBannedEmail } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
 import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'
@@ -62,6 +62,7 @@ export async function getDevelopers() {
       id: developers.id,
       githubId: developers.githubId,
       username: developers.username,
+      forkeUsername: users.username,
       accessToken: developers.accessToken,
       createdAt: developers.createdAt,
       userId: users.id,
@@ -155,6 +156,12 @@ export async function toggleDeveloperBan(userId: string, shouldBan: boolean) {
     action: shouldBan ? 'developer.banned' : 'developer.unbanned',
     target: u?.username ? `@${u.username}` : u?.name || u?.email || userId,
   })
+
+  // On ban, email the developer the unban-request link (fail-soft)
+  if (shouldBan && u?.email) {
+    await sendDeveloperBannedEmail(u.email, u.name || 'there')
+  }
+
   revalidatePath('/admin')
   return { success: true }
 }

@@ -31,6 +31,7 @@ import { adminLogout } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import ToastContainer, { toast } from '@/components/shared/Toast'
+import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 import { cn } from '@/lib/utils/cn'
 import { 
   LayoutDashboard,
@@ -149,6 +150,13 @@ export default function AdminDashboard() {
   const [declineTargetOwner, setDeclineTargetOwner] = useState<any>(null)
   const [declineReason, setDeclineReason] = useState('')
   const [isDeclining, setIsDeclining] = useState(false)
+
+  // Reusable in-app confirmation modal (replaces native confirm())
+  const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null)
+
+  function requestConfirm(opts: ConfirmOptions) {
+    setConfirmState(opts)
+  }
 
   // Data states
   const [ownersList, setOwnersList] = useState<any[]>([])
@@ -308,19 +316,21 @@ export default function AdminDashboard() {
 
   async function handleToggleWaitlist() {
     if (waitlistEnabled) {
-      if (confirm('Are you sure you want to disable the waitlist? This will allow open access to the site.')) {
-        setIsTogglingWaitlist(true)
-        try {
-          const res = await updateWaitlistConfig(false)
-          if (res.success) {
-            setWaitlistEnabled(false)
+      requestConfirm({
+        title: 'Disable Waitlist Gate',
+        message: 'This will allow open access to the site. Are you sure you want to disable the waitlist?',
+        confirmLabel: 'Disable Gate',
+        tone: 'danger',
+        onConfirm: async () => {
+          setIsTogglingWaitlist(true)
+          try {
+            const res = await updateWaitlistConfig(false)
+            if (res.success) setWaitlistEnabled(false)
+          } finally {
+            setIsTogglingWaitlist(false)
           }
-        } catch (error) {
-          console.error('Failed to toggle waitlist:', error)
-        } finally {
-          setIsTogglingWaitlist(false)
-        }
-      }
+        },
+      })
     } else {
       setWaitlistModalPassword(waitlistBypassPassword || 'bypass123')
       setIsWaitlistModalOpen(true)
@@ -385,13 +395,9 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleToggleOwnerBan(userId: string, isBanned: boolean) {
-    // Confirm only when banning (an irreversible-feeling action); unban is safe
-    if (!isBanned && !confirm('Ban this owner? They will lose access and be emailed an unban-request link.')) {
-      return
-    }
+  async function doToggleOwnerBan(userId: string, shouldBan: boolean) {
     try {
-      await toggleOwnerBan(userId, !isBanned)
+      await toggleOwnerBan(userId, shouldBan)
       fetchData()
     } catch (err) {
       console.error('Failed to toggle owner ban:', err)
@@ -399,12 +405,43 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleToggleBan(userId: string, isBanned: boolean) {
+  function handleToggleOwnerBan(userId: string, isBanned: boolean) {
+    // Confirm only when banning; unban is safe
+    if (!isBanned) {
+      requestConfirm({
+        title: 'Ban Owner',
+        message: 'They will lose access immediately and be emailed an unban-request link. Continue?',
+        confirmLabel: 'Ban Owner',
+        tone: 'danger',
+        onConfirm: () => doToggleOwnerBan(userId, true),
+      })
+    } else {
+      doToggleOwnerBan(userId, false)
+    }
+  }
+
+  async function doToggleBan(userId: string, shouldBan: boolean) {
     try {
-      await toggleDeveloperBan(userId, !isBanned)
+      await toggleDeveloperBan(userId, shouldBan)
       fetchData()
     } catch (err) {
       console.error('Failed to toggle developer ban:', err)
+      toast('Something went wrong.', "error")
+    }
+  }
+
+  function handleToggleBan(userId: string, isBanned: boolean) {
+    // Confirm only when banning; unban is safe
+    if (!isBanned) {
+      requestConfirm({
+        title: 'Ban Developer',
+        message: 'They will lose access immediately and be emailed an unban-request link. Continue?',
+        confirmLabel: 'Ban Developer',
+        tone: 'danger',
+        onConfirm: () => doToggleBan(userId, true),
+      })
+    } else {
+      doToggleBan(userId, false)
     }
   }
 
@@ -417,19 +454,21 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleDeleteSubscriber(id: string) {
-    if (confirm('Are you sure you want to delete this subscriber?')) {
-      try {
+  function handleDeleteSubscriber(id: string) {
+    requestConfirm({
+      title: 'Delete Subscriber',
+      message: 'This will permanently remove this subscriber from the list. Continue?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: async () => {
         const res = await deleteSubscriber(id)
         if (res.success) {
           fetchData()
         } else {
           toast('Failed to delete subscriber', "error")
         }
-      } catch (err) {
-        console.error('Failed to delete subscriber:', err)
-      }
-    }
+      },
+    })
   }
 
   async function handleInviteAdmin(e: React.FormEvent) {
@@ -465,19 +504,21 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleDeleteAdmin(id: string) {
-    if (confirm('Are you sure you want to decline and DELETE this administrator?')) {
-      try {
+  function handleDeleteAdmin(id: string) {
+    requestConfirm({
+      title: 'Delete Administrator',
+      message: 'This will permanently remove this administrator account. Continue?',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: async () => {
         const res = await deleteAdmin(id)
         if (res.success) {
           fetchData()
         } else {
           toast(res.error || 'Failed to delete admin account.', "error")
         }
-      } catch (err) {
-        console.error('Failed to delete admin:', err)
-      }
-    }
+      },
+    })
   }
 
   async function handleUpdateProfile(e: React.FormEvent) {
@@ -512,11 +553,15 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleToggleDisabled(adminId: string, currentStatus: boolean) {
+  function handleToggleDisabled(adminId: string, currentStatus: boolean) {
     const newStatus = !currentStatus
-    const actionLabel = newStatus ? 'DISABLE' : 'ENABLE'
-    if (confirm(`Are you sure you want to ${actionLabel} this administrator?`)) {
-      try {
+    const actionLabel = newStatus ? 'Disable' : 'Enable'
+    requestConfirm({
+      title: `${actionLabel} Administrator`,
+      message: `Are you sure you want to ${actionLabel.toLowerCase()} this administrator?`,
+      confirmLabel: actionLabel,
+      tone: newStatus ? 'danger' : 'default',
+      onConfirm: async () => {
         const res = await toggleAdminDisabledAction(adminId, newStatus)
         if (res.success) {
           toast(`Administrator has been successfully ${newStatus ? 'disabled' : 'enabled'}.`, "success")
@@ -524,11 +569,8 @@ export default function AdminDashboard() {
         } else {
           toast(res.error || 'Failed to update administrator status.', "error")
         }
-      } catch (err) {
-        console.error('Toggle status error:', err)
-        toast('Something went wrong.', "error")
-      }
-    }
+      },
+    })
   }
 
   async function handleResetPassword(e: React.FormEvent) {
@@ -1569,15 +1611,24 @@ export default function AdminDashboard() {
                                 )}
                               </div>
                               <div>
-                                <a 
-                                  href={`https://github.com/${dev.username || ''}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-medium text-white hover:text-accent transition-colors block text-sm"
-                                >
-                                  {dev.username || 'N/A'}
-                                </a>
-                                <p className="text-xs text-[var(--color-text-muted)] mt-1">{dev.name || 'No Display Name'} &middot; {dev.email || 'No Email Linked'}</p>
+                                {dev.forkeUsername ? (
+                                  <a
+                                    href={`/${dev.forkeUsername}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-white hover:text-accent transition-colors block text-sm"
+                                    title={`View @${dev.forkeUsername}'s Forke profile`}
+                                  >
+                                    {dev.name || dev.forkeUsername}
+                                    <span className="text-xs text-accent ml-1.5">@{dev.forkeUsername}</span>
+                                  </a>
+                                ) : (
+                                  <p className="font-medium text-white text-sm">{dev.name || 'N/A'}</p>
+                                )}
+                                <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                                  {dev.email || 'No Email Linked'}
+                                  {dev.username && <> &middot; <a href={`https://github.com/${dev.username}`} target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">@{dev.username} (GitHub)</a></>}
+                                </p>
                               </div>
                             </div>
                           </td>
@@ -2289,6 +2340,9 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* --- REUSABLE CONFIRMATION MODAL --- */}
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
 
       {/* --- DECLINE OWNER GLASS MODAL --- */}
       {isDeclineModalOpen && declineTargetOwner && (

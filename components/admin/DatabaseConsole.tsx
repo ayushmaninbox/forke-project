@@ -49,6 +49,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { toast } from '@/components/shared/Toast'
+import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 import { cn } from '@/lib/utils/cn'
 
 interface DatabaseConsoleProps {
@@ -310,6 +311,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
   const [isSubmittingRequest, setIsSubmittingRequest] = useState<boolean>(false)
   const [isReviewingRequest, setIsReviewingRequest] = useState<string | null>(null)
   const [expandedRequestResultsId, setExpandedRequestResultsId] = useState<string | null>(null)
+  const [confirmState, setConfirmState] = useState<ConfirmOptions | null>(null)
 
   async function fetchRequests() {
     setIsLoadingRequests(true)
@@ -685,23 +687,28 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
   }
 
   // Delete selected rows
-  async function handleDeleteSelectedRecords() {
+  function handleDeleteSelectedRecords() {
     if (!isSuperAdmin) return
     if (selectedRowKeys.length === 0) return
 
-    const confirmMsg = `Are you sure you want to delete ${selectedRowKeys.length} selected record(s) from "${selectedTable}"?`
-    if (confirm(confirmMsg)) {
-      setIsLoadingData(true)
-      const res = await deleteTableRecords(selectedTable, primaryKeyCol, selectedRowKeys)
-      if (res.success) {
-        toast('Records successfully deleted!', 'success')
-        fetchTableMetadataAndData()
-      } else {
-        toast(res.error || 'Failed to delete records.', 'error')
-        setIsLoadingData(false)
-      }
-      setSelectedRowKeys([])
-    }
+    setConfirmState({
+      title: 'Delete Records',
+      message: `Permanently delete ${selectedRowKeys.length} selected record(s) from "${selectedTable}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+      onConfirm: async () => {
+        setIsLoadingData(true)
+        const res = await deleteTableRecords(selectedTable, primaryKeyCol, selectedRowKeys)
+        if (res.success) {
+          toast('Records successfully deleted!', 'success')
+          fetchTableMetadataAndData()
+        } else {
+          toast(res.error || 'Failed to delete records.', 'error')
+          setIsLoadingData(false)
+        }
+        setSelectedRowKeys([])
+      },
+    })
   }
 
   // Add Record submit
@@ -830,6 +837,8 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
   return (
     <div className="flex h-full min-h-0 border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
+
+      <ConfirmModal state={confirmState} onClose={() => setConfirmState(null)} />
 
       {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
       {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
@@ -961,13 +970,19 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                           {isSuperAdmin && (
                           <>
                           <button
-                            onClick={async (e) => {
+                            onClick={(e) => {
                               e.stopPropagation()
-                              if (confirm(`Are you sure you want to TRUNCATE table "${t.name}"? This deletes all rows.`)) {
-                                toast(`Table "${t.name}" truncated!`, 'success')
-                                fetchTableMetadataAndData()
-                              }
                               setSidebarActiveTableMenu('')
+                              setConfirmState({
+                                title: 'Truncate Table',
+                                message: `This deletes ALL rows in "${t.name}". This cannot be undone. Continue?`,
+                                confirmLabel: 'Truncate',
+                                tone: 'danger',
+                                onConfirm: async () => {
+                                  toast(`Table "${t.name}" truncated!`, 'success')
+                                  fetchTableMetadataAndData()
+                                },
+                              })
                             }}
                             className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
                           >
@@ -975,12 +990,18 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                             <span>Truncate</span>
                           </button>
                           <button
-                            onClick={async (e) => {
+                            onClick={(e) => {
                               e.stopPropagation()
-                              if (confirm(`Are you sure you want to DROP table "${t.name}"? This deletes the table forever.`)) {
-                                toast(`Table "${t.name}" dropped!`, 'success')
-                              }
                               setSidebarActiveTableMenu('')
+                              setConfirmState({
+                                title: 'Drop Table',
+                                message: `This permanently deletes the table "${t.name}" and all its data forever. Continue?`,
+                                confirmLabel: 'Drop Table',
+                                tone: 'danger',
+                                onConfirm: async () => {
+                                  toast(`Table "${t.name}" dropped!`, 'success')
+                                },
+                              })
                             }}
                             className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/15 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
                           >
