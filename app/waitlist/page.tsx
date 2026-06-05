@@ -1,19 +1,49 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Zap, Flame, Star, Mail, Check, AlertCircle } from 'lucide-react'
 import DotField from '@/components/shared/DotField'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
+import { useSearchParams } from 'next/navigation'
 
-export default function WaitlistPage() {
+function WaitlistPageContent() {
+  const searchParams = useSearchParams()
+  const emailParam = searchParams.get('email')
+
   const containerRef = useRef<HTMLDivElement>(null)
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null)
+  const [verifying, setVerifying] = useState(false)
+
+  useEffect(() => {
+    if (!emailParam) return
+
+    async function checkWaitlistEmail() {
+      setVerifying(true)
+      try {
+        const checkRes = await fetch(`/api/waitlist/check?email=${encodeURIComponent(emailParam || '')}`)
+        const checkData = await checkRes.json()
+        if (checkData.success && checkData.joined) {
+          // Set waitlist_joined cookie on client side
+          document.cookie = "waitlist_joined=true; path=/; max-age=31536000; SameSite=Lax"
+          window.location.href = '/'
+          return
+        } else {
+          setEmail(emailParam || '')
+        }
+      } catch (err) {
+        console.error('Waitlist email check failed:', err)
+      }
+      setVerifying(false)
+    }
+
+    checkWaitlistEmail()
+  }, [emailParam])
 
   useEffect(() => {
     async function fetchCount() {
@@ -168,11 +198,17 @@ export default function WaitlistPage() {
         setStatus('success')
         setMessage(data.message)
         setSubscriberCount((prev) => (prev !== null ? prev + 1 : 1))
+        // Set waitlist_joined cookie on client side
+        document.cookie = "waitlist_joined=true; path=/; max-age=31536000; SameSite=Lax"
         // Animate success
         gsap.fromTo('.gsap-wl-success',
           { scale: 0.9, opacity: 0 },
           { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)' }
         )
+        // Redirect to landing page after 1.5 seconds
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 1500)
       } else {
         setStatus('error')
         setMessage(data.message)
@@ -246,7 +282,15 @@ export default function WaitlistPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.06] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
               <div className="relative z-10">
-                {status === 'success' ? (
+                {verifying ? (
+                  <div className="flex flex-col items-center justify-center text-center space-y-4 py-6">
+                    <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-serif text-white/80">Checking waitlist status...</h3>
+                      <p className="text-[10px] text-white/30">Verifying your early access email.</p>
+                    </div>
+                  </div>
+                ) : status === 'success' ? (
                   <div className="gsap-wl-success flex flex-col items-center justify-center text-center space-y-4 py-2">
                     <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                       <Check className="w-6 h-6 text-emerald-400" />
@@ -449,5 +493,17 @@ export default function WaitlistPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export default function WaitlistPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[100dvh] bg-[#050505] text-white flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <WaitlistPageContent />
+    </Suspense>
   )
 }

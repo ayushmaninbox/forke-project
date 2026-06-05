@@ -17,6 +17,23 @@ export default function CTA() {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const [hasSiteAccess, setHasSiteAccess] = React.useState(true)
+  const [waitlistActive, setWaitlistActive] = React.useState(false)
+
+  React.useEffect(() => {
+    const getCookie = (name: string): string | null => {
+      if (typeof document === 'undefined') return null
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+      return null
+    }
+
+    setHasSiteAccess(getCookie('site_access_public') === 'true')
+    setWaitlistActive(getCookie('waitlist_active') === 'true')
+  }, [])
+
+  const showWaitlisterView = waitlistActive && !hasSiteAccess
 
   useGSAP(() => {
     // 1. Scroll-triggered entrance animations
@@ -140,9 +157,15 @@ export default function CTA() {
                 size="lg" 
                 variant="primary"
                 className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0 active:scale-[0.98] transition-transform"
-                onClick={() => router.push('/register')}
+                onClick={() => {
+                  if (showWaitlisterView) {
+                    router.push('/')
+                  } else {
+                    router.push('/register')
+                  }
+                }}
               >
-                Get Started Free <Zap className="w-5 h-5 fill-current" />
+                {showWaitlisterView ? 'Coming Soon' : <>Get Started Free <Zap className="w-5 h-5 fill-current" /></>}
               </Button>
             </div>
 

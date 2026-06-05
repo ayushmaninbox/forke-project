@@ -36,6 +36,12 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       path: '/',
     })
+    cookieStore.set('site_access_public', 'true', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    })
 
     return NextResponse.json({ success: true })
   } catch {

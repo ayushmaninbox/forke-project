@@ -13,6 +13,23 @@ import { useGSAP } from '@gsap/react'
 export default function Hero() {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
+  const [hasSiteAccess, setHasSiteAccess] = React.useState(true)
+  const [waitlistActive, setWaitlistActive] = React.useState(false)
+
+  React.useEffect(() => {
+    const getCookie = (name: string): string | null => {
+      if (typeof document === 'undefined') return null
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+      return null
+    }
+
+    setHasSiteAccess(getCookie('site_access_public') === 'true')
+    setWaitlistActive(getCookie('waitlist_active') === 'true')
+  }, [])
+
+  const showWaitlisterView = waitlistActive && !hasSiteAccess
 
   useGSAP(() => {
     // 1. Entrance timeline
@@ -149,21 +166,33 @@ export default function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-5 pt-6">
-              <Button 
-                size="lg" 
-                className="gsap-hero-btn gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0"
-                onClick={() => router.push('/register?role=developer')}
-              >
-                Start Grinding <Zap className="w-5 h-5 fill-current" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="gsap-hero-btn text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold opacity-0"
-                onClick={() => router.push('/register?role=owner')}
-              >
-                Post a Task
-              </Button>
+              {showWaitlisterView ? (
+                <Button 
+                  size="lg" 
+                  className="gsap-hero-btn gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0"
+                  onClick={() => router.push('/')}
+                >
+                  Coming Soon
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    size="lg" 
+                    className="gsap-hero-btn gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0"
+                    onClick={() => router.push('/register?role=developer')}
+                  >
+                    Start Grinding <Zap className="w-5 h-5 fill-current" />
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="gsap-hero-btn text-lg px-8 py-5 rounded-xl border-2 border-accent/20 text-accent hover:bg-accent/5 transition-all font-bold opacity-0"
+                    onClick={() => router.push('/register?role=owner')}
+                  >
+                    Post a Task
+                  </Button>
+                </>
+              )}
             </div>
 
           </div>

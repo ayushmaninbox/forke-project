@@ -172,8 +172,9 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: 'Forke Waitlist <waitlist@forke.space>',
         to: toEmail,
+        reply_to: 'support@forke.space',
         subject: 'Welcome to the Forke Waitlist!',
         html: htmlContent,
       }),
@@ -230,8 +231,9 @@ export async function sendBroadcastEmail(
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          from: fromEmail,
+          from: 'Forke Updates <updates@forke.space>',
           to: email,
+          reply_to: 'support@forke.space',
           subject: subject,
           html: htmlContent,
         }),
@@ -366,8 +368,9 @@ export async function sendAdminInvitation(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: 'Forke Onboarding <onboarding@forke.space>',
         to: toEmail,
+        reply_to: 'support@forke.space',
         subject: 'Action Required: Complete your Forke Admin Setup',
         html: htmlContent,
       }),
@@ -485,8 +488,9 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: 'Forke Security <security@forke.space>',
         to: toEmail,
+        reply_to: 'support@forke.space',
         subject: 'Forke: Your account deletion has been scheduled',
         html: htmlContent,
       }),
@@ -616,7 +620,13 @@ function ctaButton(href: string, label: string): string {
 
 // Posts an email through Resend. Fail-soft: logs and returns false, never throws,
 // so a Resend outage can never block the underlying DB action.
-async function sendResendEmail(toEmail: string, subject: string, html: string, label: string): Promise<boolean> {
+async function sendResendEmail(
+  toEmail: string,
+  subject: string,
+  html: string,
+  label: string,
+  fromEmail?: string
+): Promise<boolean> {
   const apiKey = resolveResendApiKey()
   if (!apiKey) {
     console.warn(`⚠️ RESEND_API_KEY is not configured. Skipping ${label} email.`)
@@ -629,7 +639,13 @@ async function sendResendEmail(toEmail: string, subject: string, html: string, l
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ from: resolveFromEmail(), to: toEmail, subject, html }),
+      body: JSON.stringify({
+        from: fromEmail || resolveFromEmail(),
+        to: toEmail,
+        reply_to: 'support@forke.space',
+        subject,
+        html
+      }),
     })
     if (!res.ok) {
       const errText = await res.text()
@@ -667,7 +683,7 @@ export async function sendOwnerApprovedEmail(toEmail: string, name: string): Pro
       </p>
     `,
   })
-  return sendResendEmail(toEmail, 'Your Forke owner account is approved', html, 'owner approval')
+  return sendResendEmail(toEmail, 'Your Forke owner account is approved', html, 'owner approval', 'Forke Approvals <approvals@forke.space>')
 }
 
 export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reason: string): Promise<boolean> {
@@ -703,7 +719,7 @@ export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reas
       </p>
     `,
   })
-  return sendResendEmail(toEmail, 'Update on your Forke owner application', html, 'owner decline')
+  return sendResendEmail(toEmail, 'Update on your Forke owner application', html, 'owner decline', 'Forke Approvals <approvals@forke.space>')
 }
 
 // Shared suspension email used for both owners and developers — identical copy,
@@ -732,7 +748,7 @@ async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owne
       </p>
     `,
   })
-  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, `${accountKind} ban`)
+  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, `${accountKind} ban`, 'Forke Bans <bans@forke.space>')
 }
 
 export async function sendOwnerBannedEmail(toEmail: string, name: string): Promise<boolean> {

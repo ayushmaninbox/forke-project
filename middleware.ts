@@ -19,36 +19,81 @@ async function fetchWaitlistStatus(origin: string): Promise<boolean> {
   }
 }
 
-export default auth(async (req) => {
-  // ===== WAITLIST GATE =====
-  // Block all routes unless the user has the site_access cookie.
-  // Only /waitlist, /checkout, /admin, and their API routes are allowed through.
-  const siteAccess = req.cookies.get('site_access')?.value
-  const pathname = req.nextUrl.pathname
+function isPublicProfilePath(pathname: string): boolean {
+  if (pathname.includes('.') || pathname.startsWith('/_next') || pathname.startsWith('/uploads')) {
+    return false
+  }
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length !== 1) return false
+  
+  const reservedNames = [
+    'waitlist', 'checkout', 'admin', 'api', 'signin', 'register', 'onboarding',
+    'dashboard', 'profile', 'tasks', 'submissions', 'earnings', 'settings',
+    'analytics', 'developers', 'escrow', 'messages', 'notifications', 'post-task',
+    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund'
+  ]
+  return !reservedNames.includes(segments[0])
+}
 
+export default auth(async (req) => {
+  const pathname = req.nextUrl.pathname
+  const siteAccess = req.cookies.get('site_access')?.value
+  const waitlistJoined = req.cookies.get('waitlist_joined')?.value
+  const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
+
+  // Helper function to append tracking cookies and disable page cache
+  const withCookies = (res: NextResponse) => {
+    res.cookies.set('site_access_public', siteAccess ? 'true' : 'false', { path: '/' })
+    res.cookies.set('waitlist_active', waitlistEnabled ? 'true' : 'false', { path: '/' })
+    if (!pathname.startsWith('/_next') && !pathname.startsWith('/api') && pathname !== '/favicon.ico') {
+      res.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
+    }
+    return res
+  }
+
+  // ===== WAITLIST GATE =====
   const isWaitlistAllowed = 
     pathname === '/waitlist' ||
     pathname === '/checkout' ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/checkout') ||
-    pathname.startsWith('/api/auth')
+    pathname.startsWith('/api/auth') ||
+    isPublicProfilePath(pathname)
 
-  if (!siteAccess && !isWaitlistAllowed) {
-    // Dynamically check if the waitlist is enabled (force fresh state check)
-    const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
+  // If waitlist is active and the user doesn't have site_access
+  if (waitlistEnabled && !siteAccess && !isWaitlistAllowed) {
+    if (waitlistJoined) {
+      // Waitlisters can view marketing/policy pages
+      const isMarketingPage =
+        pathname === '/' ||
+        pathname === '/whats-forke' ||
+        pathname === '/levels' ||
+        pathname === '/contact' ||
+        pathname === '/terms' ||
+        pathname === '/privacy' ||
+        pathname === '/refund'
 
-    if (waitlistEnabled) {
-      return NextResponse.redirect(new URL('/waitlist', req.nextUrl.origin))
+      if (!isMarketingPage) {
+        // Redirect dashboard and real site pages to landing page
+        const redirectUrl = new URL('/', req.nextUrl.origin)
+        redirectUrl.search = req.nextUrl.search
+        return withCookies(NextResponse.redirect(redirectUrl))
+      }
+    } else {
+      // Redirect users who haven't joined to waitlist
+      const redirectUrl = new URL('/waitlist', req.nextUrl.origin)
+      redirectUrl.search = req.nextUrl.search
+      return withCookies(NextResponse.redirect(redirectUrl))
     }
   }
 
-  // If user HAS access (or waitlist is disabled) and tries to visit /waitlist, redirect them
+  // If user HAS access (or waitlist is disabled, or already joined) and tries to visit /waitlist, redirect them to /
   if (pathname === '/waitlist') {
-    const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
-
-    if (!waitlistEnabled || siteAccess) {
-      return NextResponse.redirect(new URL('/', req.nextUrl.origin))
+    if (!waitlistEnabled || siteAccess || waitlistJoined) {
+      const redirectUrl = new URL('/', req.nextUrl.origin)
+      redirectUrl.search = req.nextUrl.search
+      return withCookies(NextResponse.redirect(redirectUrl))
     }
   }
 
@@ -68,25 +113,25 @@ export default auth(async (req) => {
   // Block banned users
   if (isLoggedIn && isBanned && !isAdminPage && !req.nextUrl.pathname.startsWith('/auth-error')) {
      const errorUrl = new URL('/auth-error?error=AccessDenied', req.nextUrl.origin)
-     return NextResponse.redirect(errorUrl)
+     return withCookies(NextResponse.redirect(errorUrl))
   }
 
   // Admin protection
   if (isAdminPage && !isAdminLogin && !isAdminSetup) {
     const adminToken = req.cookies.get('admin_token')?.value
     if (!adminToken || !adminToken.startsWith('forke_admin_session:')) {
-      return NextResponse.redirect(new URL('/admin/login', req.nextUrl.origin))
+      return withCookies(NextResponse.redirect(new URL('/admin/login', req.nextUrl.origin)))
     }
   }
 
   if (isAppPage && !isLoggedIn) {
     const loginUrl = new URL('/', req.nextUrl.origin)
-    return NextResponse.redirect(loginUrl)
+    return withCookies(NextResponse.redirect(loginUrl))
   }
 
   // Redirect logged in users from root to dashboard
   if (isLoggedIn && req.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
+    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
   }
 
   // Onboarding redirection for developers without username
@@ -97,22 +142,15 @@ export default auth(async (req) => {
   const needsOnboarding = role === 'developer' && !username
 
   if (isLoggedIn && needsOnboarding && !isOnboardingPage && isAppPage) {
-    return NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin))
+    return withCookies(NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin)))
   }
 
   // Prevent users who don't need onboarding from accessing it
   if (isLoggedIn && !needsOnboarding && isOnboardingPage) {
-    return NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin))
+    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
   }
   
-  const response = NextResponse.next()
-
-  // Disable browser caching for all page routes to make waitlist activation instant on reload
-  if (!pathname.startsWith('/_next') && !pathname.startsWith('/api') && pathname !== '/favicon.ico') {
-    response.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
-  }
-
-  return response
+  return withCookies(NextResponse.next())
 })
 
 export const config = {

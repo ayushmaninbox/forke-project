@@ -14,16 +14,37 @@ export default function Navbar() {
   const isLoggedIn = !!session?.user
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [hasSiteAccess, setHasSiteAccess] = useState(true)
+  const [waitlistActive, setWaitlistActive] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', handleScroll)
+
+    // Read helper cookies
+    const getCookie = (name: string): string | null => {
+      if (typeof document === 'undefined') return null
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+      return null
+    }
+
+    setHasSiteAccess(getCookie('site_access_public') === 'true')
+    setWaitlistActive(getCookie('waitlist_active') === 'true')
+
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const navLinks = [
+  const showWaitlisterView = waitlistActive && !hasSiteAccess && !isLoggedIn
+
+  const navLinks = showWaitlisterView ? [
+    { name: "What's Forke?", href: '/whats-forke' },
+    { name: 'Levels', href: '/levels' },
+    { name: 'Contact Us', href: '/contact' },
+  ] : [
     { name: "What's Forke?", href: '/whats-forke' },
     { name: 'Bounties', href: '/bounties' },
     { name: 'Levels', href: '/levels' },
@@ -50,12 +71,12 @@ export default function Navbar() {
                 className="object-contain"
               />
             </div>
-            <div className="w-[160px] h-[40px]" /> {/* Spacer for the absolute mascot */}
+            <div className="w-[160px] h-[40px] " /> {/* Spacer for the absolute mascot */}
             <span className="font-serif text-5xl text-white font -ml-6 relative z-10">
               Forke
             </span>
           </Link>
-
+          
           {/* Center: Navigation Links */}
           <div className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
@@ -78,6 +99,14 @@ export default function Navbar() {
                 onClick={() => router.push('/dashboard')}
               >
                 Dashboard
+              </Button>
+            ) : showWaitlisterView ? (
+              <Button 
+                variant="primary" 
+                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                onClick={() => router.push('/')}
+              >
+                Coming Soon
               </Button>
             ) : (
               <Button 
@@ -129,17 +158,25 @@ export default function Navbar() {
             ))}
           </div>
           <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-            <Button variant="outline" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
-              Post a Task
-            </Button>
-            {isLoggedIn ? (
-              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
-                Dashboard
+            {showWaitlisterView ? (
+              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}>
+                Coming Soon
               </Button>
             ) : (
-              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
-                Get Started
-              </Button>
+              <>
+                <Button variant="outline" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
+                  Post a Task
+                </Button>
+                {isLoggedIn ? (
+                  <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
+                    Dashboard
+                  </Button>
+                ) : (
+                  <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
+                    Get Started
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
