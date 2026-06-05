@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm'
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
 import QRCode from 'qrcode'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
+import { headers } from 'next/headers'
 
 export const runtime = 'nodejs'
 export const alt = 'Forke Developer Profile'
@@ -14,12 +15,16 @@ export const size = {
 }
 export const contentType = 'image/png'
 
-async function fetchAvatarBase64(url: string | null): Promise<string | null> {
+async function fetchAvatarBase64(url: string | null, origin: string): Promise<string | null> {
   if (!url) return null
   try {
+    let absoluteUrl = url
+    if (url.startsWith('/')) {
+      absoluteUrl = `${origin}${url}`
+    }
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 2000)
-    const res = await fetch(url, { signal: controller.signal })
+    const res = await fetch(absoluteUrl, { signal: controller.signal })
     clearTimeout(timeoutId)
     if (!res.ok) return null
     const buffer = await res.arrayBuffer()
@@ -166,8 +171,13 @@ export default async function Image({
   const firstName = nameParts[0] || 'Forke'
   const lastName = nameParts.slice(1).join(' ')
 
+  const headersList = await headers()
+  const host = headersList.get('host') || 'www.forke.space'
+  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https'
+  const origin = `${protocol}://${host}`
+
   // Fetch avatar image server-side safely
-  const avatarBase64 = await fetchAvatarBase64(avatarUrl)
+  const avatarBase64 = await fetchAvatarBase64(avatarUrl, origin)
 
   // 6. Generate QR code pointing to profile page
   const profileUrl = `https://www.forke.space/${dbUser.username}`

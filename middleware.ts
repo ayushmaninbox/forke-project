@@ -166,5 +166,5 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|glb|gltf|svg|jpg|jpeg|gif|webp|ico|css|js|woff2?|json)$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|glb|gltf|svg|jpg|jpeg|gif|webp|ico|css|js|woff2?|json)$|.*\\/opengraph-image$).*)'],
 }
