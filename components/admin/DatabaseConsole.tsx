@@ -517,9 +517,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
     setIsLoadingTables(true)
     const res = await getDatabaseTables()
     if (res.success && res.tables) {
-      const visibleTables = isSuperAdmin
-        ? res.tables
-        : res.tables.filter((t: any) => t.name !== 'sql_query_requests')
+      const visibleTables = res.tables
       setTablesList(visibleTables)
       if (visibleTables.length > 0 && !selectedTable) {
         setSelectedTable(visibleTables[0].name)
@@ -1914,6 +1912,31 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                 {req.queryText}
                               </pre>
                             </div>
+
+                            {/* Query explanation in Requests Log */}
+                            {(() => {
+                              const explanation = explainSQL(req.queryText);
+                              if (!explanation) return null;
+                              return (
+                                <div className={cn(
+                                  "rounded-lg p-2.5 border text-[11px] font-sans space-y-0.5 transition-all duration-300",
+                                  explanation.isWarning 
+                                    ? "bg-red-500/5 border-red-500/15 text-red-400/90 shadow-[0_0_15px_rgba(239,68,68,0.02)]" 
+                                    : "bg-white/[0.015] border-white/[0.05] text-white/60"
+                                )}>
+                                  <div className="flex items-center gap-1.5 font-semibold text-white/85">
+                                    <AlertCircle className={cn("w-3 h-3", explanation.isWarning ? "text-red-400" : "text-accent")} />
+                                    <span>Action: {explanation.action}</span>
+                                  </div>
+                                  <p className="text-white/45 leading-relaxed pl-4.5 font-mono">{explanation.description}</p>
+                                  {explanation.isWarning && explanation.warningText && (
+                                    <p className="text-red-400/90 font-semibold pl-4.5 mt-0.5">
+                                      ⚠️ {explanation.warningText}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             {/* Approval metadata / Rejection info */}
                             {req.status === 'rejected' && (

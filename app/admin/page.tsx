@@ -21,7 +21,8 @@ import {
   toggleAdminDisabledAction,
   resetAdminPasswordAction,
   changeAdminPasswordAction,
-  logSubscribersExportAction
+  logSubscribersExportAction,
+  getSidebarCounts
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -86,6 +87,12 @@ export default function AdminDashboard() {
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [activityLive, setActivityLive] = useState(true)
+
+  // Sidebar counts – fetched once on mount
+  const [sidebarCounts, setSidebarCounts] = useState({
+    owners: 0, pendingOwners: 0, developers: 0, subscribers: 0,
+    admins: 0, enquiries: 0, tables: 0, pendingSqlRequests: 0
+  })
 
   // Keep the sidebar Activity badge in sync with the global live/paused status
   useEffect(() => {
@@ -235,6 +242,17 @@ export default function AdminDashboard() {
     }
     
     setIsLoading(false)
+
+    // Silently refresh sidebar counts after data loads
+    refreshSidebarCounts()
+  }
+
+  function refreshSidebarCounts() {
+    getSidebarCounts()
+      .then(res => {
+        if (res.success && res.counts) setSidebarCounts(res.counts)
+      })
+      .catch(() => {})
   }
 
   async function fetchCurrentAdmin() {
@@ -251,6 +269,16 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchCurrentAdmin()
   }, [])
+
+  // Fetch sidebar counts once admin is known
+  useEffect(() => {
+    if (!currentAdmin) return
+    getSidebarCounts()
+      .then(res => {
+        if (res.success && res.counts) setSidebarCounts(res.counts)
+      })
+      .catch(err => console.error('Failed to fetch sidebar counts:', err))
+  }, [currentAdmin])
 
   useEffect(() => {
     if (currentAdmin) {
@@ -755,24 +783,36 @@ export default function AdminDashboard() {
                 <div className="pl-6 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
                   <button
                     onClick={() => selectTab('owner-approval')}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
                       activeTab === 'owner-approval'
                         ? 'text-accent font-semibold bg-accent/[0.04]'
                         : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
                     }`}
                   >
-                    <span>Owner Approval</span>
+                    <span>Owners</span>
+                    {sidebarCounts.pendingOwners > 0 ? (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
+                        {sidebarCounts.pendingOwners}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono text-white/25 leading-none">
+                        {sidebarCounts.owners}
+                      </span>
+                    )}
                   </button>
 
                   <button
                     onClick={() => selectTab('developer-ban')}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
                       activeTab === 'developer-ban'
                         ? 'text-accent font-semibold bg-accent/[0.04]'
                         : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
                     }`}
                   >
                     <span>Developers</span>
+                    <span className="text-[10px] font-mono text-white/25 leading-none">
+                      {sidebarCounts.developers}
+                    </span>
                   </button>
                 </div>
               )}
@@ -791,10 +831,12 @@ export default function AdminDashboard() {
                 <MessageSquare className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'enquiries' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
                 <span>Enquiries</span>
               </div>
-              {enquiriesList.length > 0 && (
+              {sidebarCounts.enquiries > 0 ? (
                 <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
-                  {enquiriesList.length}
+                  {sidebarCounts.enquiries}
                 </span>
+              ) : (
+                <span className="text-[10px] font-mono text-white/25 leading-none">0</span>
               )}
             </button>
 
@@ -811,11 +853,9 @@ export default function AdminDashboard() {
                 <Mail className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'subscribers' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
                 <span>Subscribers</span>
               </div>
-              {subscribersList.length > 0 && (
-                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
-                  {subscribersList.length}
-                </span>
-              )}
+              <span className="text-[10px] font-mono text-white/25 leading-none">
+                {sidebarCounts.subscribers}
+              </span>
             </button>
 
             {/* Activity / audit log */}
@@ -885,8 +925,8 @@ export default function AdminDashboard() {
                 <Table className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'database' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
                 <span>Tables</span>
               </div>
-              <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-accent/15 border border-accent/25 text-accent leading-none">
-                Live DB
+              <span className="text-[10px] font-mono text-white/25 leading-none">
+                {sidebarCounts.tables}
               </span>
             </button>
 
@@ -894,14 +934,21 @@ export default function AdminDashboard() {
             {currentAdmin && (
               <button
                 onClick={() => selectTab('sql-editor')}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
                   activeTab === 'sql-editor'
                     ? 'bg-white/[0.05] text-white'
                     : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
                 }`}
               >
-                <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>SQL Editor</span>
+                <div className="flex items-center gap-2.5">
+                  <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+                  <span>SQL Editor</span>
+                </div>
+                {currentAdmin?.role === 'super_admin' && sidebarCounts.pendingSqlRequests > 0 && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
+                    {sidebarCounts.pendingSqlRequests}
+                  </span>
+                )}
               </button>
             )}
 
@@ -919,11 +966,9 @@ export default function AdminDashboard() {
                   <Shield className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'admins' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
                   <span>Admins</span>
                 </div>
-                {adminsList.length > 0 && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
-                    {adminsList.length}
-                  </span>
-                )}
+                <span className="text-[10px] font-mono text-white/25 leading-none">
+                  {sidebarCounts.admins}
+                </span>
               </button>
             )}
 
@@ -993,7 +1038,7 @@ export default function AdminDashboard() {
             </button>
             <h1 className="text-sm font-semibold text-white tracking-tight capitalize truncate">
               {activeTab === 'owner-approval'
-                ? 'Owner Approval'
+                ? 'Owners'
                 : activeTab === 'developer-ban'
                 ? 'Developers'
                 : activeTab}
@@ -1146,7 +1191,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ==================== OWNER APPROVAL PANEL ==================== */}
+          {/* ==================== OWNERS PANEL ==================== */}
           {activeTab === 'owner-approval' && (
             <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
               
