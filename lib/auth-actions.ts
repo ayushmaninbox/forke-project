@@ -124,12 +124,8 @@ export async function registerDeveloperWithCredentials(formData: any) {
         try {
           await db.insert(subscribers).values({
             email: email,
-            userId: newUser.id,
             createdAt: new Date()
-          }).onConflictDoUpdate({
-            target: subscribers.email,
-            set: { userId: newUser.id }
-          })
+          }).onConflictDoNothing()
         } catch (e) {
           console.error('Failed to add to subscribers upon registration:', e)
         }

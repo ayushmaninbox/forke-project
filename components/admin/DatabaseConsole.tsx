@@ -8,7 +8,8 @@ import {
   insertTableRecord, 
   updateTableRecord, 
   deleteTableRecords,
-  logTableExportAction
+  logTableExportAction,
+  executeSQLQuery
 } from '@/lib/db-client-actions'
 import { 
   Database, 
@@ -37,7 +38,10 @@ import {
   Lock,
   Scissors,
   KeyRound,
-  Link2
+  Link2,
+  Terminal,
+  Play,
+  AlertCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
@@ -106,7 +110,39 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   const [rows, setRows] = useState<any[]>([])
   const [totalRecords, setTotalRecords] = useState<number>(0)
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false)
-  const [activeSubTab, setActiveSubTab] = useState<'data' | 'structure'>('data')
+  const [activeSubTab, setActiveSubTab] = useState<'data' | 'structure' | 'sql'>('data')
+
+  // SQL Editor state
+  const [sqlQuery, setSqlQuery] = useState<string>('SELECT * FROM subscribers LIMIT 10;')
+  const [isExecutingSql, setIsExecutingSql] = useState<boolean>(false)
+  const [sqlResult, setSqlResult] = useState<any>(null)
+
+  async function handleExecuteQuery() {
+    if (!isSuperAdmin) {
+      toast('Access Denied: Only Super Admins can execute custom SQL commands.', 'error')
+      return
+    }
+    if (!sqlQuery.trim()) {
+      toast('Please enter a query to run.', 'error')
+      return
+    }
+    setIsExecutingSql(true)
+    setSqlResult(null)
+    try {
+      const res = await executeSQLQuery(sqlQuery)
+      setSqlResult(res)
+      if (res.success) {
+        toast('Query executed successfully!', 'success')
+      } else {
+        toast(res.error || 'Failed to execute query.', 'error')
+      }
+    } catch (err: any) {
+      setSqlResult({ success: false, headers: [], rows: [], error: err.message || 'Execution error.' })
+      toast(err.message || 'Execution error.', 'error')
+    } finally {
+      setIsExecutingSql(false)
+    }
+  }
 
   // Pagination & Sorting & Filters
   const [currentPage, setCurrentPage] = useState<number>(1)
@@ -815,6 +851,20 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                 <Layers className="w-3.5 h-3.5" />
                 <span>STRUCTURE</span>
               </button>
+              {isSuperAdmin && (
+                <button
+                  onClick={() => setActiveSubTab('sql')}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                    activeSubTab === 'sql'
+                      ? "bg-white/[0.06] text-white shadow-sm"
+                      : "text-white/40 hover:text-white/80"
+                  )}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>SQL EDITOR</span>
+                </button>
+              )}
             </div>
 
             {/* History arrows removed per user feedback */}
@@ -1313,7 +1363,164 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
         {/* --- DYNAMIC RENDER OF VIEW --- */}
         <div className="flex-grow min-h-0 overflow-auto p-4 relative">
           
-          {!selectedTable ? (
+          {activeSubTab === 'sql' ? (
+            <div className="flex flex-col h-full min-h-0 text-left space-y-4">
+              {/* SQL Query Editor Box */}
+              <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col shrink-0 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                    <Terminal className="w-3.5 h-3.5 text-accent" />
+                    <span>SQL Editor Console</span>
+                  </div>
+                  
+                  {/* Query Templates / Snippets */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto max-w-xl no-scrollbar py-0.5">
+                    <span className="text-[10px] text-white/30 uppercase font-semibold shrink-0 mr-1">Templates:</span>
+                    {[
+                      { label: 'Subscribers List', query: 'SELECT * FROM subscribers LIMIT 10;' },
+                      { label: 'Users List', query: 'SELECT * FROM users LIMIT 10;' },
+                      { label: 'Admins List', query: 'SELECT * FROM admins LIMIT 10;' },
+                      { label: 'Database Version', query: 'SELECT version();' }
+                    ].map((t) => (
+                      <button
+                        key={t.label}
+                        onClick={() => setSqlQuery(t.query)}
+                        className="text-[10px] px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08] hover:border-white/12 text-white/60 hover:text-white transition-colors cursor-pointer whitespace-nowrap font-mono"
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    value={sqlQuery}
+                    onChange={(e) => setSqlQuery(e.target.value)}
+                    placeholder="-- Type your PostgreSQL query here...&#10;SELECT * FROM subscribers LIMIT 10;"
+                    className="w-full h-36 bg-[#070709] border border-white/[0.06] rounded-lg p-3 text-xs font-mono text-white/80 focus:outline-none focus:border-accent/40 resize-y leading-relaxed"
+                    spellCheck={false}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between border-t border-white/[0.04] pt-3">
+                  <div className="text-[10px] text-white/30 font-mono">
+                    Press Run Query to execute against public schema.
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSqlQuery('')
+                        setSqlResult(null)
+                      }}
+                      className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={handleExecuteQuery}
+                      disabled={isExecutingSql}
+                      className="h-8 px-3 rounded-lg bg-accent text-[#0a0a0a] hover:bg-accent/80 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shadow-lg shadow-accent/5"
+                    >
+                      {isExecutingSql ? (
+                        <>
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>Running...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 fill-current text-[#0a0a0a]" />
+                          <span>Run Query</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* SQL Results View */}
+              <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0 flex flex-col relative overflow-hidden">
+                {isExecutingSql ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2 bg-[#060608]/40 z-10">
+                    <RefreshCw className="w-6 h-6 animate-spin text-accent" />
+                    <p className="text-xs font-medium">Running SQL query...</p>
+                  </div>
+                ) : null}
+
+                {!sqlResult ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-white/30 space-y-2 py-12">
+                    <Terminal className="w-8 h-8 text-white/10" />
+                    <p className="text-sm">Execute a query above to see the results here.</p>
+                  </div>
+                ) : !sqlResult.success ? (
+                  <div className="flex-grow p-5 overflow-y-auto">
+                    <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-400">
+                      <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <h5 className="text-sm font-semibold">SQL Error</h5>
+                        <p className="text-xs font-mono whitespace-pre-wrap">{sqlResult.error}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col h-full min-h-0">
+                    <div className="px-4 py-2 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between text-[11px] text-white/45">
+                      <div className="flex items-center gap-4">
+                        <span>Query completed in <strong className="text-white/70 font-mono">{sqlResult.duration} ms</strong></span>
+                        <span className="text-white/10">|</span>
+                        <span>Affected: <strong className="text-white/70 font-mono">{sqlResult.affectedRows} rows</strong></span>
+                        <span className="text-white/10">|</span>
+                        <span>Returned: <strong className="text-white/70 font-mono">{sqlResult.rows.length} rows</strong></span>
+                      </div>
+                    </div>
+
+                    <div className="flex-grow overflow-auto min-h-0">
+                      {sqlResult.rows.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-white/20 py-12 text-xs italic">
+                          Query succeeded. No rows returned.
+                        </div>
+                      ) : (
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none font-mono">
+                              <th className="px-4 py-2 text-center w-10 text-[10px] text-white/25">#</th>
+                              {sqlResult.headers.map((h: string) => (
+                                <th key={h} className="px-4 py-2 font-semibold tracking-tight whitespace-nowrap">
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/[0.04] font-mono select-text">
+                            {sqlResult.rows.map((row: any, rIdx: number) => (
+                              <tr key={rIdx} className="hover:bg-white/[0.005] transition-colors border-b border-white/[0.02]/50 last:border-b-0">
+                                <td className="px-4 py-2 text-center text-[10px] text-white/20 select-none">
+                                  {rIdx + 1}
+                                </td>
+                                {sqlResult.headers.map((h: string) => {
+                                  const val = row[h]
+                                  const stringVal = val === null 
+                                    ? <span className="text-white/20 italic">null</span>
+                                    : typeof val === 'object' 
+                                    ? JSON.stringify(val) 
+                                    : String(val)
+                                  return (
+                                    <td key={h} className="px-4 py-2 whitespace-nowrap text-white/80 max-w-xs truncate" title={typeof val === 'object' ? JSON.stringify(val) : String(val)}>
+                                      {stringVal}
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : !selectedTable ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2">
               <Database className="w-8 h-8 text-white/10" />
               <p className="text-sm">Select a table in the sidebar to begin</p>

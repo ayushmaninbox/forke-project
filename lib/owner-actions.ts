@@ -67,12 +67,8 @@ export async function submitOwnerApplication(formData: any) {
       try {
         await db.insert(subscribers).values({
           email: formData.contactEmail,
-          userId: userId,
           createdAt: new Date()
-        }).onConflictDoUpdate({
-          target: subscribers.email,
-          set: { userId: userId }
-        })
+        }).onConflictDoNothing()
       } catch (e) {
         console.error('Failed to add owner to subscribers:', e)
       }
