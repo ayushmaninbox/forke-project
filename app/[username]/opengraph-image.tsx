@@ -3,11 +3,14 @@ import { db } from '@/lib/db'
 import { users, tasks, submissions } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getLevelFromXp, getLevelTitle } from '@/lib/utils/xp'
-import QRCode from 'qrcode'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
 import { headers } from 'next/headers'
 
 export const runtime = 'nodejs'
+// Always render from live DB data — never serve a stale statically-cached image
+// (so avatar/name/headline edits show up immediately).
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 export const alt = 'Forke Developer Profile'
 export const size = {
   width: 1200,
@@ -37,12 +40,82 @@ async function fetchAvatarBase64(url: string | null, origin: string): Promise<st
   }
 }
 
+let fontPromise: Promise<ArrayBuffer | null> | null = null
+
+function getFontData(): Promise<ArrayBuffer | null> {
+  if (!fontPromise) {
+    fontPromise = fetch('https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zATiw.ttf')
+      .then((res) => (res.ok ? res.arrayBuffer() : null))
+      .catch((e) => {
+        console.error('Failed to load Instrument Serif Italic font:', e)
+        return null
+      })
+  }
+  return fontPromise
+}
+
+// Geist Sans — matches the live profile card / dashboard. Satori needs the raw
+// font file, so we fetch the static TTFs (CSS variables aren't available here).
+const geistUrls: Record<number, string> = {
+  300: 'https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-300-normal.ttf',
+  400: 'https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-400-normal.ttf',
+  700: 'https://cdn.jsdelivr.net/fontsource/fonts/geist-sans@latest/latin-700-normal.ttf',
+}
+const geistPromises: Record<number, Promise<ArrayBuffer | null>> = {}
+
+function getGeist(weight: 300 | 400 | 700): Promise<ArrayBuffer | null> {
+  if (!geistPromises[weight]) {
+    geistPromises[weight] = fetch(geistUrls[weight])
+      .then((res) => (res.ok ? res.arrayBuffer() : null))
+      .catch((e) => {
+        console.error(`Failed to load Geist Sans ${weight}:`, e)
+        return null
+      })
+  }
+  return geistPromises[weight]
+}
+
+// Builds the Satori `fonts` array, including Geist weights that loaded ok.
+function buildFonts(
+  serif: ArrayBuffer | null,
+  geist: { weight: 300 | 400 | 700; data: ArrayBuffer | null }[]
+) {
+  const fonts: any[] = []
+  // Geist FIRST so any unmatched text falls back to sans (never the serif).
+  for (const g of geist) {
+    if (g.data) fonts.push({ name: 'Geist', data: g.data, style: 'normal', weight: g.weight })
+  }
+  if (serif) fonts.push({ name: 'Instrument Serif', data: serif, style: 'italic', weight: 400 })
+  return fonts
+}
+
 export default async function Image({
   params,
 }: {
   params: Promise<{ username: string }>
 }) {
   const { username } = await params
+
+  // Pre-load font data (serif for the wordmark fallback, Geist for everything else)
+  const [fontData, geist300, geist400, geist700] = await Promise.all([
+    getFontData(),
+    getGeist(300),
+    getGeist(400),
+    getGeist(700),
+  ])
+  const fonts = buildFonts(fontData, [
+    { weight: 300, data: geist300 },
+    { weight: 400, data: geist400 },
+    { weight: 700, data: geist700 },
+  ])
+
+  // Resolve the request origin so we can fetch local /public assets as base64
+  // (Satori can't load a not-yet-deployed prod URL when running on localhost).
+  const headersList = await headers()
+  const host = headersList.get('host') || 'www.forke.space'
+  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https'
+  const origin = `${protocol}://${host}`
+  const faviconBase64 = await fetchAvatarBase64('/forke-assets/favicon.png', origin)
 
   // 1. Fetch user data from DB
   const dbUser = await db.query.users.findFirst({
@@ -88,7 +161,7 @@ export default async function Image({
             alignItems: 'center',
             justifyContent: 'center',
             color: 'white',
-            fontFamily: 'sans-serif',
+            fontFamily: 'Geist, sans-serif',
             position: 'relative',
           }}
         >
@@ -122,18 +195,22 @@ export default async function Image({
               zIndex: 10,
             }}
           >
-            <img
-              src="https://www.forke.space/forke-assets/forke_logo.png"
-              style={{ width: '130px', height: '130px', objectFit: 'contain', marginBottom: '24px' }}
-            />
-            <h1 style={{ fontSize: '56px', fontFamily: 'serif', margin: 0, fontWeight: 'bold' }}>Forke</h1>
+            {faviconBase64 && (
+              <img
+                src={faviconBase64}
+                width={130}
+                height={130}
+                style={{ width: '130px', height: '130px', objectFit: 'contain', marginBottom: '24px' }}
+              />
+            )}
+            <h1 style={{ fontSize: '64px', fontFamily: 'Instrument Serif', fontStyle: 'italic', margin: 0, fontWeight: 400 }}>Forke</h1>
             <p style={{ fontSize: '20px', color: '#ff8a00', marginTop: '12px', letterSpacing: '1px', fontWeight: 'bold' }}>
               Ship Real Work, Get Paid
             </p>
           </div>
         </div>
       ),
-      { ...size }
+      { ...size, fonts: fonts.length ? fonts : undefined }
     )
   }
 
@@ -167,28 +244,14 @@ export default async function Image({
   const initial = (name?.[0] || 'F').toUpperCase()
   const avatarUrl = resolveAvatarUrl(dbUser.image)
 
-  const nameParts = name.trim().split(/\s+/)
+  // For long names keep only first + last (drop middle names); single name as-is.
+  const nameParts = name.trim().split(/\s+/).filter(Boolean)
   const firstName = nameParts[0] || 'Forke'
-  const lastName = nameParts.slice(1).join(' ')
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
 
-  const headersList = await headers()
-  const host = headersList.get('host') || 'www.forke.space'
-  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https'
-  const origin = `${protocol}://${host}`
-
-  // Fetch avatar image server-side safely
+  // Avatar fetched here (origin + favicon already resolved above).
   const avatarBase64 = await fetchAvatarBase64(avatarUrl, origin)
 
-  // 6. Generate QR code pointing to profile page
-  const profileUrl = `https://www.forke.space/${dbUser.username}`
-  const qrBase64 = await QRCode.toDataURL(profileUrl, {
-    margin: 1,
-    width: 150,
-    color: {
-      dark: '#ffffff',
-      light: '#050505',
-    },
-  })
 
 
 
@@ -205,7 +268,7 @@ export default async function Image({
           backgroundImage: 'radial-gradient(circle at 35% 50%, rgba(255, 138, 0, 0.05) 0%, transparent 70%)',
           color: 'white',
           padding: '40px 50px',
-          fontFamily: 'sans-serif',
+          fontFamily: 'Geist, sans-serif',
           alignItems: 'center',
           justifyContent: 'space-between',
           boxSizing: 'border-box',
@@ -309,6 +372,8 @@ export default async function Image({
                 {avatarBase64 ? (
                   <img
                     src={avatarBase64}
+                    width={290}
+                    height={290}
                     style={{
                       width: '290px',
                       height: '290px',
@@ -345,7 +410,7 @@ export default async function Image({
               <h2
                 style={{
                   fontSize: '40px',
-                  fontFamily: 'Georgia, serif',
+                  fontFamily: 'Instrument Serif',
                   fontStyle: 'italic',
                   color: 'white',
                   lineHeight: '0.85',
@@ -359,7 +424,7 @@ export default async function Image({
                 <h2
                   style={{
                     fontSize: '40px',
-                    fontFamily: 'Georgia, serif',
+                    fontFamily: 'Instrument Serif',
                     fontStyle: 'italic',
                     color: 'white',
                     lineHeight: '0.85',
@@ -382,7 +447,7 @@ export default async function Image({
                 zIndex: 10,
               }}
             >
-              <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.5px' }}>
+              <span style={{ fontSize: '18px', fontFamily: 'Geist', color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.5px' }}>
                 {levelTitle}
               </span>
             </div>
@@ -401,7 +466,7 @@ export default async function Image({
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'white' }}>
+              <span style={{ fontSize: '14px', fontFamily: 'Geist', fontWeight: 700, color: 'white' }}>
                 Level {level} Builder
               </span>
               <span style={{ fontSize: '16px', color: '#ff8a00', fontWeight: 'bold', fontFamily: 'monospace' }}>
@@ -411,6 +476,7 @@ export default async function Image({
             <span
               style={{
                 fontSize: '11px',
+                fontFamily: 'Geist',
                 color: 'rgba(255,255,255,0.45)',
                 marginTop: '6px',
                 whiteSpace: 'nowrap',
@@ -438,15 +504,15 @@ export default async function Image({
         >
           {/* Top Info */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <h1 style={{ fontSize: '56px', fontWeight: '900', color: 'white', margin: 0, letterSpacing: '-1.5px', lineHeight: '1.1' }}>
+            <h1 style={{ fontSize: '64px', fontFamily: 'Instrument Serif', fontStyle: 'italic', fontWeight: 400, color: 'white', margin: 0, letterSpacing: '-1px', lineHeight: '1.05' }}>
               {name}
             </h1>
-            <div style={{ display: 'flex', flexDirection: 'row', fontSize: '24px', margin: '6px 0 0 0', fontFamily: 'monospace', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', fontSize: '24px', margin: '10px 0 0 0', fontFamily: 'Geist', fontWeight: 700 }}>
               <span style={{ color: 'white' }}>forke.space/</span>
               <span style={{ color: '#ff8a00' }}>@{dbUser.username}</span>
             </div>
             {/* Headline/Bio section */}
-            <p style={{ fontSize: '20px', color: 'rgba(255,255,255,0.7)', margin: '16px 0 0 0', lineHeight: '1.4' }}>
+            <p style={{ fontSize: '20px', fontFamily: 'Geist', color: 'rgba(255,255,255,0.7)', margin: '16px 0 0 0', lineHeight: '1.4' }}>
               {dbUser.headline || dbUser.bio || 'Building real, verified work on Forke.'}
             </p>
           </div>
@@ -495,39 +561,24 @@ export default async function Image({
               </div>
             </div>
 
-            {/* QR Code and Forke Brand */}
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '24px' }}>
-              {/* QR Code */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  background: '#050505',
-                  border: '1px solid rgba(255, 122, 0, 0.25)',
-                  padding: '10px',
-                  borderRadius: '14px',
-                }}
-              >
-                <img src={qrBase64} style={{ width: '100px', height: '100px' }} />
-                <span style={{ fontSize: '8px', color: '#ff8a00', marginTop: '6px', letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                  Scan Profile
-                </span>
-              </div>
-
-              {/* Branding */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img
-                  src="https://www.forke.space/forke-assets/forke_logo.png"
-                  style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-                />
-              </div>
+            {/* Forke favicon mark, bottom-right, sized to match the stat-card height */}
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <img
+                src={faviconBase64 || ''}
+                width={82}
+                height={82}
+                style={{ width: '82px', height: '82px', objectFit: 'contain' }}
+              />
             </div>
 
           </div>
         </div>
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      // Geist (300/400/700) for all UI text; Instrument Serif (italic) for names.
+      fonts,
+    }
   )
 }

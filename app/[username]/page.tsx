@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { users, owners, tasks, submissions } from '@/lib/db/schema'
 import { eq, desc, sql, and } from 'drizzle-orm'
+import crypto from 'crypto'
 import {
   getLevelFromXp, getLevelTitle, getLevelProgress, getXpForNextLevel, calculateXpAward,
 } from '@/lib/utils/xp'
@@ -34,12 +35,29 @@ export async function generateMetadata({
   const title = `${dbUser.name} (@${dbUser.username})`
   const description = `${dbUser.bio || dbUser.headline || 'Building real, verified work on Forke.'} · Level ${level} ${getLevelTitle(level)}.`
 
+  // Cache-buster: a short hash of everything the OG image renders. When the user
+  // changes their avatar/name/headline/level, this version changes, so the
+  // og:image URL changes and external scrapers (LinkedIn, Twitter, etc.) re-fetch
+  // instead of serving their cached copy.
+  const ogVersion = crypto
+    .createHash('sha1')
+    .update(`${dbUser.name}|${dbUser.image || ''}|${dbUser.headline || ''}|${dbUser.bio || ''}|${dbUser.xp || 0}`)
+    .digest('hex')
+    .slice(0, 10)
+  const ogImageUrl = `/${dbUser.username}/opengraph-image?v=${ogVersion}`
+
   return {
     title,
     description,
     alternates: { canonical: `/${dbUser.username}` },
-    openGraph: { title, description, type: 'profile', username: dbUser.username || undefined },
-    twitter: { card: 'summary_large_image', title, description },
+    openGraph: {
+      title,
+      description,
+      type: 'profile',
+      username: dbUser.username || undefined,
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
+    },
+    twitter: { card: 'summary_large_image', title, description, images: [ogImageUrl] },
   }
 }
 

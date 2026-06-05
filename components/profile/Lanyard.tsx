@@ -318,11 +318,10 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
 // thin two-line name, role, and footer meta.
 function CardFront({ card }: { card: LanyardCard }) {
   const initial = (card.name?.[0] || 'F').toUpperCase()
-  const first = (card.name || 'Forke').trim().split(' ')[0]
   const rawHeadline = card.headline || 'Real, verified work.'
   const headline = rawHeadline.length > 25 ? `${rawHeadline.slice(0, 25)}...` : rawHeadline
   return (
-    <div style={{ width: FACE_W, height: FACE_H }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
+    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
 
       {/* Header: dots + URL */}
       <div className="flex items-center justify-between px-6 pt-5 pb-4">
@@ -362,13 +361,17 @@ function CardFront({ card }: { card: LanyardCard }) {
         {/* Oversized editorial serif stacked name overlapping the portrait bottom-left */}
         <div className="absolute left-6 z-10 max-w-[85%]" style={{ bottom: '-44px' }}>
           {(() => {
-            const nameParts = (card.name || 'Forke').trim().split(/\s+/)
+            // First + last name only (drop middle names); single name as-is.
+            const nameParts = (card.name || 'Forke').trim().split(/\s+/).filter(Boolean)
             const firstName = nameParts[0] || 'Forke'
-            const lastName = nameParts.slice(1).join(' ')
+            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
             const maxPartLength = Math.max(firstName.length, lastName.length)
             const fontSize = maxPartLength > 15 ? '32px' : maxPartLength > 10 ? '42px' : '52px'
             return (
-              <h2 className="text-white font-serif italic leading-[0.8] tracking-tight" style={{ fontSize }}>
+              <h2
+                className="text-white italic leading-[0.8] tracking-tight"
+                style={{ fontSize, fontFamily: 'var(--font-instrument-serif), Georgia, serif' }}
+              >
                 <div>{firstName}</div>
                 {lastName && <div className="opacity-95">{lastName}</div>}
               </h2>
@@ -405,7 +408,7 @@ function CardBack({ card }: { card: LanyardCard }) {
     : `https://forke.space/${card.username || 'forke'}`
 
   return (
-    <div style={{ width: FACE_W, height: FACE_H }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
+    <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
       <style>{`
         .lanyard-qr image {
           filter: brightness(0) invert(1);

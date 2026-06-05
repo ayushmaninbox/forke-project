@@ -43,9 +43,18 @@ export default auth(async (req) => {
   if (
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/uploads')
+    pathname.startsWith('/uploads') ||
+    pathname.endsWith('/opengraph-image')
   ) {
     return NextResponse.next()
+  }
+
+  // Redirect /@username to /username
+  if (pathname.startsWith('/@')) {
+    const targetPath = pathname.replace('/@', '/')
+    const redirectUrl = new URL(targetPath, req.nextUrl.origin)
+    redirectUrl.search = req.nextUrl.search
+    return NextResponse.redirect(redirectUrl)
   }
 
   const siteAccess = req.cookies.get('site_access')?.value
