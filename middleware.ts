@@ -37,6 +37,17 @@ function isPublicProfilePath(pathname: string): boolean {
 
 export default auth(async (req) => {
   const pathname = req.nextUrl.pathname
+
+  // Bypass all static files and system assets containing a dot (like .glb, .svg, .png, etc.)
+  // and Next.js internal /_next paths or custom /uploads paths.
+  if (
+    pathname.includes('.') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/uploads')
+  ) {
+    return NextResponse.next()
+  }
+
   const siteAccess = req.cookies.get('site_access')?.value
   const waitlistJoined = req.cookies.get('waitlist_joined')?.value
   const waitlistEnabled = await fetchWaitlistStatus(req.nextUrl.origin)
@@ -129,8 +140,8 @@ export default auth(async (req) => {
     return withCookies(NextResponse.redirect(loginUrl))
   }
 
-  // Redirect logged in users from root to dashboard
-  if (isLoggedIn && req.nextUrl.pathname === '/') {
+  // Redirect logged in users from root to dashboard (only if waitlist is disabled or they have site access)
+  if (isLoggedIn && req.nextUrl.pathname === '/' && (!waitlistEnabled || siteAccess)) {
     return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
   }
 
@@ -154,5 +165,5 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|glb|gltf|svg|jpg|jpeg|gif|webp|ico|css|js|woff2?|json)$).*)'],
 }

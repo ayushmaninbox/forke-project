@@ -14,8 +14,8 @@ export default function Navbar() {
   const isLoggedIn = !!session?.user
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [hasSiteAccess, setHasSiteAccess] = useState(true)
-  const [waitlistActive, setWaitlistActive] = useState(false)
+  const [hasSiteAccess, setHasSiteAccess] = useState(false)
+  const [waitlistActive, setWaitlistActive] = useState(true)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,7 +38,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const showWaitlisterView = waitlistActive && !hasSiteAccess && !isLoggedIn
+  const showWaitlisterView = waitlistActive && !hasSiteAccess
 
   const navLinks = showWaitlisterView ? [
     { name: "What's Forke?", href: '/whats-forke' },
@@ -58,8 +58,8 @@ export default function Navbar() {
         <div className={cn(
           "flex justify-between items-center h-20 px-8 rounded-full border transition-all duration-300",
           isScrolled 
-            ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]" 
-            : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+             ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]" 
+             : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         )}>
           
           <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
@@ -92,21 +92,21 @@ export default function Navbar() {
           
           {/* Right: CTA Section */}
           <div className="flex items-center gap-4 shrink-0">
-            {isLoggedIn ? (
-              <Button 
-                variant="primary" 
-                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
-                onClick={() => router.push('/dashboard')}
-              >
-                Dashboard
-              </Button>
-            ) : showWaitlisterView ? (
+            {showWaitlisterView ? (
               <Button 
                 variant="primary" 
                 className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
                 onClick={() => router.push('/')}
               >
                 Coming Soon
+              </Button>
+            ) : isLoggedIn ? (
+              <Button 
+                variant="primary" 
+                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                onClick={() => router.push('/dashboard')}
+              >
+                Dashboard
               </Button>
             ) : (
               <Button 

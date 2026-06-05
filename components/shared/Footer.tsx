@@ -1,7 +1,27 @@
-import React from 'react'
+'use client'
+
+import React, { useState, useEffect } from 'react'
 import { Mail } from 'lucide-react'
 
 export default function Footer() {
+  const [hasSiteAccess, setHasSiteAccess] = useState(false)
+  const [waitlistActive, setWaitlistActive] = useState(true)
+
+  useEffect(() => {
+    const getCookie = (name: string): string | null => {
+      if (typeof document === 'undefined') return null
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null
+      return null
+    }
+
+    setHasSiteAccess(getCookie('site_access_public') === 'true')
+    setWaitlistActive(getCookie('waitlist_active') === 'true')
+  }, [])
+
+  const showWaitlisterView = waitlistActive && !hasSiteAccess
+
   return (
     <footer className="relative z-10 py-24 border-t border-border bg-[#050505] px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
@@ -28,9 +48,9 @@ export default function Footer() {
           <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Navigate</h4>
           <ul className="space-y-4 columns-2 gap-x-12">
             <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">What&apos;s Forke?</a></li>
-            <li><a href="/tasks" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>
+            {!showWaitlisterView && <li><a href="/tasks" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>}
             <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Levels</a></li>
-            <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">Blog</a></li>
+            {!showWaitlisterView && <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">Blog</a></li>}
             <li><a href="/contact" className="text-muted hover:text-white transition-colors text-sm font-light">Contact Us</a></li>
           </ul>
         </div>
@@ -74,7 +94,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      
+
       <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
         <p className="text-muted text-xs uppercase tracking-widest font-bold">© 2026 Forke. All rights reserved.</p>
         <div className="flex gap-6 text-muted text-xs font-light flex-wrap justify-center md:justify-end">
