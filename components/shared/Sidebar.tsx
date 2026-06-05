@@ -3,7 +3,6 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Image from 'next/image'
 import { 
   LayoutDashboard, 
   ClipboardList,
@@ -197,7 +196,8 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
               isOwner ? "ring-1 ring-accent/30" : ""
             )}>
               {user.image ? (
-                <Image src={user.image} alt={user.name || ''} fill className="object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-xs font-mono text-accent font-semibold">
                   {user.name?.[0]?.toUpperCase()}

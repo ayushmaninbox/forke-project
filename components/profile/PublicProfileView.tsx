@@ -115,7 +115,11 @@ export default function PublicProfileView({
   
   useEffect(() => {
     const organicPatterns = [1, 2, 3, 5]
-    setPatternNum(organicPatterns[Math.floor(Math.random() * organicPatterns.length)])
+    const selected = organicPatterns[Math.floor(Math.random() * organicPatterns.length)]
+    const handle = requestAnimationFrame(() => {
+      setPatternNum(selected)
+    })
+    return () => cancelAnimationFrame(handle)
   }, [])
 
   const joined = new Date(data.joinedAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
@@ -141,7 +145,7 @@ export default function PublicProfileView({
   const bento = (
     <>
       {/* Identity bento */}
-      <div className={`${tile} p-6`}>
+      <div className={`${tile} p-4 sm:p-6`}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate">{data.name}</h1>
@@ -268,7 +272,7 @@ export default function PublicProfileView({
     // Dashboard: card pinned full-height on the left, only the bento scrolls.
     return (
       <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full">
-        <div className="lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
+        <div className="w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
         {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
       </div>
@@ -279,9 +283,9 @@ export default function PublicProfileView({
   // while the bento on the right scrolls. Once the (taller) bento is fully
   // scrolled, the row ends and the card scrolls away with it, revealing the footer.
   return (
-    <div className="grid lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start">
-      <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
-      <div className="space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start w-full">
+      <div className="w-full lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
+      <div className="w-full space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
       {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
     </div>
   )
@@ -306,7 +310,7 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
 
 function Section({ icon, title, subtitle, children }: { icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className={`${tile} p-6 text-left`}>
+    <div className={`${tile} p-4 sm:p-6 text-left w-full max-w-full overflow-hidden`}>
       <div className="flex items-baseline justify-between gap-3 mb-4">
         <h2 className="text-sm font-black tracking-wider font-mono text-white flex items-center gap-2 uppercase">{icon}{title}</h2>
         {subtitle && <span className="text-[11px] text-white/30 font-mono text-right">{subtitle}</span>}
@@ -540,13 +544,13 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
   return (
     <div className="flex flex-col lg:flex-row gap-5 items-start w-full">
       {/* Calendar Card (Left) */}
-      <div className="flex-1 min-w-0 rounded-xl border border-white/[0.08] bg-black/40 p-5 flex flex-col gap-4">
+      <div className="w-full max-w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/40 p-4 sm:p-5 flex flex-col gap-4">
         <div className="flex items-center">
           <span className="text-[15px] font-semibold text-white/90 font-sans">{contributionHeader}</span>
         </div>
 
-        <div ref={scrollRef} className="overflow-x-auto scrollbar-none pt-8 pb-6">
-          <div className="flex gap-4 min-w-max items-end">
+        <div ref={scrollRef} className="w-full max-w-full overflow-x-auto scrollbar-none pt-8 pb-6">
+          <div className="flex gap-2 md:gap-4 min-w-max items-end">
             {months.map(({ year, month }, mi) => {
               const weeks = buildMonthGrid(year, month, username, data, joinYear)
               const monthName = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'short' })
@@ -554,17 +558,17 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
               return (
                 <div key={mi} className="flex flex-col items-center gap-2 select-none">
                   {/* Heatmap blocks grid for this month */}
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5 md:gap-1">
                     {weeks.map((week, wi) => (
-                      <div key={wi} className="flex flex-col gap-1">
+                      <div key={wi} className="flex flex-col gap-0.5 md:gap-1">
                         {week.map((d, di) => {
-                          if (!d) return <div key={di} className="w-3 h-3" /> // blank gap!
+                          if (!d) return <div key={di} className="w-2 h-2 md:w-3 md:h-3" /> // blank gap!
                           const hasXp = d.count > 0
                           const isTopRow = di < 3
                           return (
                             <div key={d.date} className="relative group">
                               <div 
-                                className={`w-3 h-3 rounded-[2.5px] transition-all hover:scale-110 cursor-pointer ${colors[level(d.count)]}`} 
+                                className={`w-2 h-2 md:w-3 md:h-3 rounded-[1.5px] md:rounded-[2.5px] transition-all hover:scale-110 cursor-pointer ${colors[level(d.count)]}`} 
                               />
                               {hasXp && (
                                 isTopRow ? (
@@ -610,7 +614,7 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
           </span>
           <div className="flex items-center gap-1.5 select-none">
             <span>Less</span>
-            {colors.map((c, i) => <div key={i} className={`w-3 h-3 rounded-[2.5px] ${c}`} />)}
+            {colors.map((c, i) => <div key={i} className={`w-2 h-2 md:w-3 md:h-3 rounded-[1.5px] md:rounded-[2.5px] ${c}`} />)}
             <span>More</span>
           </div>
         </div>
@@ -634,7 +638,7 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
                   setActiveYear(y)
                 }
               }}
-              className={`text-xs font-bold py-1.5 px-3 text-left rounded-lg transition-all cursor-pointer shrink-0 w-full ${
+              className={`text-xs font-bold py-1.5 px-3 text-center lg:text-left rounded-lg transition-all cursor-pointer shrink-0 w-auto lg:w-full ${
                 isActive 
                   ? 'bg-[#ff8a00] text-black font-black shadow-[0_0_12px_rgba(255,138,0,0.3)]' 
                   : 'text-white/40 hover:text-white/80 hover:bg-white/5'

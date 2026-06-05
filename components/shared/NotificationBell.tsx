@@ -51,7 +51,10 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
 
   // Set mounted status on client
   useEffect(() => {
-    setMounted(true)
+    const animHandle = requestAnimationFrame(() => {
+      setMounted(true)
+    })
+    return () => cancelAnimationFrame(animHandle)
   }, [])
 
   // Close on outside click
@@ -132,7 +135,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
         className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-text-muted)] hover:text-white transition-colors relative hover:bg-white/[0.04] cursor-pointer"
         title="Notifications"
       >
-        <Bell className={cn('w-[18px] h-[18px] transition-colors', unreadCount > 0 ? 'text-accent' : 'text-white/50')} />
+        <Bell className={cn('w-[22px] h-[22px] md:w-[18px] md:h-[18px] transition-colors', unreadCount > 0 ? 'text-accent' : 'text-white/50')} />
         {unreadCount > 0 && (
           <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-ping" />
         )}

@@ -32,10 +32,17 @@ export default function Navbar() {
       return null
     }
 
-    setHasSiteAccess(getCookie('site_access_public') === 'true')
-    setWaitlistActive(getCookie('waitlist_active') === 'true')
+    const siteAccess = getCookie('site_access_public') === 'true'
+    const waitlist = getCookie('waitlist_active') === 'true'
+    const animHandle = requestAnimationFrame(() => {
+      setHasSiteAccess(siteAccess)
+      setWaitlistActive(waitlist)
+    })
 
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      cancelAnimationFrame(animHandle)
+    }
   }, [])
 
   const showWaitlisterView = waitlistActive && !hasSiteAccess
@@ -56,14 +63,14 @@ export default function Navbar() {
     <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
       <div className="w-full max-w-7xl mx-auto">
         <div className={cn(
-          "flex justify-between items-center h-20 px-8 rounded-full border transition-all duration-300",
+          "flex justify-between items-center h-20 px-4 sm:px-8 rounded-full border transition-all duration-300",
           isScrolled 
              ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]" 
              : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         )}>
           
           <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
-            <div className="absolute -top-[30px] -left-4 w-[180px] h-[110px] z-20 pointer-events-none">
+            <div className="absolute -top-[22px] sm:-top-[30px] -left-3 sm:-left-4 w-[140px] sm:w-[180px] h-[85px] sm:h-[110px] z-20 pointer-events-none">
               <Image 
                 src="/forke-assets/nav_peeking_forky.png" 
                 alt="Forke Logo" 
@@ -71,8 +78,8 @@ export default function Navbar() {
                 className="object-contain"
               />
             </div>
-            <div className="w-[160px] h-[40px] " /> {/* Spacer for the absolute mascot */}
-            <span className="font-serif text-5xl text-white font -ml-6 relative z-10">
+            <div className="w-[120px] sm:w-[160px] h-[40px] " /> {/* Spacer for the absolute mascot */}
+            <span className="font-serif text-3xl sm:text-5xl text-white font -ml-4 sm:-ml-6 relative z-10">
               Forke
             </span>
           </Link>
@@ -91,11 +98,11 @@ export default function Navbar() {
           </div>
           
           {/* Right: CTA Section */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {showWaitlisterView ? (
               <Button 
                 variant="primary" 
-                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
                 onClick={() => router.push('/')}
               >
                 Coming Soon
@@ -103,7 +110,7 @@ export default function Navbar() {
             ) : isLoggedIn ? (
               <Button 
                 variant="primary" 
-                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
                 onClick={() => router.push('/dashboard')}
               >
                 Dashboard
@@ -111,7 +118,7 @@ export default function Navbar() {
             ) : (
               <Button 
                 variant="primary" 
-                className="rounded-full px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
                 onClick={() => router.push('/register')}
               >
                 Get Started
@@ -164,9 +171,6 @@ export default function Navbar() {
               </Button>
             ) : (
               <>
-                <Button variant="outline" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
-                  Post a Task
-                </Button>
                 {isLoggedIn ? (
                   <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
                     Dashboard

@@ -132,9 +132,7 @@ export default async function AppLayout({
         />
         <main className="flex-grow flex flex-col min-w-0 overflow-hidden relative z-10">
           {/* Floating Mobile Trigger */}
-          <div className="absolute top-3 left-4 z-40 md:hidden bg-[#0c0c0f]/80 backdrop-blur border border-white/[0.06] p-1 rounded-lg">
-            <MobileMenuTrigger />
-          </div>
+          <MobileMenuTrigger />
           {children}
         </main>
       </div>

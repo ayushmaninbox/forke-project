@@ -24,9 +24,9 @@ export default async function TopBar({ title }: TopBarProps) {
   }
 
   return (
-    <header className="shrink-0 flex items-center justify-between gap-3 h-12 pl-16 pr-4 md:px-8">
+    <header className="shrink-0 flex items-center justify-between gap-3 h-14 md:h-12 pl-16 pr-4 md:px-8">
       {/* Breadcrumb — orients you without a heavy bar; the page's own title sits below */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[12px] min-w-0">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm min-w-0">
         <Link
           href="/dashboard"
           className="text-[var(--color-text-muted)] hover:text-white transition-colors shrink-0"
