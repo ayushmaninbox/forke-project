@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/forke-assets/banner.png" width="100%" alt="Forke Banner" />
+  <img src="./public/forke-assets/email-banners/main-banner.png" width="100%" alt="Forke Banner" />
 </p>
 
 <p align="center">

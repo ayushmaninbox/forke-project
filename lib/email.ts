@@ -21,6 +21,7 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
     fromEmail = fromEmail.slice(1, -1)
   }
 
+  const bannerFile = 'main-banner.png'
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
@@ -42,7 +43,7 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
                 <!-- Banner -->
                 <tr>
                   <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
+                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
                   </td>
                 </tr>
                 
@@ -276,6 +277,7 @@ export async function sendAdminInvitation(
     fromEmail = fromEmail.slice(1, -1)
   }
 
+  const bannerFile = 'admin-approval.png'
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -292,7 +294,7 @@ export async function sendAdminInvitation(
               <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
                 <tr>
                   <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
+                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
                   </td>
                 </tr>
                 <tr>
@@ -406,6 +408,7 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
     fromEmail = fromEmail.slice(1, -1)
   }
 
+  const bannerFile = 'main-banner.png'
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -422,7 +425,7 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
               <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
                 <tr>
                   <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
+                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
                   </td>
                 </tr>
                 <tr>
@@ -528,13 +531,16 @@ function resolveBaseUrl(): string {
 }
 
 // Wraps body markup in the standard dark Forke email shell (banner + logo + footer).
+// `banner` is the email-banners filename (e.g. 'owner-approved.png'); defaults to main-banner.
 function ownerEmailShell(opts: {
   title: string
   heading: string
   headingAccent: string
   bodyHtml: string
   footerLabel: string
+  banner?: string
 }): string {
+  const bannerFile = opts.banner || 'main-banner.png'
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -551,7 +557,7 @@ function ownerEmailShell(opts: {
               <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
                 <tr>
                   <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
+                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
                   </td>
                 </tr>
                 <tr>
@@ -645,6 +651,7 @@ export async function sendOwnerApprovedEmail(toEmail: string, name: string): Pro
     heading: 'Application approved.',
     headingAccent: 'Welcome aboard.',
     footerLabel: 'OWNER ACCESS GRANTED',
+    banner: 'owner-approved.png',
     bodyHtml: `
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
@@ -672,6 +679,7 @@ export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reas
     heading: 'Application update.',
     headingAccent: 'You can apply again.',
     footerLabel: 'OWNER APPLICATION REVIEW',
+    banner: 'owner-rejected.png',
     bodyHtml: `
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
@@ -708,6 +716,7 @@ async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owne
     heading: 'Account suspended.',
     headingAccent: 'You can request a review.',
     footerLabel: 'ACCOUNT SUSPENSION NOTICE',
+    banner: 'user-ban.png',
     bodyHtml: `
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
       <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
