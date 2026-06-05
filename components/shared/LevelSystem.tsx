@@ -97,33 +97,7 @@ export default function LevelSystem() {
       '-=0.6'
     )
 
-    // 2. Stats Card Counter ScrollTrigger
-    const statsObj = { completed: 0, paid: 0, active: 0, colleges: 0 }
-    
-    gsap.to(statsObj, {
-      completed: 1240,
-      paid: 4.8,
-      active: 850,
-      colleges: 12,
-      duration: 2.2,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: '.gsap-stats-card',
-        start: 'top 85%',
-        toggleActions: 'play none none none'
-      },
-      onUpdate: () => {
-        const elCompleted = document.querySelector('.gsap-stat-completed')
-        const elPaid = document.querySelector('.gsap-stat-paid')
-        const elActive = document.querySelector('.gsap-stat-active')
-        const elColleges = document.querySelector('.gsap-stat-colleges')
-        
-        if (elCompleted) elCompleted.innerHTML = Math.floor(statsObj.completed).toLocaleString() + '+'
-        if (elPaid) elPaid.innerHTML = '₹' + statsObj.paid.toFixed(1) + 'L+'
-        if (elActive) elActive.innerHTML = Math.floor(statsObj.active) + '+'
-        if (elColleges) elColleges.innerHTML = Math.floor(statsObj.colleges) + '+'
-      }
-    })
+
   }, { scope: containerRef })
 
   return (
@@ -233,60 +207,7 @@ export default function LevelSystem() {
           ))}
         </div>
 
-        {/* Stats Card */}
-        <div className="gsap-stats-card mt-32 p-12 rounded-[3rem] bg-[#0D0D0D] border border-white/[0.06] relative overflow-hidden group">
-          <div className="relative z-10 flex flex-wrap justify-center items-center gap-16 md:gap-24">
-            {/* Stat 1 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-completed text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Tasks Completed</p>
-              </div>
-            </div>
 
-            {/* Stat 2 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <span className="text-xl font-medium">₹</span>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-paid text-4xl font-bold text-white tracking-tight">₹0.0L+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Total Paid Out</p>
-              </div>
-            </div>
-
-            {/* Stat 3 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-active text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Active Developers</p>
-              </div>
-            </div>
-
-            {/* Stat 4 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-colleges text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Colleges Reached</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )

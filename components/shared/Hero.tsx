@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 import { Zap, Flame, Star } from 'lucide-react'
-import LiveTaskTicker from './LiveTaskTicker'
 import DotField from './DotField'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
@@ -293,10 +292,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Live Bounty Feed at the bottom of Hero */}
-      <div className="absolute bottom-0 left-0 w-full z-40">
-        <LiveTaskTicker isHeroEmbedded />
-      </div>
     </section>
   )
 }
