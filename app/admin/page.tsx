@@ -138,6 +138,9 @@ export default function AdminDashboard() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false)
 
+  // Owners panel sub-tab
+  const [ownersSubTab, setOwnersSubTab] = useState<'approved' | 'requests'>('approved')
+
   // Data states
   const [ownersList, setOwnersList] = useState<any[]>([])
   const [developersList, setDevelopersList] = useState<any[]>([])
@@ -573,7 +576,7 @@ export default function AdminDashboard() {
   }
 
   // Real-time filtering logic
-  const filteredOwners = ownersList.filter(({ owner, user }) => {
+  const filteredOwners = ownersList.filter(({ owner }) => {
     const fullName = `${owner.firstName} ${owner.lastName}`.toLowerCase()
     return fullName.includes(searchQuery.toLowerCase()) || 
            owner.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -612,9 +615,9 @@ export default function AdminDashboard() {
   // Pagination logic and slices
   useEffect(() => {
     setCurrentPage(1)
+    if (activeTab !== 'owner-approval') setOwnersSubTab('approved')
   }, [searchQuery, activeTab])
 
-  const paginatedOwners = filteredOwners.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const paginatedDevelopers = filteredDevelopers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const paginatedEnquiries = filteredEnquiries.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const paginatedSubscribers = filteredSubscribers.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -1138,9 +1141,13 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-left mt-3">
                     <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
-                      {isLoading ? '...' : ownersList.length}
+                      {sidebarCounts.owners}
                     </h3>
-                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Pending & approved owners</p>
+                    <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
+                      {sidebarCounts.pendingOwners > 0 ? (
+                        <span className="text-orange-400">{sidebarCounts.pendingOwners} pending approval</span>
+                      ) : 'All approved'}
+                    </p>
                   </div>
                 </div>
 
@@ -1152,7 +1159,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-left mt-3">
                     <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
-                      {isLoading ? '...' : developersList.length}
+                      {sidebarCounts.developers}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Registered builders</p>
                   </div>
@@ -1166,7 +1173,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-left mt-3">
                     <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
-                      {isLoading ? '...' : enquiriesList.length}
+                      {sidebarCounts.enquiries}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Support & conflict tickets</p>
                   </div>
@@ -1180,7 +1187,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-left mt-3">
                     <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
-                      {isLoading ? '...' : subscribersList.length}
+                      {sidebarCounts.subscribers}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Waitlist signups</p>
                   </div>
@@ -1192,112 +1199,177 @@ export default function AdminDashboard() {
           )}
 
           {/* ==================== OWNERS PANEL ==================== */}
-          {activeTab === 'owner-approval' && (
-            <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
-              
-              {/* Search & filters */}
-              <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between bg-white/[0.005]">
-                <div className="relative w-full max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <input 
-                    type="text" 
-                    placeholder="Search by name, company, email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-9 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-3 text-[13px] text-white focus:outline-none focus:border-accent transition-colors"
-                  />
-                </div>
-              </div>
+          {activeTab === 'owner-approval' && (() => {
+            const pendingOwners = filteredOwners.filter(({ user }) => !user.isApproved)
+            const approvedOwners = filteredOwners.filter(({ user }) => user.isApproved)
+            const activeOwners = ownersSubTab === 'requests' ? pendingOwners : approvedOwners
+            const paginatedActive = activeOwners.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-              {/* Table list */}
-              <div className="overflow-auto flex-grow min-h-0">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">User Details</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Company / Designation</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Status</th>
-                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--color-border)]/50">
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
+            return (
+              <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
+
+                {/* Sub-tab switcher + search */}
+                <div className="p-4 border-b border-[var(--color-border)] flex flex-col sm:flex-row sm:items-center gap-3 bg-white/[0.005]">
+                  <div className="flex items-center gap-1 bg-white/[0.03] border border-[var(--color-border)] rounded-lg p-1 shrink-0">
+                    <button
+                      onClick={() => { setOwnersSubTab('approved'); setCurrentPage(1) }}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        ownersSubTab === 'approved'
+                          ? 'bg-white/[0.08] text-white'
+                          : 'text-[var(--color-text-muted)] hover:text-white'
+                      }`}
+                    >
+                      Approved
+                      <span className={`ml-1.5 text-[10px] font-mono ${ownersSubTab === 'approved' ? 'text-white/60' : 'text-white/25'}`}>
+                        {ownersList.filter(({ user }) => user.isApproved).length}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => { setOwnersSubTab('requests'); setCurrentPage(1) }}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                        ownersSubTab === 'requests'
+                          ? 'bg-white/[0.08] text-white'
+                          : 'text-[var(--color-text-muted)] hover:text-white'
+                      }`}
+                    >
+                      Requests
+                      {ownersList.filter(({ user }) => !user.isApproved).length > 0 ? (
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-500/15 border border-orange-500/25 text-orange-400 leading-none">
+                          {ownersList.filter(({ user }) => !user.isApproved).length}
+                        </span>
+                      ) : (
+                        <span className={`text-[10px] font-mono ${ownersSubTab === 'requests' ? 'text-white/60' : 'text-white/25'}`}>0</span>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="relative w-full max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                    <input
+                      type="text"
+                      placeholder="Search by name, company, email..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-9 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-3 text-[13px] text-white focus:outline-none focus:border-accent transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-auto flex-grow min-h-0">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
+                        <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">User Details</th>
+                        <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Company / Designation</th>
+                        {ownersSubTab === 'approved' && (
+                          <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Status</th>
+                        )}
+                        <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Actions</th>
                       </tr>
-                    ) : filteredOwners.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">No matching records found</td>
-                      </tr>
-                    ) : (
-                      paginatedOwners.map(({ user, owner }) => (
-                        <tr key={user.id} className="group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-white/5 border border-[var(--color-border)] overflow-hidden relative shrink-0">
-                                {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
-                              </div>
-                              <div>
-                                <p className="font-medium text-white text-sm">{owner.firstName} {owner.lastName}</p>
-                                <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-1">
-                                  <span>{owner.contactEmail}</span>
-                                  {owner.contactNumber && <span>&middot; {owner.contactNumber}</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-[13px] text-[var(--color-text-muted)]">
-                            <div>
-                              <p className="font-medium text-white/80">{owner.companyName}</p>
-                              <p className="text-xs text-[var(--color-text-muted)] mt-1">{owner.designation}</p>
-                              <div className="flex items-center gap-3 mt-2">
-                                <a href={owner.personalLinkedIn} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline">LinkedIn</a>
-                                {owner.companyWebsite && <a href={owner.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline">Website</a>}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {user.isApproved ? (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Approved
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-medium animate-pulse">
-                                <ShieldCheck className="w-3.5 h-3.5" /> Pending
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              {!user.isApproved && (
-                                <button 
-                                  onClick={() => handleApprove(user.id)}
-                                  className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
-                                  title="Approve Owner"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
-                              )}
-                              <button 
-                                onClick={() => handleDecline(user.id)}
-                                className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
-                                title="Decline & Delete"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--color-border)]/50">
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
+                        </tr>
+                      ) : activeOwners.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">
+                            {ownersSubTab === 'requests' ? 'No pending requests' : 'No matching records found'}
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        paginatedActive.map(({ user, owner }) => (
+                          <tr key={user.id} className="group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-white/5 border border-[var(--color-border)] overflow-hidden relative shrink-0">
+                                  {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-white text-sm">{owner.firstName} {owner.lastName}</p>
+                                  <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-1">
+                                    <span>{owner.contactEmail}</span>
+                                    {owner.contactNumber && <span>&middot; {owner.contactNumber}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-[13px] text-[var(--color-text-muted)]">
+                              <div>
+                                <p className="font-medium text-white/80">{owner.companyName}</p>
+                                <p className="text-xs text-[var(--color-text-muted)] mt-1">{owner.designation}</p>
+                                <div className="flex items-center gap-3 mt-2">
+                                  <a href={owner.personalLinkedIn} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline">LinkedIn</a>
+                                  {owner.companyWebsite && <a href={owner.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline">Website</a>}
+                                </div>
+                              </div>
+                            </td>
+                            {ownersSubTab === 'approved' && (
+                              <td className="px-6 py-4">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Approved
+                                </span>
+                              </td>
+                            )}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                {ownersSubTab === 'requests' && (
+                                  <button
+                                    onClick={() => handleApprove(user.id)}
+                                    className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
+                                    title="Approve Owner"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDecline(user.id)}
+                                  className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                  title="Decline & Delete"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {activeOwners.length > pageSize && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-[var(--color-border)] bg-white/[0.005] text-left">
+                    <p className="text-[11px] text-[var(--color-text-muted)] font-medium font-mono">
+                      Showing <span className="text-white">{(currentPage - 1) * pageSize + 1}</span> – <span className="text-white">{Math.min(currentPage * pageSize, activeOwners.length)}</span> of <span className="text-white">{activeOwners.length}</span>
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-white/[0.02] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white hover:border-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[11px] font-medium text-white px-2 font-mono select-none">
+                        {currentPage} / {Math.ceil(activeOwners.length / pageSize)}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(activeOwners.length / pageSize)))}
+                        disabled={currentPage === Math.ceil(activeOwners.length / pageSize)}
+                        className="w-7 h-7 flex items-center justify-center rounded-md bg-white/[0.02] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-white hover:border-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
               </div>
-
-              {renderPagination()}
-
-            </div>
-          )}
+            )
+          })()}
 
           {/* ==================== DEVELOPERS PANEL ==================== */}
           {activeTab === 'developer-ban' && (
