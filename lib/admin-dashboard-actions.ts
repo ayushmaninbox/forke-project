@@ -499,51 +499,50 @@ export async function getSidebarCounts() {
   const admin = await getCurrentAdmin()
   if (!admin) throw new Error('Unauthorized')
 
-  try {
-    // Run all count queries in parallel for speed
-    const [
-      ownersRes,
-      pendingOwnersRes,
-      devsRes,
-      subscribersRes,
-      adminsRes,
-      enquiriesRes,
-      tablesRes,
-      pendingSqlRes,
-    ] = await Promise.all([
-      db.execute(sql`SELECT count(*)::int AS count FROM public.owners`),
-      db.execute(sql`SELECT count(*)::int AS count FROM public.users u INNER JOIN public.owners o ON u.id = o.id WHERE u.is_approved = false`),
-      db.execute(sql`SELECT count(*)::int AS count FROM public.developers`),
-      db.execute(sql`SELECT count(*)::int AS count FROM public.subscribers`),
-      db.execute(sql`SELECT count(*)::int AS count FROM public.admins`),
-      db.execute(sql`SELECT count(*)::int AS count FROM public.enquiries`),
-      db.execute(sql`SELECT count(*)::int AS count FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r'`),
-      admin.role === 'super_admin'
-        ? db.execute(sql`SELECT count(*)::int AS count FROM public.sql_query_requests WHERE status = 'pending'`)
-        : Promise.resolve([{ count: 0 }]),
-    ])
-
-    return {
-      success: true,
-      counts: {
-        owners: (ownersRes as any)[0]?.count ?? 0,
-        pendingOwners: (pendingOwnersRes as any)[0]?.count ?? 0,
-        developers: (devsRes as any)[0]?.count ?? 0,
-        subscribers: (subscribersRes as any)[0]?.count ?? 0,
-        admins: (adminsRes as any)[0]?.count ?? 0,
-        enquiries: (enquiriesRes as any)[0]?.count ?? 0,
-        tables: (tablesRes as any)[0]?.count ?? 0,
-        pendingSqlRequests: (pendingSqlRes as any)[0]?.count ?? 0,
-      }
+  // Run each count independently so one failing query never zeros out the rest
+  const countOf = async (query: ReturnType<typeof sql>): Promise<number> => {
+    try {
+      const res = await db.execute(query)
+      return (res as any)[0]?.count ?? 0
+    } catch (error) {
+      console.error('Sidebar count query failed:', error)
+      return 0
     }
-  } catch (error: any) {
-    console.error('Failed to fetch sidebar counts:', error)
-    return {
-      success: false,
-      counts: {
-        owners: 0, pendingOwners: 0, developers: 0, subscribers: 0,
-        admins: 0, enquiries: 0, tables: 0, pendingSqlRequests: 0
-      }
+  }
+
+  const [
+    owners,
+    pendingOwners,
+    developers,
+    subscribers,
+    adminsCount,
+    enquiries,
+    tables,
+    pendingSqlRequests,
+  ] = await Promise.all([
+    countOf(sql`SELECT count(*)::int AS count FROM public.owners`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.users u INNER JOIN public.owners o ON u.id = o.id WHERE u.is_approved = false`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.developers`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.subscribers`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.admins`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.support_enquiries`),
+    countOf(sql`SELECT count(*)::int AS count FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r'`),
+    admin.role === 'super_admin'
+      ? countOf(sql`SELECT count(*)::int AS count FROM public.sql_query_requests WHERE status = 'pending'`)
+      : Promise.resolve(0),
+  ])
+
+  return {
+    success: true,
+    counts: {
+      owners,
+      pendingOwners,
+      developers,
+      subscribers,
+      admins: adminsCount,
+      enquiries,
+      tables,
+      pendingSqlRequests,
     }
   }
 }
