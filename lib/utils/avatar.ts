@@ -7,6 +7,34 @@ import { decryptUrl, isEncrypted } from '@/lib/utils/encrypt'
  */
 export function resolveAvatarUrl(image: string | null | undefined): string | null {
   if (!image) return null
-  if (isEncrypted(image)) return decryptUrl(image)
-  return image
+  
+  let url = image
+  if (isEncrypted(image)) {
+    url = decryptUrl(image) || image
+  }
+
+  // Optimize Google/GitHub OAuth image sizes for crisp rendering on high-DPI/3D cards
+  if (url.includes('googleusercontent.com')) {
+    if (url.match(/=s\d+(-\w+)?$/)) {
+      return url.replace(/=s\d+(-\w+)?$/, '=s384-c')
+    }
+    if (url.match(/\/s\d+(-\w+)?\//)) {
+      return url.replace(/\/s\d+(-\w+)?\//, '/s384-c/')
+    }
+    if (!url.includes('=')) {
+      return `${url}=s384-c`
+    }
+  }
+
+  if (url.includes('githubusercontent.com')) {
+    try {
+      const parsed = new URL(url)
+      parsed.searchParams.set('s', '384')
+      return parsed.toString()
+    } catch {
+      return url
+    }
+  }
+
+  return url
 }

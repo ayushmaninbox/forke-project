@@ -78,7 +78,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Settings" />
 
       <div className="flex-grow overflow-y-auto">

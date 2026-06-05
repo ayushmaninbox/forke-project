@@ -48,7 +48,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   const revisionRequest = isClaimedByMe && task.status === 'claimed' ? await getLatestRevisionRequest(task.id) : null
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Task" />
 
       <div className="flex-grow overflow-y-auto">

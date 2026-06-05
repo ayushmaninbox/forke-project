@@ -33,7 +33,7 @@ export default async function TasksPage({
   const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true })
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+    <div className="flex flex-col h-full bg-transparent text-[var(--color-text-primary)]">
       <TopBar title="Tasks" />
       <div className="flex-grow overflow-y-auto">
         <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">

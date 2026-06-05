@@ -96,10 +96,29 @@ export default function PublicProfileView({
   contained?: boolean
 }) {
   const [shareOpen, setShareOpen] = useState(false)
+  const [patternNum, setPatternNum] = useState<number | null>(null)
+  
+  useEffect(() => {
+    const organicPatterns = [1, 2, 3, 5]
+    setPatternNum(organicPatterns[Math.floor(Math.random() * organicPatterns.length)])
+  }, [])
+
   const joined = new Date(data.joinedAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
 
   const cardCol = (
-    <div className="relative h-[470px] lg:h-full rounded-2xl overflow-hidden bg-[#0b0a0d]/40 border border-white/[0.05]">
+    <div className="relative h-[470px] lg:h-full rounded-2xl overflow-hidden border border-white/[0.08] shadow-[0_24px_50px_rgba(0,0,0,0.5)] bg-[#08070a]">
+      {/* Subtle client-side randomized dot pattern background overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none mix-blend-screen bg-repeat bg-center transition-opacity duration-700"
+        style={{
+          backgroundImage: patternNum ? `url('/patterns/pattern_${patternNum}.svg')` : 'none',
+          backgroundSize: '420px',
+          opacity: patternNum ? 0.22 : 0,
+          filter: 'invert(0.5) sepia(1) saturate(5) hue-rotate(10deg)', // Amber/orange tint to match theme
+        }}
+      />
+      {/* Subtle radial glow to highlight the card */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,138,0,0.12)_0%,transparent_70%)] pointer-events-none" />
       <Lanyard card={{ name: data.name, username: data.username, level: data.level, title: data.levelTitle, headline: data.headline, avatarUrl: data.avatarUrl }} />
     </div>
   )
@@ -125,7 +144,7 @@ export default function PublicProfileView({
         </div>
 
         {data.headline && <p className="text-[15px] text-white/75 mt-3 leading-snug">{data.headline}</p>}
-        {data.bio && <p className="text-[13px] text-white/45 mt-2 leading-relaxed">{data.bio}</p>}
+        {data.bio && <p className="text-[13px] text-white/45 mt-2 leading-relaxed whitespace-pre-wrap">{data.bio}</p>}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
           <div className="col-span-2 rounded-xl border border-accent/20 bg-accent/[0.04] p-3.5">

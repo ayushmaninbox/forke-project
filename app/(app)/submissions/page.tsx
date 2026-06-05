@@ -216,7 +216,7 @@ export default async function SubmissionsPage() {
     const rejected = ownerSubmissions.filter(s => s.status === 'rejected')
 
     return (
-      <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <div className="flex flex-col h-full bg-transparent text-white font-sans">
         <TopBar title="Submissions" />
         <div className="flex-grow overflow-y-auto">
          <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
@@ -283,7 +283,7 @@ export default async function SubmissionsPage() {
   const rejected = devSubmissions.filter(s => s.submission.status === 'rejected')
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Submissions" />
       <div className="flex-grow overflow-y-auto">
        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">

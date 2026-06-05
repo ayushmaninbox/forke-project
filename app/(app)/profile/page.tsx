@@ -197,7 +197,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Profile" />
       {/* Mobile: page scrolls. Desktop: fixed height so the card pins and only the bento scrolls. */}
       <div className="flex-grow min-h-0 overflow-y-auto lg:overflow-hidden w-full px-4 md:px-6 lg:px-8 py-4 lg:py-5">

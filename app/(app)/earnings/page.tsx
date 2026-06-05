@@ -80,7 +80,7 @@ export default async function EarningsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title={isDev ? 'Earnings' : 'Finances'} />
 
       <div className="flex-grow overflow-y-auto">

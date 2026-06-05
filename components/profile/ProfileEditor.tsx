@@ -62,6 +62,9 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
   // Live preview merges edits over the computed base data.
   const previewData: ProfileData = { ...data, ...form, avatarUrl }
 
+  const bioWordCount = (form.bio || '').trim().split(/\s+/).filter(Boolean).length
+  const isBioOverLimit = bioWordCount > 2500
+
   async function handleSave() {
     setSaving(true)
     const res = await updateProfile({ ...form, avatarUrl })
@@ -155,10 +158,10 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
             <Field label="Location" value={form.location} onChange={set('location')} placeholder="e.g. Bengaluru, India" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Headline" value={form.headline} onChange={set('headline')} placeholder="One line that describes you" />
+            <Field label="Headline" value={form.headline} onChange={set('headline')} placeholder="One line that describes you" maxLength={25} />
             <Field label="College / University" value={form.college} onChange={set('college')} placeholder="e.g. Stanford University" icon={<GraduationCap className="w-4 h-4" />} />
           </div>
-          <Field label="Bio" value={form.bio} onChange={set('bio')} placeholder="A few sentences about what you build…" textarea />
+          <Field label="Bio" value={form.bio} onChange={set('bio')} placeholder="A few sentences about what you build…" textarea wordLimit={2500} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="GitHub URL" value={form.githubUrl} onChange={set('githubUrl')} placeholder="https://github.com/you" icon={<Github className="w-4 h-4" />} />
@@ -169,7 +172,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
           <div className="flex justify-end pt-2 border-t border-white/[0.05]">
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || isBioOverLimit}
               className="h-9 px-5 rounded-lg bg-[#ff8a00] hover:bg-[#ff8a00]/90 transition-all text-xs font-black text-[#0a0a0a] flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save changes
@@ -322,7 +325,7 @@ function AvatarPickerModal({
 /* ----------------------------- Field component ----------------------------- */
 
 function Field({
-  label, value, onChange, placeholder, textarea, icon,
+  label, value, onChange, placeholder, textarea, icon, maxLength, wordLimit,
 }: {
   label: string
   value: string
@@ -330,10 +333,26 @@ function Field({
   placeholder?: string
   textarea?: boolean
   icon?: React.ReactNode
+  maxLength?: number
+  wordLimit?: number
 }) {
+  const currentWordCount = value.trim().split(/\s+/).filter(Boolean).length
+
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-semibold text-white/60">{label}</span>
+      <div className="flex justify-between items-center">
+        <span className="text-xs font-semibold text-white/60">{label}</span>
+        {maxLength && (
+          <span className="text-[10px] text-white/30 font-mono">
+            {value.length}/{maxLength}
+          </span>
+        )}
+        {wordLimit && (
+          <span className={`text-[10px] font-mono ${currentWordCount > wordLimit ? 'text-red-500 font-black' : 'text-white/30'}`}>
+            {currentWordCount}/{wordLimit} words
+          </span>
+        )}
+      </div>
       <div className="relative">
         {icon && <span className="absolute left-3 top-3 text-white/30">{icon}</span>}
         {textarea ? (
@@ -342,6 +361,7 @@ function Field({
             onChange={onChange}
             placeholder={placeholder}
             rows={3}
+            maxLength={maxLength}
             className="w-full bg-white/[0.02] border border-white/[0.08] rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-colors resize-none"
           />
         ) : (
@@ -350,6 +370,7 @@ function Field({
             value={value}
             onChange={onChange}
             placeholder={placeholder}
+            maxLength={maxLength}
             className={`w-full h-10 bg-white/[0.02] border border-white/[0.08] rounded-lg ${icon ? 'pl-9' : 'pl-3'} pr-3 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-accent/50 transition-colors`}
           />
         )}

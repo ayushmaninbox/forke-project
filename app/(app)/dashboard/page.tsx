@@ -160,7 +160,7 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full font-sans bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+    <div className="flex flex-col h-full font-sans bg-transparent text-[var(--color-text-primary)]">
       <TopBar title="Overview" />
 
       <div className="flex-grow overflow-y-auto">

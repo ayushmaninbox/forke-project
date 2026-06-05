@@ -124,7 +124,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-[420px] animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col items-center mb-7">
           <Image

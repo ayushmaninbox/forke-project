@@ -12,7 +12,7 @@ export default async function PostTaskPage() {
 
   if (user?.role === 'developer') {
     return (
-      <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+      <div className="flex flex-col h-full bg-transparent text-white font-sans">
         <TopBar title="Post task" />
         <div className="flex-grow flex flex-col items-center justify-center p-6 text-center max-w-2xl mx-auto space-y-5 select-none">
           <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 text-accent flex items-center justify-center">
@@ -36,7 +36,7 @@ export default async function PostTaskPage() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Post task" />
 
       <div className="flex-grow overflow-y-auto">

@@ -17,6 +17,7 @@ import {
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline'
 import { RefreshCw } from 'lucide-react'
 import * as THREE from 'three'
+import { QRCodeSVG } from 'qrcode.react'
 
 extend({ MeshLineGeometry, MeshLineMaterial })
 
@@ -313,66 +314,139 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
 
 /* ----------------------------- DOM card faces ----------------------------- */
 
-const faceClass =
-  'rounded-[28px] overflow-hidden border border-white/[0.1] p-7 flex flex-col bg-gradient-to-b from-[#151013] via-[#0d0a0c] to-[#0a0708] shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none'
-
+// Editorial portrait card: black face with a tilted oval portrait, an oversized
+// thin two-line name, role, and footer meta.
 function CardFront({ card }: { card: LanyardCard }) {
   const initial = (card.name?.[0] || 'F').toUpperCase()
+  const first = (card.name || 'Forke').trim().split(' ')[0]
+  const rawHeadline = card.headline || 'Real, verified work.'
+  const headline = rawHeadline.length > 25 ? `${rawHeadline.slice(0, 25)}...` : rawHeadline
   return (
-    <div style={{ width: FACE_W, height: FACE_H }} className={faceClass}>
-      <div className="relative flex items-center justify-between">
-        <span className="text-[#ff8a00] font-mono font-black text-2xl">FORKE //</span>
-        <span className="text-white/35 font-mono font-bold text-[12px] tracking-[0.15em]">DEV CREDENTIAL</span>
-      </div>
+    <div style={{ width: FACE_W, height: FACE_H }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
 
-      <div className="relative flex-1 flex flex-col items-center justify-center gap-6">
-        <div className="w-40 h-40 rounded-full overflow-hidden border-[5px] border-[#ff8a00]/70 bg-[#ff8a00]/10 flex items-center justify-center shadow-[0_0_30px_rgba(255,138,0,0.18)]">
-          {card.avatarUrl ? (
-            <img src={card.avatarUrl} alt={card.name} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-6xl font-black text-[#ff8a00]">{initial}</span>
-          )}
+      {/* Header: dots + URL */}
+      <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <div className="flex items-center gap-1.5">
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+        </div>
+        <span className="text-[#ff8a00] text-[15px] tracking-tight">forke.space</span>
+      </div>
+      <div className="h-px bg-white/20" />
+
+      {/* Tall tilted capsule portrait — slanted right like the indicators */}
+      <div className="relative flex-1">
+        <div
+          className="absolute left-1/2 top-1/2 w-[72%] h-[94%]"
+          style={{ transform: 'translate(-50%, -50%) rotate(25deg)' }}
+        >
+          {/* the photo is clipped to a vertical pill/capsule and counter-rotated upright */}
+          <div
+            className="w-full h-full bg-[#161616] flex items-center justify-center rounded-full overflow-hidden"
+          >
+            {card.avatarUrl ? (
+              <img
+                src={card.avatarUrl}
+                alt={card.name}
+                className="w-full h-full object-cover"
+                style={{ transform: 'rotate(-25deg) scale(1.4)' }}
+                draggable={false}
+              />
+            ) : (
+              <span className="text-[120px] font-light text-white/80" style={{ transform: 'rotate(-25deg)' }}>{initial}</span>
+            )}
+          </div>
         </div>
 
-        <div className="w-full space-y-3">
-          <Field><span className="font-bold text-white text-[22px]">{card.name}</span></Field>
-          <Field><span className="font-mono font-bold text-[#ff8a00] text-[18px]">LVL {card.level} · {card.title}</span></Field>
-          <Field><span className="text-white/70 text-[16px]">{card.headline || 'Building real, verified work.'}</span></Field>
+        {/* Oversized editorial serif stacked name overlapping the portrait bottom-left */}
+        <div className="absolute left-6 z-10 max-w-[85%]" style={{ bottom: '-44px' }}>
+          {(() => {
+            const nameParts = (card.name || 'Forke').trim().split(/\s+/)
+            const firstName = nameParts[0] || 'Forke'
+            const lastName = nameParts.slice(1).join(' ')
+            const maxPartLength = Math.max(firstName.length, lastName.length)
+            const fontSize = maxPartLength > 15 ? '32px' : maxPartLength > 10 ? '42px' : '52px'
+            return (
+              <h2 className="text-white font-serif italic leading-[0.8] tracking-tight" style={{ fontSize }}>
+                <div>{firstName}</div>
+                {lastName && <div className="opacity-95">{lastName}</div>}
+              </h2>
+            )
+          })()}
         </div>
       </div>
 
-      <div className="relative">
-        <div className="flex items-end gap-[3px] h-9 opacity-25">
-          {BARS.map((w, i) => <span key={i} className="bg-white" style={{ width: w, height: '100%' }} />)}
-        </div>
-        <p className="text-[11px] font-mono text-white/30 tracking-[0.12em] mt-2">VERIFIED · PROOF OF WORK · FORKE.SPACE</p>
+      {/* Role line (right-aligned) */}
+      <div className="px-6 pt-3 pb-3 flex items-end justify-end">
+        <span className="text-white/85 text-[19px] tracking-tight">{card.title}</span>
       </div>
+      <div className="h-px bg-white/20 mx-6" />
+
+      {/* Identity row: level/headline + handle */}
+      <div className="px-6 py-4 flex items-start justify-between gap-3">
+        <div className="leading-snug min-w-0">
+          <p className="text-white text-[15px] tracking-tight">Level {card.level} Builder</p>
+          <p className="text-white/65 text-[14px] tracking-tight truncate">{headline}</p>
+        </div>
+        <span className="text-[#ff8a00] text-[18px] tracking-tight whitespace-nowrap">@{card.username || 'forke'}</span>
+      </div>
+      <div className="h-px bg-white/20 mx-6" />
+      <div className="h-3" />
     </div>
   )
 }
 
+// Back face: same black card + dots/URL header, then just the white Forky mark,
+// the @handle and the "Developer Network" tagline centered — no oval, no footer.
 function CardBack({ card }: { card: LanyardCard }) {
+  const profileUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${card.username || 'forke'}`
+    : `https://forke.space/${card.username || 'forke'}`
+
   return (
-    <div style={{ width: FACE_W, height: FACE_H }} className={faceClass}>
-      <div className="relative flex items-center justify-between">
-        <span className="text-white/30 font-mono font-bold text-[12px] tracking-[0.15em]">FORKE NETWORK</span>
-        <span className="text-[#ff8a00] font-mono font-black text-2xl">//</span>
+    <div style={{ width: FACE_W, height: FACE_H }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">
+      <style>{`
+        .lanyard-qr image {
+          filter: brightness(0) invert(1);
+        }
+      `}</style>
+
+      {/* Header: dots + URL */}
+      <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <div className="flex items-center gap-1.5">
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+          <span className="w-[6px] h-[13px] rounded-full bg-white" style={{ transform: 'rotate(25deg)' }} />
+        </div>
+        <span className="text-[#ff8a00] text-[15px] tracking-tight">forke.space</span>
       </div>
-      <div className="relative flex-1 flex flex-col items-center justify-center gap-3">
-        <img src={FORKY_BACK} alt="Forky" className="w-[300px] h-[300px] object-contain drop-shadow-[0_0_36px_rgba(255,138,0,0.22)]" />
-        <span className="text-[#ff8a00] font-mono font-black text-3xl">@{card.username || 'forke'}</span>
+      <div className="h-px bg-white/20" />
+
+      {/* Centered QR code + handle + tagline */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+        <QRCodeSVG
+          value={profileUrl}
+          size={220}
+          bgColor="#0a0a0a"
+          fgColor="#ffffff"
+          level="H"
+          imageSettings={{
+            src: FORKY_BACK,
+            height: 60,
+            width: 60,
+            excavate: true,
+          }}
+          className="lanyard-qr"
+        />
+        <div className="text-center">
+          <h2 className="text-white font-light leading-none tracking-tight" style={{ fontSize: '38px' }}>
+            @{card.username || 'forke'}
+          </h2>
+          <p className="text-[#ff8a00] text-[15px] tracking-[0.25em] uppercase mt-3">Developer Network</p>
+        </div>
       </div>
-      <p className="relative text-center text-[11px] font-mono text-white/30 tracking-[0.18em]">FORKE // DEVELOPER NETWORK</p>
     </div>
   )
 }
 
-function Field({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="w-full text-center py-3 rounded-2xl border border-[#ff8a00]/25 bg-white/[0.015]">
-      {children}
-    </div>
-  )
-}
-
-const BARS = ['3px', '5px', '2px', '7px', '3px', '2px', '6px', '3px', '4px', '8px', '2px', '5px', '3px', '6px', '4px', '2px', '7px', '3px', '5px', '4px', '2px', '6px', '8px', '3px', '4px', '5px', '2px', '7px', '3px', '4px', '6px', '2px', '5px', '3px', '8px', '4px', '2px', '6px', '3px', '5px']

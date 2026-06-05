@@ -119,7 +119,7 @@ export default async function AnalyticsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Analytics" />
 
       <div className="flex-grow overflow-y-auto">
@@ -207,7 +207,7 @@ export default async function AnalyticsPage() {
 
             {/* No data indicator */}
             {dbStats.totalCount === 0 && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-[var(--color-bg)]/80">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-transparent/80">
                 <AlertTriangle className="w-5 h-5 text-[var(--color-text-muted)]" />
                 <p className="text-[13px] text-[var(--color-text-muted)]">
                   No data yet — {isOwner ? 'post your first task' : 'claim your first task'}

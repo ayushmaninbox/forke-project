@@ -65,7 +65,7 @@ export default async function MessagesPage({
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Messages" />
 
       <div className="flex-grow p-5 md:p-8 select-none max-w-5xl mx-auto w-full min-h-0">

@@ -64,7 +64,7 @@ export default async function EscrowPage() {
     .reduce((sum, r) => sum + r.amount, 0)
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-bg)] text-white font-sans">
+    <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Escrow" />
 
       <div className="flex-grow overflow-y-auto">

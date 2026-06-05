@@ -23,6 +23,7 @@ import ToastContainer from '@/components/shared/Toast'
 
 import MobileMenuTrigger from '@/components/dashboard/MobileMenuTrigger'
 import { resolveAvatarUrl } from '@/lib/utils/avatar'
+import DotPatternBackground from '@/components/shared/DotPatternBackground'
 
 export default async function AppLayout({
   children,
@@ -100,6 +101,7 @@ export default async function AppLayout({
     return (
       <DashboardProvider>
         <div className="flex h-screen bg-[#070709] overflow-hidden theme-ember relative">
+          <DotPatternBackground />
           <main className="flex-grow flex flex-col min-w-0 overflow-y-auto relative z-10">
             {children}
           </main>
@@ -112,6 +114,7 @@ export default async function AppLayout({
   return (
     <DashboardProvider>
       <div className="flex h-screen bg-[var(--color-bg-surface)] overflow-hidden theme-ember relative">
+        <DotPatternBackground />
 
         <Sidebar
           user={{
