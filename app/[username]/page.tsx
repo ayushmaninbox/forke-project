@@ -33,7 +33,19 @@ export async function generateMetadata({
 
   const level = getLevelFromXp(dbUser.xp || 0)
   const title = `${dbUser.name} (@${dbUser.username})`
-  const description = `${dbUser.bio || dbUser.headline || 'Building real, verified work on Forke.'} · Level ${level} ${getLevelTitle(level)}.`
+
+  // Social/SEO descriptions should be ~110-160 chars. Bios can be long (2500
+  // char limit), so trim to a level-aware budget, cut on a word boundary, and
+  // append the "· Level N Title" suffix without blowing past ~160 chars.
+  const levelSuffix = ` · Level ${level} ${getLevelTitle(level)}`
+  const intro = (dbUser.headline || dbUser.bio || 'Building real, verified work on Forke.')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const maxIntro = Math.max(40, 158 - levelSuffix.length)
+  const trimmedIntro = intro.length > maxIntro
+    ? `${intro.slice(0, maxIntro).replace(/\s+\S*$/, '')}…`
+    : intro
+  const description = `${trimmedIntro}${levelSuffix}`
 
   // Cache-buster: a short hash of everything the OG image renders. When the user
   // changes their avatar/name/headline/level, this version changes, so the

@@ -78,6 +78,13 @@ export interface ProfileData {
   heatmap: { date: string; count: number }[]
 }
 
+// Tiny stable string hash (djb2) → short base36 token for share-URL versioning.
+function djb2(str: string): string {
+  let h = 5381
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0
+  return h.toString(36).slice(0, 8)
+}
+
 const ACH_ICON = {
   first: Zap, streak: Flame, boss: Target, legend: Crown,
   loot: Trophy, untouchable: Award, sprint: Zap, night: Sparkles,
@@ -97,6 +104,14 @@ export default function PublicProfileView({
 }) {
   const [shareOpen, setShareOpen] = useState(false)
   const [patternNum, setPatternNum] = useState<number | null>(null)
+
+  // Versioned share URL: appends ?v=<hash of name/avatar/headline/bio/xp> so the
+  // shared link is a *new* URL to scrapers (WhatsApp/LinkedIn etc.) whenever the
+  // profile changes — they re-fetch the OG preview instead of serving a stale
+  // cached one keyed on the bare URL. Hash matches the og:image versioning.
+  const shareVersion = djb2(`${data.name}|${data.avatarUrl || ''}|${data.headline || ''}|${data.bio || ''}|${data.xp}`)
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.forke.space'
+  const shareUrl = `${origin}/${data.username}?v=${shareVersion}`
   
   useEffect(() => {
     const organicPatterns = [1, 2, 3, 5]
@@ -255,7 +270,7 @@ export default function PublicProfileView({
       <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full">
         <div className="lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
-        {shareOpen && <ShareModal username={data.username} onClose={() => setShareOpen(false)} />}
+        {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
       </div>
     )
   }
@@ -267,7 +282,7 @@ export default function PublicProfileView({
     <div className="grid lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start">
       <div className="lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
       <div className="space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
-      {shareOpen && <ShareModal username={data.username} onClose={() => setShareOpen(false)} />}
+      {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
     </div>
   )
 }
@@ -637,12 +652,13 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
 /* --------------------------- Forke-Branded Share Modal --------------------------- */
 
 interface ShareModalProps {
-  username: string
+  /** Versioned profile URL (…?v=hash) so scrapers always re-fetch fresh OG data. */
+  shareUrl: string
   onClose: () => void
 }
 
-function ShareModal({ username, onClose }: ShareModalProps) {
-  const profileUrl = typeof window !== 'undefined' ? `${window.location.origin}/${username}` : `https://forke.space/${username}`
+function ShareModal({ shareUrl, onClose }: ShareModalProps) {
+  const profileUrl = shareUrl
   const [copied, setCopied] = useState(false)
 
   const handleCopy = async () => {
