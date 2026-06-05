@@ -243,4 +243,22 @@ ALTER TABLE "system_settings" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "tasks" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "developers" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "admin_audit_log" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "admin_audit_log" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "sql_query_requests" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"requester_id" uuid NOT NULL,
+	"query_text" text NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"reviewed_by" uuid,
+	"reviewed_at" timestamp,
+	"rejection_reason" text,
+	"execution_duration_ms" integer,
+	"execution_results" jsonb,
+	"execution_error" text
+);
+--> statement-breakpoint
+ALTER TABLE "sql_query_requests" ADD CONSTRAINT "sql_query_requests_requester_id_admins_id_fk" FOREIGN KEY ("requester_id") REFERENCES "public"."admins"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sql_query_requests" ADD CONSTRAINT "sql_query_requests_reviewed_by_admins_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sql_query_requests" ENABLE ROW LEVEL SECURITY;
+

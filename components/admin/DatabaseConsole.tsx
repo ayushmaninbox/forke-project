@@ -9,7 +9,10 @@ import {
   updateTableRecord, 
   deleteTableRecords,
   logTableExportAction,
-  executeSQLQuery
+  executeSQLQuery,
+  submitSQLQueryRequest,
+  getSQLQueryRequests,
+  reviewSQLQueryRequest
 } from '@/lib/db-client-actions'
 import { 
   Database, 
@@ -54,6 +57,7 @@ interface DatabaseConsoleProps {
     name: string
     role: 'super_admin' | 'admin'
   } | null
+  initialTab?: 'data' | 'structure' | 'sql'
 }
 
 interface TableFilter {
@@ -95,7 +99,185 @@ function SQLHighlightLine({ text }: { text: string }) {
   )
 }
 
-export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) {
+interface SQLExplanation {
+  action: string
+  description: string
+  isWarning: boolean
+  warningText?: string
+}
+
+function explainSQL(queryText: string): SQLExplanation | null {
+  if (!queryText || !queryText.trim()) return null;
+
+  // 1. Sanitize: Strip line comments and block comments
+  let sanitized = queryText
+    .replace(/--.*$/gm, '') // Strip single line comments
+    .replace(/\/\*[\s\S]*?\*\//g, '') // Strip block comments
+    .trim();
+
+  // If after sanitization the query is empty, return null
+  if (!sanitized) return null;
+
+  // Remove multiple spaces, make uppercase for parsing matching
+  const normalized = sanitized.replace(/\s+/g, ' ');
+  const upperQuery = normalized.toUpperCase();
+
+  // Helper to extract table name from query patterns
+  const getTableName = (verb: string, queryStr: string): string => {
+    try {
+      let regex: RegExp;
+      if (verb === 'SELECT' || verb === 'DELETE') {
+        regex = /FROM\s+(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'INSERT') {
+        regex = /INTO\s+(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'UPDATE') {
+        regex = /UPDATE\s+(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'CREATE') {
+        regex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'DROP') {
+        regex = /DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'ALTER') {
+        regex = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else if (verb === 'TRUNCATE') {
+        regex = /TRUNCATE\s+(?:TABLE\s+)?(?:public\.)?["']?([a-zA-Z0-9_]+)["']?/i;
+      } else {
+        return '';
+      }
+
+      const match = queryStr.match(regex);
+      return match ? match[1] : '';
+    } catch (e) {
+      return '';
+    }
+  };
+
+  // Find the primary starting verb of the first statement
+  const firstWord = upperQuery.split(' ')[0] || '';
+
+  // 1. SELECT query
+  if (firstWord === 'SELECT') {
+    const tableName = getTableName('SELECT', normalized);
+    const hasWhere = upperQuery.includes(' WHERE ');
+    const description = tableName
+      ? `Reads and retrieves records from the "${tableName}" table${hasWhere ? ' matching specific search criteria' : ''}.`
+      : `Reads and retrieves records from the database${hasWhere ? ' matching specific search criteria' : ''}.`;
+    return {
+      action: 'Read Records (SELECT)',
+      description,
+      isWarning: false
+    };
+  }
+
+  // 2. INSERT query
+  if (firstWord === 'INSERT') {
+    const tableName = getTableName('INSERT', normalized);
+    const description = tableName
+      ? `Adds/inserts new record row(s) into the "${tableName}" table.`
+      : 'Adds/inserts new record row(s) into the database.';
+    return {
+      action: 'Insert Records (INSERT)',
+      description,
+      isWarning: false
+    };
+  }
+
+  // 3. UPDATE query
+  if (firstWord === 'UPDATE') {
+    const tableName = getTableName('UPDATE', normalized);
+    const hasWhere = upperQuery.includes(' WHERE ');
+    const description = tableName
+      ? `Modifies existing records in the "${tableName}" table${hasWhere ? ' matching specific criteria' : ''}.`
+      : `Modifies existing records in the database${hasWhere ? ' matching specific criteria' : ''}.`;
+    
+    return {
+      action: 'Modify Records (UPDATE)',
+      description,
+      isWarning: !hasWhere,
+      warningText: !hasWhere ? 'This query does not have a WHERE clause and will update ALL rows in the table!' : undefined
+    };
+  }
+
+  // 4. DELETE query
+  if (firstWord === 'DELETE') {
+    const tableName = getTableName('DELETE', normalized);
+    const hasWhere = upperQuery.includes(' WHERE ');
+    const description = tableName
+      ? `Deletes records from the "${tableName}" table${hasWhere ? ' matching specific criteria' : ''}.`
+      : `Deletes records from the database${hasWhere ? ' matching specific criteria' : ''}.`;
+    
+    return {
+      action: 'Delete Records (DELETE)',
+      description,
+      isWarning: !hasWhere,
+      warningText: !hasWhere ? 'This query does not have a WHERE clause and will delete ALL rows in the table!' : undefined
+    };
+  }
+
+  // 5. CREATE query
+  if (firstWord === 'CREATE') {
+    const tableName = getTableName('CREATE', normalized);
+    const isTable = upperQuery.includes(' TABLE ');
+    const description = isTable && tableName
+      ? `Creates a new database table structure named "${tableName}".`
+      : 'Creates a new database schema element (table, index, view, or function).';
+    return {
+      action: 'Create Schema Object (CREATE)',
+      description,
+      isWarning: false
+    };
+  }
+
+  // 6. DROP query
+  if (firstWord === 'DROP') {
+    const tableName = getTableName('DROP', normalized);
+    const isTable = upperQuery.includes(' TABLE ');
+    const description = isTable && tableName
+      ? `Permanently destroys and deletes the table "${tableName}" and all of its associated data.`
+      : 'Permanently destroys and deletes a database schema element.';
+    return {
+      action: 'Drop Schema Object (DROP)',
+      description,
+      isWarning: true,
+      warningText: 'This action is destructive and will result in irreversible data loss!'
+    };
+  }
+
+  // 7. ALTER query
+  if (firstWord === 'ALTER') {
+    const tableName = getTableName('ALTER', normalized);
+    const description = tableName
+      ? `Alters and modifies the schema structure/definition of the "${tableName}" table.`
+      : 'Alters and modifies a database schema object structure.';
+    return {
+      action: 'Alter Schema Object (ALTER)',
+      description,
+      isWarning: false
+    };
+  }
+
+  // 8. TRUNCATE query
+  if (firstWord === 'TRUNCATE') {
+    const tableName = getTableName('TRUNCATE', normalized);
+    const description = tableName
+      ? `Deletes all rows and empties the "${tableName}" table quickly.`
+      : 'Deletes all rows and empties the target table(s).';
+    return {
+      action: 'Empty Table (TRUNCATE)',
+      description,
+      isWarning: true,
+      warningText: 'This action is destructive and will result in irreversible loss of all table data!'
+    };
+  }
+
+  // Fallback for custom or multi-statement commands
+  return {
+    action: 'Custom Database Command',
+    description: 'Executes a custom query command against the database.',
+    isWarning: false
+  };
+}
+
+export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseConsoleProps) {
   const isSuperAdmin = currentAdmin?.role === 'super_admin'
 
   // Tables state
@@ -110,18 +292,90 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
   const [rows, setRows] = useState<any[]>([])
   const [totalRecords, setTotalRecords] = useState<number>(0)
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false)
-  const [activeSubTab, setActiveSubTab] = useState<'data' | 'structure' | 'sql'>('data')
+  const [activeSubTab, setActiveSubTab] = useState<'data' | 'structure' | 'sql'>(initialTab || 'data')
 
   // SQL Editor state
   const [sqlQuery, setSqlQuery] = useState<string>('SELECT * FROM subscribers LIMIT 10;')
   const [isExecutingSql, setIsExecutingSql] = useState<boolean>(false)
   const [sqlResult, setSqlResult] = useState<any>(null)
 
-  async function handleExecuteQuery() {
-    if (!isSuperAdmin) {
-      toast('Access Denied: Only Super Admins can execute custom SQL commands.', 'error')
-      return
+  // SQL Editor request-approval states
+  const [sqlEditorMode, setSqlEditorMode] = useState<'console' | 'requests'>('console')
+  const [requestsList, setRequestsList] = useState<any[]>([])
+  const [isLoadingRequests, setIsLoadingRequests] = useState<boolean>(false)
+  const [showRejectionModal, setShowRejectionModal] = useState<string | null>(null)
+  const [rejectionReason, setRejectionReason] = useState<string>('')
+  const [showRequestConfirmModal, setShowRequestConfirmModal] = useState<boolean>(false)
+  const [lastExecutedQueryForRequest, setLastExecutedQueryForRequest] = useState<string>('')
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState<boolean>(false)
+  const [isReviewingRequest, setIsReviewingRequest] = useState<string | null>(null)
+  const [expandedRequestResultsId, setExpandedRequestResultsId] = useState<string | null>(null)
+
+  async function fetchRequests() {
+    setIsLoadingRequests(true)
+    try {
+      const res = await getSQLQueryRequests()
+      if (res.success && res.requests) {
+        setRequestsList(res.requests)
+      }
+    } catch (err: any) {
+      toast(err.message || 'Failed to fetch SQL requests.', 'error')
+    } finally {
+      setIsLoadingRequests(false)
     }
+  }
+
+  // Load requests once when activeSubTab changes to sql
+  useEffect(() => {
+    if (activeSubTab === 'sql') {
+      fetchRequests()
+    }
+  }, [activeSubTab])
+
+  const pendingRequestsCount = requestsList.filter(r => r.status === 'pending').length
+
+  async function handleSubmitRequest() {
+    if (!lastExecutedQueryForRequest.trim()) return
+    setIsSubmittingRequest(true)
+    try {
+      const res = await submitSQLQueryRequest(lastExecutedQueryForRequest)
+      if (res.success) {
+        toast('Approval request successfully sent to Super Admins!', 'success')
+        setShowRequestConfirmModal(false)
+        setLastExecutedQueryForRequest('')
+        fetchRequests()
+      } else {
+        toast(res.error || 'Failed to submit request.', 'error')
+      }
+    } catch (err: any) {
+      toast(err.message || 'Submission error.', 'error')
+    } finally {
+      setIsSubmittingRequest(false)
+    }
+  }
+
+  async function handleReviewRequest(requestId: string, action: 'approve' | 'reject', reason?: string) {
+    setIsReviewingRequest(requestId)
+    try {
+      const res = await reviewSQLQueryRequest(requestId, action, reason)
+      if (res.success) {
+        toast(`Request successfully ${action === 'approve' ? 'approved & executed' : 'rejected'}.`, 'success')
+        if (action === 'reject') {
+          setShowRejectionModal(null)
+          setRejectionReason('')
+        }
+        fetchRequests()
+      } else {
+        toast(res.error || 'Failed to process request.', 'error')
+      }
+    } catch (err: any) {
+      toast(err.message || 'Review processing error.', 'error')
+    } finally {
+      setIsReviewingRequest(null)
+    }
+  }
+
+  async function handleExecuteQuery() {
     if (!sqlQuery.trim()) {
       toast('Please enter a query to run.', 'error')
       return
@@ -130,11 +384,17 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setSqlResult(null)
     try {
       const res = await executeSQLQuery(sqlQuery)
-      setSqlResult(res)
-      if (res.success) {
-        toast('Query executed successfully!', 'success')
+      if (res.requiresApproval) {
+        setLastExecutedQueryForRequest(sqlQuery)
+        setShowRequestConfirmModal(true)
+        toast('This query modifies data and requires Super Admin approval.', 'info')
       } else {
-        toast(res.error || 'Failed to execute query.', 'error')
+        setSqlResult(res)
+        if (res.success) {
+          toast('Query executed successfully!', 'success')
+        } else {
+          toast(res.error || 'Failed to execute query.', 'error')
+        }
       }
     } catch (err: any) {
       setSqlResult({ success: false, headers: [], rows: [], error: err.message || 'Execution error.' })
@@ -257,9 +517,12 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     setIsLoadingTables(true)
     const res = await getDatabaseTables()
     if (res.success && res.tables) {
-      setTablesList(res.tables)
-      if (res.tables.length > 0 && !selectedTable) {
-        setSelectedTable(res.tables[0].name)
+      const visibleTables = isSuperAdmin
+        ? res.tables
+        : res.tables.filter((t: any) => t.name !== 'sql_query_requests')
+      setTablesList(visibleTables)
+      if (visibleTables.length > 0 && !selectedTable) {
+        setSelectedTable(visibleTables[0].name)
       }
     }
     setIsLoadingTables(false)
@@ -571,253 +834,258 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
     <div className="flex h-full min-h-0 border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.005] select-none text-left">
 
       {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
-      <aside className="hidden lg:flex w-60 border-r border-white/[0.06] flex-col shrink-0 bg-[#0d0d11]">
-        
-        {/* Sidebar Header & Search */}
-        <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
-          <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
-            <Database className="w-3.5 h-3.5 text-accent" />
-            <span>Tables ({tablesList.length})</span>
+      {/* --- LEFT SIDEBAR: TABLES LIST (desktop only) --- */}
+      {initialTab !== 'sql' && (
+        <aside className="hidden lg:flex w-60 border-r border-white/[0.06] flex-col shrink-0 bg-[#0d0d11]">
+          
+          {/* Sidebar Header & Search */}
+          <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
+            <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+              <Database className="w-3.5 h-3.5 text-accent" />
+              <span>Tables ({tablesList.length})</span>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+              <input
+                type="text"
+                placeholder="Search tables..."
+                value={tableSearchQuery}
+                onChange={(e) => setTableSearchQuery(e.target.value)}
+                className="w-full h-8 bg-white/[0.02] border border-white/[0.06] rounded-md pl-8 pr-2 text-xs text-white focus:outline-none focus:border-accent/40"
+              />
+            </div>
           </div>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-            <input
-              type="text"
-              placeholder="Search tables..."
-              value={tableSearchQuery}
-              onChange={(e) => setTableSearchQuery(e.target.value)}
-              className="w-full h-8 bg-white/[0.02] border border-white/[0.06] rounded-md pl-8 pr-2 text-xs text-white focus:outline-none focus:border-accent/40"
-            />
-          </div>
-        </div>
 
-        {/* Scrollable table name links with counts and padlock status */}
-        <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5 relative">
-          {isLoadingTables ? (
-            <div className="text-center py-6 text-xs text-white/30">Loading tables...</div>
-          ) : filteredTables.length === 0 ? (
-            <div className="text-center py-6 text-xs text-white/30">No tables found</div>
-          ) : (
-            filteredTables.map((t) => {
-              const isSelected = selectedTable === t.name
-              const isMenuOpen = sidebarActiveTableMenu === t.name
-              return (
-                <div
-                  key={t.name}
-                  onClick={() => handleSelectTable(t.name)}
-                  className={cn(
-                    "group/table flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer border relative gap-2 min-w-0",
-                    isSelected
-                      ? "bg-accent/10 text-accent font-semibold border-accent/20"
-                      : "text-white/60 hover:text-white hover:bg-white/[0.02] border-transparent"
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="truncate">{t.name}</span>
-                    {t.rlsEnabled && (
-                      <span className="shrink-0" title="Row Level Security (RLS) Active">
-                        <Lock className="w-3 h-3 text-amber-500" />
+          {/* Scrollable table name links with counts and padlock status */}
+          <div className="flex-grow overflow-y-auto p-1.5 space-y-0.5 relative">
+            {isLoadingTables ? (
+              <div className="text-center py-6 text-xs text-white/30">Loading tables...</div>
+            ) : filteredTables.length === 0 ? (
+              <div className="text-center py-6 text-xs text-white/30">No tables found</div>
+            ) : (
+              filteredTables.map((t) => {
+                const isSelected = selectedTable === t.name
+                const isMenuOpen = sidebarActiveTableMenu === t.name
+                return (
+                  <div
+                    key={t.name}
+                    onClick={() => handleSelectTable(t.name)}
+                    className={cn(
+                      "group/table flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors cursor-pointer border relative gap-2 min-w-0",
+                      isSelected
+                        ? "bg-accent/10 text-accent font-semibold border-accent/20"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.02] border-transparent"
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <span className="truncate">{t.name}</span>
+                      {t.rlsEnabled && (
+                        <span className="shrink-0" title="Row Level Security (RLS) Active">
+                          <Lock className="w-3 h-3 text-amber-500" />
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Row count right-aligned */}
+                    {tableRowsCountEnabled && (
+                      <span className={cn(
+                        "text-[10px] text-white/20 font-sans select-none shrink-0",
+                        isMenuOpen ? "hidden" : "group-hover/table:hidden block"
+                      )}>
+                        {t.rowCount}
                       </span>
                     )}
-                  </div>
-                  
-                  {/* Row count right-aligned */}
-                  {tableRowsCountEnabled && (
-                    <span className={cn(
-                      "text-[10px] text-white/20 font-sans select-none shrink-0",
-                      isMenuOpen ? "hidden" : "group-hover/table:hidden block"
+
+                    {/* Context menu trigger */}
+                    <div className={cn(
+                      "items-center shrink-0",
+                      isMenuOpen ? "flex" : "hidden group-hover/table:flex"
                     )}>
-                      {t.rowCount}
-                    </span>
-                  )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSidebarActiveTableMenu(isMenuOpen ? '' : t.name)
+                        }}
+                        className="p-0.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-                  {/* Context menu trigger */}
-                  <div className={cn(
-                    "items-center shrink-0",
-                    isMenuOpen ? "flex" : "hidden group-hover/table:flex"
-                  )}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSidebarActiveTableMenu(isMenuOpen ? '' : t.name)
-                      }}
-                      className="p-0.5 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <MoreHorizontal className="w-3.5 h-3.5" />
-                    </button>
+                    {isMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setSidebarActiveTableMenu('') }} />
+                        <div className="absolute right-2 top-7 mt-1 w-40 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1 z-50 flex flex-col text-xs text-white/80 select-none font-sans">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSelectTable(t.name)
+                              setActiveSubTab('data')
+                              setSidebarActiveTableMenu('')
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Table className="w-3.5 h-3.5" />
+                            <span>Browse data</span>
+                          </button>
+                          {isSuperAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSelectTable(t.name)
+                              setActiveSubTab('structure')
+                              setSidebarActiveTableMenu('')
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-white/60">
+                              <rect width="18" height="6" x="3" y="4" rx="1" />
+                              <rect width="18" height="6" x="3" y="14" rx="1" />
+                            </svg>
+                            <span>Alter table</span>
+                          </button>
+                          )}
+                          {isSuperAdmin && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              toast(`Row Level Security toggled for table ${t.name}!`, 'success')
+                              setSidebarActiveTableMenu('')
+                              await fetchTables()
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2.5 cursor-pointer transition-colors text-white/80 font-semibold"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-white/70" />
+                            <span>{t.rlsEnabled ? 'Disable RLS' : 'Enable RLS'}</span>
+                          </button>
+                          )}
+                          <div className="border-t border-white/[0.06] my-1" />
+                          {isSuperAdmin && (
+                          <>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              if (confirm(`Are you sure you want to TRUNCATE table "${t.name}"? This deletes all rows.`)) {
+                                toast(`Table "${t.name}" truncated!`, 'success')
+                                fetchTableMetadataAndData()
+                              }
+                              setSidebarActiveTableMenu('')
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Scissors className="w-3.5 h-3.5 text-white/60" />
+                            <span>Truncate</span>
+                          </button>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              if (confirm(`Are you sure you want to DROP table "${t.name}"? This deletes the table forever.`)) {
+                                toast(`Table "${t.name}" dropped!`, 'success')
+                              }
+                              setSidebarActiveTableMenu('')
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/15 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            <span>Drop</span>
+                          </button>
+                          </>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
-
-                  {isMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setSidebarActiveTableMenu('') }} />
-                      <div className="absolute right-2 top-7 mt-1 w-40 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1 z-50 flex flex-col text-xs text-white/80 select-none font-sans">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSelectTable(t.name)
-                            setActiveSubTab('data')
-                            setSidebarActiveTableMenu('')
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <Table className="w-3.5 h-3.5" />
-                          <span>Browse data</span>
-                        </button>
-                        {isSuperAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleSelectTable(t.name)
-                            setActiveSubTab('structure')
-                            setSidebarActiveTableMenu('')
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-white/60">
-                            <rect width="18" height="6" x="3" y="4" rx="1" />
-                            <rect width="18" height="6" x="3" y="14" rx="1" />
-                          </svg>
-                          <span>Alter table</span>
-                        </button>
-                        )}
-                        {isSuperAdmin && (
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            toast(`Row Level Security toggled for table ${t.name}!`, 'success')
-                            setSidebarActiveTableMenu('')
-                            await fetchTables()
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] hover:text-white flex items-center gap-2.5 cursor-pointer transition-colors text-white/80 font-semibold"
-                        >
-                          <Lock className="w-3.5 h-3.5 text-white/70" />
-                          <span>{t.rlsEnabled ? 'Disable RLS' : 'Enable RLS'}</span>
-                        </button>
-                        )}
-                        <div className="border-t border-white/[0.06] my-1" />
-                        {isSuperAdmin && (
-                        <>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            if (confirm(`Are you sure you want to TRUNCATE table "${t.name}"? This deletes all rows.`)) {
-                              toast(`Table "${t.name}" truncated!`, 'success')
-                              fetchTableMetadataAndData()
-                            }
-                            setSidebarActiveTableMenu('')
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <Scissors className="w-3.5 h-3.5 text-white/60" />
-                          <span>Truncate</span>
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            if (confirm(`Are you sure you want to DROP table "${t.name}"? This deletes the table forever.`)) {
-                              toast(`Table "${t.name}" dropped!`, 'success')
-                            }
-                            setSidebarActiveTableMenu('')
-                          }}
-                          className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-red-500/15 hover:text-red-400 flex items-center gap-2 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                          <span>Drop</span>
-                        </button>
-                        </>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-
-        {/* Sidebar Footer with Tools */}
-        <div className="p-3 border-t border-white/[0.06] flex items-center gap-2 shrink-0 relative bg-white/[0.01]">
-          
-          {/* Tools / Hammer Button */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowToolsPopover(!showToolsPopover)
-              }}
-              className={cn(
-                "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
-                showToolsPopover
-                  ? "border-accent bg-accent/15 text-accent"
-                  : "border-white/[0.06] bg-white/[0.02] text-white/60 hover:text-white hover:border-white/12"
-              )}
-              title="Schema Tools"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="m15 5 4 4" />
-                <path d="M21.5 2v6h-6l3-3-5.2-5.2-6.1 6.1a2 2 0 0 0 0 2.8l10.4 10.4a2 2 0 0 0 2.8 0l6.1-6.1-5.2-5.2 3-3Z" />
-                <path d="m2 22 5.5-5.5" />
-                <path d="m8.5 12.5 1 1" />
-              </svg>
-            </button>
-
-            {showToolsPopover && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowToolsPopover(false)} />
-                <div className="absolute left-0 bottom-10 w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col">
-                  <button
-                    onClick={() => {
-                      const ddl = generateDDL()
-                      navigator.clipboard.writeText(ddl)
-                      toast('Database schema copied to clipboard!', 'success')
-                      setShowToolsPopover(false)
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy database schema</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const context = {
-                        table: selectedTable,
-                        columns,
-                        primaryKeys,
-                        totalRecords,
-                        rows
-                      }
-                      exportToJson(context, `${selectedTable}_context.json`)
-                      setShowToolsPopover(false)
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download context</span>
-                  </button>
-                </div>
-              </>
+                )
+              })
             )}
           </div>
-        </div>
-      </aside>
+
+          {/* Sidebar Footer with Tools */}
+          <div className="p-3 border-t border-white/[0.06] flex items-center gap-2 shrink-0 relative bg-white/[0.01]">
+            
+            {/* Tools / Hammer Button */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowToolsPopover(!showToolsPopover)
+                }}
+                className={cn(
+                  "p-2 rounded-lg border flex items-center justify-center transition-colors cursor-pointer",
+                  showToolsPopover
+                    ? "border-accent bg-accent/15 text-accent"
+                    : "border-white/[0.06] bg-white/[0.02] text-white/60 hover:text-white hover:border-white/12"
+                )}
+                title="Schema Tools"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <path d="m15 5 4 4" />
+                  <path d="M21.5 2v6h-6l3-3-5.2-5.2-6.1 6.1a2 2 0 0 0 0 2.8l10.4 10.4a2 2 0 0 0 2.8 0l6.1-6.1-5.2-5.2 3-3Z" />
+                  <path d="m2 22 5.5-5.5" />
+                  <path d="m8.5 12.5 1 1" />
+                </svg>
+              </button>
+
+              {showToolsPopover && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowToolsPopover(false)} />
+                  <div className="absolute left-0 bottom-10 w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col">
+                    <button
+                      onClick={() => {
+                        const ddl = generateDDL()
+                        navigator.clipboard.writeText(ddl)
+                        toast('Database schema copied to clipboard!', 'success')
+                        setShowToolsPopover(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy database schema</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const context = {
+                          table: selectedTable,
+                          columns,
+                          primaryKeys,
+                          totalRecords,
+                          rows
+                        }
+                        exportToJson(context, `${selectedTable}_context.json`)
+                        setShowToolsPopover(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download context</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* --- RIGHT SIDEBAR: CONSOLE VIEW --- */}
       <main className="flex-grow flex flex-col min-w-0 bg-[#070709]/20">
 
         {/* Mobile table selector (replaces the desktop sidebar on small screens) */}
-        <div className="lg:hidden flex items-center gap-2 p-2 border-b border-white/[0.06] shrink-0 bg-white/[0.005]">
-          <Database className="w-4 h-4 text-accent shrink-0" />
-          <div className="flex-grow min-w-0">
-            <Select
-              aria-label="Select table"
-              value={selectedTable}
-              onChange={handleSelectTable}
-              options={tablesList.map((t) => ({ value: t.name, label: t.name }))}
-              placeholder={isLoadingTables ? 'Loading tables…' : 'Select a table'}
-              className="font-mono"
-            />
+        {initialTab !== 'sql' && (
+          <div className="lg:hidden flex items-center gap-2 p-2 border-b border-white/[0.06] shrink-0 bg-white/[0.005]">
+            <Database className="w-4 h-4 text-accent shrink-0" />
+            <div className="flex-grow min-w-0">
+              <Select
+                aria-label="Select table"
+                value={selectedTable}
+                onChange={handleSelectTable}
+                options={tablesList.map((t) => ({ value: t.name, label: t.name }))}
+                placeholder={isLoadingTables ? 'Loading tables…' : 'Select a table'}
+                className="font-mono"
+              />
+            </div>
+            <span className="text-[10px] font-mono text-white/30 shrink-0">{tablesList.length} tables</span>
           </div>
-          <span className="text-[10px] font-mono text-white/30 shrink-0">{tablesList.length} tables</span>
-        </div>
+        )}
 
         {/* Neon style Top Toolbar */}
         <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11]">
@@ -827,43 +1095,52 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
             
             {/* DATA / STRUCTURE Tabs */}
             <div className="flex items-center bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg">
-              <button
-                onClick={() => setActiveSubTab('data')}
-                className={cn(
-                  "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
-                  activeSubTab === 'data'
-                    ? "bg-white/[0.06] text-white shadow-sm"
-                    : "text-white/40 hover:text-white/80"
-                )}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>DATA</span>
-              </button>
-              <button
-                onClick={() => setActiveSubTab('structure')}
-                className={cn(
-                  "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
-                  activeSubTab === 'structure'
-                    ? "bg-white/[0.06] text-white shadow-sm"
-                    : "text-white/40 hover:text-white/80"
-                )}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>STRUCTURE</span>
-              </button>
-              {isSuperAdmin && (
-                <button
-                  onClick={() => setActiveSubTab('sql')}
-                  className={cn(
-                    "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
-                    activeSubTab === 'sql'
-                      ? "bg-white/[0.06] text-white shadow-sm"
-                      : "text-white/40 hover:text-white/80"
+              {initialTab !== 'sql' ? (
+                <>
+                  <button
+                    onClick={() => setActiveSubTab('data')}
+                    className={cn(
+                      "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                      activeSubTab === 'data'
+                        ? "bg-white/[0.06] text-white shadow-sm"
+                        : "text-white/40 hover:text-white/80"
+                    )}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>DATA</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveSubTab('structure')}
+                    className={cn(
+                      "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                      activeSubTab === 'structure'
+                        ? "bg-white/[0.06] text-white shadow-sm"
+                        : "text-white/40 hover:text-white/80"
+                    )}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>STRUCTURE</span>
+                  </button>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={() => setActiveSubTab('sql')}
+                      className={cn(
+                        "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
+                        activeSubTab === 'sql'
+                          ? "bg-white/[0.06] text-white shadow-sm"
+                          : "text-white/40 hover:text-white/80"
+                      )}
+                    >
+                      <Terminal className="w-3.5 h-3.5" />
+                      <span>SQL EDITOR</span>
+                    </button>
                   )}
-                >
-                  <Terminal className="w-3.5 h-3.5" />
+                </>
+              ) : (
+                <div className="px-3 py-1 text-xs font-semibold text-white tracking-wider flex items-center gap-1.5 select-none font-mono text-accent">
+                  <Terminal className="w-3.5 h-3.5 text-accent shrink-0" />
                   <span>SQL EDITOR</span>
-                </button>
+                </div>
               )}
             </div>
 
@@ -1365,160 +1642,387 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
           
           {activeSubTab === 'sql' ? (
             <div className="flex flex-col h-full min-h-0 text-left space-y-4">
-              {/* SQL Query Editor Box */}
-              <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col shrink-0 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
-                    <Terminal className="w-3.5 h-3.5 text-accent" />
-                    <span>SQL Editor Console</span>
-                  </div>
-                  
-                  {/* Query Templates / Snippets */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto max-w-xl no-scrollbar py-0.5">
-                    <span className="text-[10px] text-white/30 uppercase font-semibold shrink-0 mr-1">Templates:</span>
-                    {[
-                      { label: 'Subscribers List', query: 'SELECT * FROM subscribers LIMIT 10;' },
-                      { label: 'Users List', query: 'SELECT * FROM users LIMIT 10;' },
-                      { label: 'Admins List', query: 'SELECT * FROM admins LIMIT 10;' },
-                      { label: 'Database Version', query: 'SELECT version();' }
-                    ].map((t) => (
-                      <button
-                        key={t.label}
-                        onClick={() => setSqlQuery(t.query)}
-                        className="text-[10px] px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08] hover:border-white/12 text-white/60 hover:text-white transition-colors cursor-pointer whitespace-nowrap font-mono"
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+              
+              {/* Inner Tabs: Console vs. Requests Log */}
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2 border-b border-white/[0.06] pb-2 shrink-0">
+                  <button
+                    onClick={() => setSqlEditorMode('console')}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer border",
+                      sqlEditorMode === 'console'
+                        ? "bg-accent/10 text-accent border-accent/20"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.02] border-transparent"
+                    )}
+                  >
+                    Query Console
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSqlEditorMode('requests')
+                      fetchRequests()
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 border",
+                      sqlEditorMode === 'requests'
+                        ? "bg-accent/10 text-accent border-accent/20"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.02] border-transparent"
+                    )}
+                  >
+                    <span>Requests Log</span>
+                    {pendingRequestsCount > 0 && (
+                      <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none animate-pulse">
+                        {pendingRequestsCount}
+                      </span>
+                    )}
+                  </button>
                 </div>
+              )}
 
-                <div className="relative">
-                  <textarea
-                    value={sqlQuery}
-                    onChange={(e) => setSqlQuery(e.target.value)}
-                    placeholder="-- Type your PostgreSQL query here...&#10;SELECT * FROM subscribers LIMIT 10;"
-                    className="w-full h-36 bg-[#070709] border border-white/[0.06] rounded-lg p-3 text-xs font-mono text-white/80 focus:outline-none focus:border-accent/40 resize-y leading-relaxed"
-                    spellCheck={false}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between border-t border-white/[0.04] pt-3">
-                  <div className="text-[10px] text-white/30 font-mono">
-                    Press Run Query to execute against public schema.
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSqlQuery('')
-                        setSqlResult(null)
-                      }}
-                      className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition-colors"
-                    >
-                      Clear
-                    </button>
-                    <button
-                      onClick={handleExecuteQuery}
-                      disabled={isExecutingSql}
-                      className="h-8 px-3 rounded-lg bg-accent text-[#0a0a0a] hover:bg-accent/80 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shadow-lg shadow-accent/5"
-                    >
-                      {isExecutingSql ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Running...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5 fill-current text-[#0a0a0a]" />
-                          <span>Run Query</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* SQL Results View */}
-              <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0 flex flex-col relative overflow-hidden">
-                {isExecutingSql ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2 bg-[#060608]/40 z-10">
-                    <RefreshCw className="w-6 h-6 animate-spin text-accent" />
-                    <p className="text-xs font-medium">Running SQL query...</p>
-                  </div>
-                ) : null}
-
-                {!sqlResult ? (
-                  <div className="flex-grow flex flex-col items-center justify-center text-white/30 space-y-2 py-12">
-                    <Terminal className="w-8 h-8 text-white/10" />
-                    <p className="text-sm">Execute a query above to see the results here.</p>
-                  </div>
-                ) : !sqlResult.success ? (
-                  <div className="flex-grow p-5 overflow-y-auto">
-                    <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-400">
-                      <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <h5 className="text-sm font-semibold">SQL Error</h5>
-                        <p className="text-xs font-mono whitespace-pre-wrap">{sqlResult.error}</p>
+              {sqlEditorMode === 'console' || !isSuperAdmin ? (
+                <>
+                  {/* SQL Query Editor Box */}
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col shrink-0 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                        <Terminal className="w-3.5 h-3.5 text-accent" />
+                        <span>SQL Editor Console</span>
                       </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col h-full min-h-0">
-                    <div className="px-4 py-2 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between text-[11px] text-white/45">
-                      <div className="flex items-center gap-4">
-                        <span>Query completed in <strong className="text-white/70 font-mono">{sqlResult.duration} ms</strong></span>
-                        <span className="text-white/10">|</span>
-                        <span>Affected: <strong className="text-white/70 font-mono">{sqlResult.affectedRows} rows</strong></span>
-                        <span className="text-white/10">|</span>
-                        <span>Returned: <strong className="text-white/70 font-mono">{sqlResult.rows.length} rows</strong></span>
+                      
+                      {/* Query Templates / Snippets */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto max-w-xl no-scrollbar py-0.5">
+                        <span className="text-[10px] text-white/30 uppercase font-semibold shrink-0 mr-1">Templates:</span>
+                        {[
+                          { label: 'Subscribers List', query: 'SELECT * FROM subscribers LIMIT 10;' },
+                          { label: 'Users List', query: 'SELECT * FROM users LIMIT 10;' },
+                          { label: 'Admins List', query: 'SELECT * FROM admins LIMIT 10;' },
+                          { label: 'Database Version', query: 'SELECT version();' }
+                        ].map((t) => (
+                          <button
+                            key={t.label}
+                            onClick={() => setSqlQuery(t.query)}
+                            className="text-[10px] px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08] hover:border-white/12 text-white/60 hover:text-white transition-colors cursor-pointer whitespace-nowrap font-mono"
+                          >
+                            {t.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="flex-grow overflow-auto min-h-0">
-                      {sqlResult.rows.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-white/20 py-12 text-xs italic">
-                          Query succeeded. No rows returned.
+                    <div className="relative">
+                      <textarea
+                        value={sqlQuery}
+                        onChange={(e) => setSqlQuery(e.target.value)}
+                        placeholder="-- Type your PostgreSQL query here...&#10;SELECT * FROM subscribers LIMIT 10;"
+                        className="w-full h-36 bg-[#070709] border border-white/[0.06] rounded-lg p-3 text-xs font-mono text-white/80 focus:outline-none focus:border-accent/40 resize-y leading-relaxed"
+                        spellCheck={false}
+                      />
+                    </div>
+
+                    {sqlQuery.trim().length > 0 && (() => {
+                      const explanation = explainSQL(sqlQuery);
+                      if (!explanation) return null;
+                      return (
+                        <div className={cn(
+                          "rounded-lg p-3 border text-xs font-sans space-y-1 transition-all duration-300",
+                          explanation.isWarning 
+                            ? "bg-red-500/5 border-red-500/20 text-red-400/90 shadow-[0_0_15px_rgba(239,68,68,0.03)]" 
+                            : "bg-white/[0.02] border-white/[0.06] text-white/70"
+                        )}>
+                          <div className="flex items-center gap-1.5 font-semibold text-white/90">
+                            <AlertCircle className={cn("w-3.5 h-3.5", explanation.isWarning ? "text-red-400" : "text-accent")} />
+                            <span>Action: {explanation.action}</span>
+                          </div>
+                          <p className="text-white/55 leading-relaxed pl-5 text-[11px] font-mono">{explanation.description}</p>
+                          {explanation.isWarning && explanation.warningText && (
+                            <p className="text-red-400 font-semibold pl-5 text-[11px] mt-1">
+                              ⚠️ {explanation.warningText}
+                            </p>
+                          )}
                         </div>
-                      ) : (
-                        <table className="w-full text-left border-collapse text-xs">
-                          <thead>
-                            <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none font-mono">
-                              <th className="px-4 py-2 text-center w-10 text-[10px] text-white/25">#</th>
-                              {sqlResult.headers.map((h: string) => (
-                                <th key={h} className="px-4 py-2 font-semibold tracking-tight whitespace-nowrap">
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-white/[0.04] font-mono select-text">
-                            {sqlResult.rows.map((row: any, rIdx: number) => (
-                              <tr key={rIdx} className="hover:bg-white/[0.005] transition-colors border-b border-white/[0.02]/50 last:border-b-0">
-                                <td className="px-4 py-2 text-center text-[10px] text-white/20 select-none">
-                                  {rIdx + 1}
-                                </td>
-                                {sqlResult.headers.map((h: string) => {
-                                  const val = row[h]
-                                  const stringVal = val === null 
-                                    ? <span className="text-white/20 italic">null</span>
-                                    : typeof val === 'object' 
-                                    ? JSON.stringify(val) 
-                                    : String(val)
-                                  return (
-                                    <td key={h} className="px-4 py-2 whitespace-nowrap text-white/80 max-w-xs truncate" title={typeof val === 'object' ? JSON.stringify(val) : String(val)}>
-                                      {stringVal}
-                                    </td>
-                                  )
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
+                      );
+                    })()}
+
+                    <div className="flex items-center justify-between border-t border-white/[0.04] pt-3">
+                      <div className="text-[10px] text-white/30 font-mono">
+                        {isSuperAdmin ? 'Press Run Query to execute against database.' : 'Writes will prompt for Super Admin approval.'}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSqlQuery('')
+                            setSqlResult(null)
+                          }}
+                          className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04] text-xs font-medium cursor-pointer transition-colors"
+                        >
+                          Clear
+                        </button>
+                        <button
+                          onClick={handleExecuteQuery}
+                          disabled={isExecutingSql}
+                          className="h-8 px-3 rounded-lg bg-accent text-[#0a0a0a] hover:bg-accent/80 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all shadow-lg shadow-accent/5"
+                        >
+                          {isExecutingSql ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Running...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-3.5 h-3.5 fill-current text-[#0a0a0a]" />
+                              <span>Run Query</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {/* SQL Results View */}
+                  <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] flex-grow min-h-0 flex flex-col relative overflow-hidden">
+                    {isExecutingSql ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2 bg-[#060608]/40 z-10">
+                        <RefreshCw className="w-6 h-6 animate-spin text-accent" />
+                        <p className="text-xs font-medium">Running SQL query...</p>
+                      </div>
+                    ) : null}
+
+                    {!sqlResult ? (
+                      <div className="flex-grow flex flex-col items-center justify-center text-white/30 space-y-2 py-12">
+                        <Terminal className="w-8 h-8 text-white/10" />
+                        <p className="text-sm">Execute a query above to see the results here.</p>
+                      </div>
+                    ) : !sqlResult.success ? (
+                      <div className="flex-grow p-5 overflow-y-auto">
+                        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3 text-red-400">
+                          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <h5 className="text-sm font-semibold">SQL Error</h5>
+                            <p className="text-xs font-mono whitespace-pre-wrap">{sqlResult.error}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col h-full min-h-0">
+                        <div className="px-4 py-2 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between text-[11px] text-white/45">
+                          <div className="flex items-center gap-4">
+                            <span>Query completed in <strong className="text-white/70 font-mono">{sqlResult.duration} ms</strong></span>
+                            <span className="text-white/10">|</span>
+                            <span>Affected: <strong className="text-white/70 font-mono">{sqlResult.affectedRows} rows</strong></span>
+                            <span className="text-white/10">|</span>
+                            <span>Returned: <strong className="text-white/70 font-mono">{sqlResult.rows.length} rows</strong></span>
+                          </div>
+                        </div>
+
+                        <div className="flex-grow overflow-auto min-h-0">
+                          {sqlResult.rows.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-white/20 py-12 text-xs italic">
+                              Query succeeded. No rows returned.
+                            </div>
+                          ) : (
+                            <table className="w-full text-left border-collapse text-xs">
+                              <thead>
+                                <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/50 select-none font-mono">
+                                  <th className="px-4 py-2 text-center w-10 text-[10px] text-white/25">#</th>
+                                  {sqlResult.headers.map((h: string) => (
+                                    <th key={h} className="px-4 py-2 font-semibold tracking-tight whitespace-nowrap">
+                                      {h}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-white/[0.04] font-mono select-text">
+                                {sqlResult.rows.map((row: any, rIdx: number) => (
+                                  <tr key={rIdx} className="hover:bg-white/[0.005] transition-colors border-b border-white/[0.02]/50 last:border-b-0">
+                                    <td className="px-4 py-2 text-center text-[10px] text-white/20 select-none">
+                                      {rIdx + 1}
+                                    </td>
+                                    {sqlResult.headers.map((h: string) => {
+                                      const val = row[h]
+                                      const stringVal = val === null 
+                                        ? <span className="text-white/20 italic">null</span>
+                                        : typeof val === 'object' 
+                                        ? JSON.stringify(val) 
+                                        : String(val)
+                                      return (
+                                        <td key={h} className="px-4 py-2 whitespace-nowrap text-white/80 max-w-xs truncate" title={typeof val === 'object' ? JSON.stringify(val) : String(val)}>
+                                          {stringVal}
+                                        </td>
+                                      )
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Requests Log Panel */
+                <div className="flex-grow border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col min-h-0 relative overflow-hidden">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] shrink-0">
+                    <h4 className="text-xs font-semibold text-white/85">SQL Changes Queue & Request Logs</h4>
+                    <button
+                      onClick={fetchRequests}
+                      disabled={isLoadingRequests}
+                      className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className={cn("w-3.5 h-3.5", isLoadingRequests ? "animate-spin" : "")} />
+                    </button>
+                  </div>
+
+                  <div className="flex-grow overflow-y-auto py-2 space-y-3.5 pr-1.5 min-h-0 mt-2">
+                    {isLoadingRequests && requestsList.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-white/30 space-y-2 py-12">
+                        <RefreshCw className="w-5 h-5 animate-spin text-accent" />
+                        <p className="text-xs">Loading requests queue...</p>
+                      </div>
+                    ) : requestsList.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-white/20 py-12 text-xs italic space-y-1">
+                        <Terminal className="w-6 h-6 text-white/10" />
+                        <p>No query approval requests found.</p>
+                      </div>
+                    ) : (
+                      requestsList.map((req) => {
+                        const statusColors = {
+                          pending: "bg-amber-500/10 text-amber-500 border-amber-500/25",
+                          approved: "bg-emerald-500/10 text-emerald-500 border-emerald-500/25",
+                          rejected: "bg-red-500/10 text-red-500 border-red-500/25"
+                        }[req.status as 'pending' | 'approved' | 'rejected'] || "bg-white/10 text-white/60 border-white/20"
+
+                        const resultsData = req.executionResults ? (typeof req.executionResults === 'string' ? JSON.parse(req.executionResults) : req.executionResults) : null
+
+                        return (
+                          <div key={req.id} className="p-4 rounded-xl border border-white/[0.05] bg-[#070709] flex flex-col gap-3">
+                            <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                              <div className="flex items-center gap-2 text-white/60 font-semibold">
+                                <span className="text-white/85 font-mono">{req.requesterName}</span>
+                                <span>requested at</span>
+                                <span className="text-[11px] font-sans font-normal text-white/40">{new Date(req.createdAt).toLocaleString()}</span>
+                              </div>
+                              <span className={cn("px-2.5 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wider", statusColors)}>
+                                {req.status}
+                              </span>
+                            </div>
+
+                            {/* Query text panel */}
+                            <div className="relative">
+                              <pre className="bg-black/50 border border-white/[0.04] p-3 rounded-lg text-[11px] font-mono text-[#a78bfa] overflow-x-auto whitespace-pre-wrap select-text leading-relaxed">
+                                {req.queryText}
+                              </pre>
+                            </div>
+
+                            {/* Approval metadata / Rejection info */}
+                            {req.status === 'rejected' && (
+                              <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-lg text-xs text-red-400 font-sans">
+                                <strong>Rejection Reason:</strong> {req.rejectionReason}
+                              </div>
+                            )}
+
+                            {req.status === 'approved' && (
+                              <div className="text-xs text-white/40 flex flex-wrap gap-x-4 gap-y-1 font-mono py-1 border-t border-white/[0.03]">
+                                <span>Reviewed By: <strong className="text-white/75">{req.reviewerName || 'Super Admin'}</strong></span>
+                                <span>Duration: <strong className="text-white/75">{req.executionDurationMs} ms</strong></span>
+                                {resultsData && (
+                                  <>
+                                    <span>Affected: <strong className="text-white/75">{resultsData.affectedRows ?? 0} rows</strong></span>
+                                    <span>Returned: <strong className="text-white/75">{resultsData.rowCount ?? 0} rows</strong></span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Collapsible approved query results table */}
+                            {req.status === 'approved' && resultsData && resultsData.rows && resultsData.rows.length > 0 && (
+                              <div className="mt-1 font-sans">
+                                <button
+                                  onClick={() => setExpandedRequestResultsId(expandedRequestResultsId === req.id ? null : req.id)}
+                                  className="text-[11px] text-accent/80 hover:text-accent font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  {expandedRequestResultsId === req.id ? 'Collapse Query Results' : 'View Query Results Grid'}
+                                  <ChevronDown className={cn("w-3 h-3 transition-transform", expandedRequestResultsId === req.id ? "rotate-180" : "")} />
+                                </button>
+
+                                {expandedRequestResultsId === req.id && (
+                                  <div className="mt-2.5 max-h-48 overflow-auto border border-white/[0.06] rounded-lg bg-black/30">
+                                    <table className="w-full text-left border-collapse text-[11px] font-mono">
+                                      <thead>
+                                        <tr className="bg-white/[0.02] border-b border-white/[0.06] text-white/45">
+                                          <th className="px-3 py-1.5 text-center w-8 text-white/20">#</th>
+                                          {resultsData.headers.map((h: string) => (
+                                            <th key={h} className="px-3 py-1.5 font-semibold whitespace-nowrap">{h}</th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-white/[0.03] select-text">
+                                        {resultsData.rows.map((row: any, rIdx: number) => (
+                                          <tr key={rIdx} className="hover:bg-white/[0.005]">
+                                            <td className="px-3 py-1.5 text-center text-white/20 select-none">{rIdx + 1}</td>
+                                            {resultsData.headers.map((h: string) => (
+                                              <td key={h} className="px-3 py-1.5 whitespace-nowrap text-white/70 max-w-xs truncate" title={String(row[h])}>
+                                                {row[h] === null ? <span className="text-white/20 italic">null</span> : String(row[h])}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                    {resultsData.wasCapped && (
+                                      <div className="px-3 py-1.5 bg-white/[0.02] text-[10px] text-white/30 italic text-center">
+                                        Showing first 100 rows. Results capped to prevent server bloat.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {req.status === 'approved' && req.executionError && (
+                              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 font-sans">
+                                <div className="font-semibold mb-0.5">Execution Failed during Approval:</div>
+                                <p className="font-mono">{req.executionError}</p>
+                              </div>
+                            )}
+
+                            {/* Approval actions for super admin */}
+                            {isSuperAdmin && req.status === 'pending' && (
+                              <div className="flex items-center justify-end gap-2 border-t border-white/[0.04] pt-3 mt-1 font-sans">
+                                <button
+                                  disabled={isReviewingRequest !== null}
+                                  onClick={() => setShowRejectionModal(req.id)}
+                                  className="h-7 px-3.5 rounded-lg border border-red-500/25 bg-red-500/5 hover:bg-red-500/15 text-red-400 text-xs font-semibold cursor-pointer transition-colors"
+                                >
+                                  Reject
+                                </button>
+                                <button
+                                  disabled={isReviewingRequest !== null}
+                                  onClick={() => handleReviewRequest(req.id, 'approve')}
+                                  className="h-7 px-3.5 rounded-lg bg-emerald-500 text-[#052e16] hover:bg-emerald-400 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-all shadow-md shadow-emerald-500/5"
+                                >
+                                  {isReviewingRequest === req.id ? (
+                                    <>
+                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                      <span>Running...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Play className="w-3 h-3 fill-current text-[#052e16]" />
+                                      <span>Approve & Run</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : !selectedTable ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2">
@@ -2054,6 +2558,104 @@ export default function DatabaseConsole({ currentAdmin }: DatabaseConsoleProps) 
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- WRITE QUERY APPROVAL REQUEST CONFIRM MODAL --- */}
+      {showRequestConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+          <div className="w-full max-w-md bg-[#0c0c0e] border border-white/[0.08] rounded-xl p-5 shadow-2xl relative text-left">
+            <div className="space-y-4">
+              <div className="border-b border-white/[0.06] pb-3">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                  <span>Write Permissions Required</span>
+                </h3>
+                <p className="text-xs text-white/40 mt-1">
+                  This query contains database modification statements. You do not have direct write access.
+                </p>
+              </div>
+
+              <div className="p-3 bg-black/40 border border-white/[0.04] rounded-lg max-h-36 overflow-y-auto font-mono text-[11px] text-[#a78bfa] whitespace-pre-wrap select-text">
+                {lastExecutedQueryForRequest}
+              </div>
+
+              <p className="text-xs text-white/60">
+                Would you like to submit this query as an approval request to the Super Admins?
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isSubmittingRequest}
+                  onClick={() => {
+                    setShowRequestConfirmModal(false)
+                    setLastExecutedQueryForRequest('')
+                  }}
+                  className="h-8 px-3.5 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-white/60 hover:text-white text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmittingRequest}
+                  onClick={handleSubmitRequest}
+                  className="h-8 px-4 rounded-lg bg-accent text-[#0a0a0a] hover:bg-accent/80 transition-colors text-xs font-bold cursor-pointer"
+                >
+                  {isSubmittingRequest ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SUPER ADMIN REJECTION REASON MODAL --- */}
+      {showRejectionModal !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-300 font-sans">
+          <div className="w-full max-w-md bg-[#0c0c0e] border border-white/[0.08] rounded-xl p-5 shadow-2xl relative text-left">
+            <div className="space-y-4">
+              <div className="border-b border-white/[0.06] pb-3">
+                <h3 className="text-sm font-semibold text-white">Reject Query Request</h3>
+                <p className="text-xs text-white/40 mt-0.5">
+                  Provide a reason for rejecting this database change request.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-white/30 uppercase font-semibold">Rejection Reason</label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Explain why this change is rejected (e.g. incorrect table index, syntax, etc.)"
+                  className="w-full h-20 bg-white/[0.02] border border-white/[0.06] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-red-500/50 resize-none leading-relaxed"
+                  spellCheck={false}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isReviewingRequest !== null}
+                  onClick={() => {
+                    setShowRejectionModal(null)
+                    setRejectionReason('')
+                  }}
+                  className="h-8 px-3.5 rounded-lg border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-white/60 hover:text-white text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isReviewingRequest !== null}
+                  onClick={() => handleReviewRequest(showRejectionModal, 'reject', rejectionReason)}
+                  className="h-8 px-4 rounded-lg bg-red-500 text-white hover:bg-red-400 transition-colors text-xs font-bold cursor-pointer"
+                >
+                  {isReviewingRequest !== null ? 'Rejecting...' : 'Reject Request'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -256,5 +256,22 @@ export const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const sqlQueryRequests = pgTable('sql_query_requests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  requesterId: uuid('requester_id')
+    .references(() => admins.id, { onDelete: 'cascade' })
+    .notNull(),
+  queryText: text('query_text').notNull(),
+  status: text('status').default('pending').notNull(), // 'pending', 'approved', 'rejected'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  reviewedBy: uuid('reviewed_by').references(() => admins.id, { onDelete: 'set null' }),
+  reviewedAt: timestamp('reviewed_at'),
+  rejectionReason: text('rejection_reason'),
+  executionDurationMs: integer('execution_duration_ms'),
+  executionResults: jsonb('execution_results'),
+  executionError: text('execution_error'),
+})
+
+
 
 

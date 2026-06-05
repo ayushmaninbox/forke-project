@@ -81,7 +81,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | null
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
   >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
       const tab = params.get('tab')
       const validTabs = [
         'dashboard', 'owner-approval', 'developer-ban', 'enquiries', 
-        'admins', 'subscribers', 'activity', 'database', 'db-overview', 'db-monitoring'
+        'admins', 'subscribers', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor'
       ]
       if (tab && validTabs.includes(tab)) {
         setActiveTab(tab as any)
@@ -889,6 +889,21 @@ export default function AdminDashboard() {
                 Live DB
               </span>
             </button>
+
+            {/* SQL Editor */}
+            {currentAdmin && (
+              <button
+                onClick={() => selectTab('sql-editor')}
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                  activeTab === 'sql-editor'
+                    ? 'bg-white/[0.05] text-white'
+                    : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+                }`}
+              >
+                <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+                <span>SQL Editor</span>
+              </button>
+            )}
 
             {/* Admins */}
             {currentAdmin?.role === 'super_admin' && (
@@ -1750,6 +1765,13 @@ export default function AdminDashboard() {
           {activeTab === 'database' && (
             <div className="flex-grow min-h-0 h-full flex flex-col">
               <DatabaseConsole currentAdmin={currentAdmin} />
+            </div>
+          )}
+
+          {/* ==================== SQL EDITOR PANEL ==================== */}
+          {activeTab === 'sql-editor' && currentAdmin && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <DatabaseConsole currentAdmin={currentAdmin} initialTab="sql" />
             </div>
           )}
 

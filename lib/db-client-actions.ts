@@ -800,9 +800,16 @@ function splitSqlStatements(sql: string): string[] {
   return statements
 }
 
-// 10. Execute custom SQL query (restricted to super_admin)
+// 10. Execute custom SQL query
 export async function executeSQLQuery(query: string) {
-  await ensureSuperAdmin()
+  await ensureAdmin()
+  const admin = await getCurrentAdmin()
+  if (!admin) {
+    throw new Error('Unauthorized')
+  }
+
+  const isSuperAdmin = admin.role === 'super_admin'
+
   try {
     const startTime = performance.now()
     
@@ -821,10 +828,39 @@ export async function executeSQLQuery(query: string) {
     let lastResult: any = null
     let totalAffectedRows = 0
 
-    for (const stmt of statements) {
-      lastResult = await client.unsafe(stmt)
-      if (lastResult && lastResult.count !== undefined) {
-        totalAffectedRows += lastResult.count
+    if (isSuperAdmin) {
+      for (const stmt of statements) {
+        lastResult = await client.unsafe(stmt)
+        if (lastResult && lastResult.count !== undefined) {
+          totalAffectedRows += lastResult.count
+        }
+      }
+    } else {
+      try {
+        await client.begin(async (sql) => {
+          await sql.unsafe('SET TRANSACTION READ ONLY;')
+          for (const stmt of statements) {
+            lastResult = await sql.unsafe(stmt)
+            if (lastResult && lastResult.count !== undefined) {
+              totalAffectedRows += lastResult.count
+            }
+          }
+        })
+      } catch (err: any) {
+        const isWriteErr = 
+          err.code === '25006' || // read_only_sql_transaction
+          err.code === '42501' || // insufficient_privilege
+          (err.message && err.message.toLowerCase().includes('read-only transaction')) ||
+          (err.message && err.message.toLowerCase().includes('permission denied'))
+          
+        if (isWriteErr) {
+          return {
+            success: false,
+            requiresApproval: true,
+            error: 'This query modifies database state and requires Super Admin approval.'
+          }
+        }
+        throw err
       }
     }
 
@@ -1152,5 +1188,231 @@ export async function logTableExportAction(tableName: string, format: string, co
     target: `${tableName} (${count} row${count === 1 ? '' : 's'})`
   })
   return { success: true }
+}
+
+// 15. Submit SQL query request for Super Admin approval
+export async function submitSQLQueryRequest(queryText: string) {
+  await ensureAdmin()
+  const admin = await getCurrentAdmin()
+  if (!admin) throw new Error('Unauthorized')
+
+  try {
+    await db.execute(sql`
+      INSERT INTO public.sql_query_requests (requester_id, query_text, status)
+      VALUES (${admin.id}, ${queryText}, 'pending');
+    `)
+
+    // Log in audit log
+    await logAudit({
+      actorId: admin.id,
+      actorName: admin.name,
+      category: 'db',
+      action: 'sql.request',
+      target: 'sql_query_requests',
+      metadata: { queryText: queryText.substring(0, 500) }
+    })
+
+    // Prune query requests older than 7 days in the background
+    db.execute(sql`
+      DELETE FROM public.sql_query_requests 
+      WHERE created_at < now() - interval '7 days';
+    `).catch(err => console.error('Failed to prune old SQL query requests:', err))
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to submit SQL request:', error)
+    return { success: false, error: error.message || 'Failed to submit request.' }
+  }
+}
+
+// 16. Fetch SQL query requests logs
+export async function getSQLQueryRequests() {
+  await ensureAdmin()
+  const admin = await getCurrentAdmin()
+  if (!admin) throw new Error('Unauthorized')
+
+  try {
+    let result: any[] = []
+    if (admin.role === 'super_admin') {
+      result = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.query_text as "queryText",
+          r.status,
+          r.created_at as "createdAt",
+          r.reviewed_at as "reviewedAt",
+          r.rejection_reason as "rejectionReason",
+          r.execution_duration_ms as "executionDurationMs",
+          r.execution_results as "executionResults",
+          r.execution_error as "executionError",
+          a.name as "requesterName",
+          rev.name as "reviewerName"
+        FROM public.sql_query_requests r
+        JOIN public.admins a ON a.id = r.requester_id
+        LEFT JOIN public.admins rev ON rev.id = r.reviewed_by
+        ORDER BY r.created_at DESC;
+      `)
+    } else {
+      result = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.query_text as "queryText",
+          r.status,
+          r.created_at as "createdAt",
+          r.reviewed_at as "reviewedAt",
+          r.rejection_reason as "rejectionReason",
+          r.execution_duration_ms as "executionDurationMs",
+          r.execution_results as "executionResults",
+          r.execution_error as "executionError",
+          a.name as "requesterName",
+          rev.name as "reviewerName"
+        FROM public.sql_query_requests r
+        JOIN public.admins a ON a.id = r.requester_id
+        LEFT JOIN public.admins rev ON rev.id = r.reviewed_by
+        WHERE r.requester_id = ${admin.id}
+        ORDER BY r.created_at DESC;
+      `)
+    }
+
+    return {
+      success: true,
+      requests: result
+    }
+  } catch (error: any) {
+    console.error('Failed to get SQL requests:', error)
+    return { success: false, error: error.message || 'Failed to list requests.' }
+  }
+}
+
+// 17. Review a pending SQL query request (approve and run, or reject)
+export async function reviewSQLQueryRequest(requestId: string, action: 'approve' | 'reject', rejectionReason?: string) {
+  await ensureSuperAdmin()
+  const reviewer = await getCurrentAdmin()
+  if (!reviewer) throw new Error('Unauthorized')
+
+  try {
+    const reqRes: any = await db.execute(sql`
+      SELECT id, query_text as "queryText", status 
+      FROM public.sql_query_requests 
+      WHERE id = ${requestId} 
+      LIMIT 1;
+    `)
+    if (reqRes.length === 0) {
+      return { success: false, error: 'Request not found.' }
+    }
+    const request = reqRes[0]
+    if (request.status !== 'pending') {
+      return { success: false, error: 'Request is no longer pending.' }
+    }
+
+    if (action === 'reject') {
+      await db.execute(sql`
+        UPDATE public.sql_query_requests
+        SET status = 'rejected',
+            reviewed_by = ${reviewer.id},
+            reviewed_at = now(),
+            rejection_reason = ${rejectionReason || 'No reason provided'}
+        WHERE id = ${requestId};
+      `)
+
+      await logAudit({
+        actorId: reviewer.id,
+        actorName: reviewer.name,
+        category: 'db',
+        action: 'sql.reject',
+        target: 'sql_query_requests',
+        metadata: { requestId }
+      })
+
+      return { success: true }
+    }
+
+    const queryToExecute = request.queryText
+    const startTime = performance.now()
+    let lastResult: any = null
+    let totalAffectedRows = 0
+    let durationMs = 0
+    let success = true
+    let executionError: string | null = null
+
+    try {
+      const statements = splitSqlStatements(queryToExecute)
+      for (const stmt of statements) {
+        lastResult = await client.unsafe(stmt)
+        if (lastResult && lastResult.count !== undefined) {
+          totalAffectedRows += lastResult.count
+        }
+      }
+      const endTime = performance.now()
+      durationMs = Math.round(endTime - startTime)
+    } catch (err: any) {
+      success = false
+      executionError = err.message || 'Execution failed.'
+      console.error('Approved SQL execution failed:', err)
+    }
+
+    if (success) {
+      const rows = Array.isArray(lastResult) ? lastResult : []
+      const headers = rows.length > 0 ? Object.keys(rows[0]) : []
+      
+      const cappedRows = rows.slice(0, 100)
+      const resultsJson = JSON.stringify({
+        headers,
+        rows: cappedRows,
+        rowCount: rows.length,
+        affectedRows: lastResult?.count !== undefined ? lastResult.count : rows.length,
+        wasCapped: rows.length > 100
+      })
+
+      await db.execute(sql`
+        UPDATE public.sql_query_requests
+        SET status = 'approved',
+            reviewed_by = ${reviewer.id},
+            reviewed_at = now(),
+            execution_duration_ms = ${durationMs},
+            execution_results = ${resultsJson}::jsonb,
+            execution_error = NULL
+        WHERE id = ${requestId};
+      `)
+
+      await logAudit({
+        actorId: reviewer.id,
+        actorName: reviewer.name,
+        category: 'db',
+        action: 'sql.approve',
+        target: 'sql_query_requests',
+        metadata: { requestId, durationMs }
+      })
+    } else {
+      await db.execute(sql`
+        UPDATE public.sql_query_requests
+        SET status = 'approved',
+            reviewed_by = ${reviewer.id},
+            reviewed_at = now(),
+            execution_error = ${executionError}
+        WHERE id = ${requestId};
+      `)
+
+      await logAudit({
+        actorId: reviewer.id,
+        actorName: reviewer.name,
+        category: 'db',
+        action: 'sql.approve_failed',
+        target: 'sql_query_requests',
+        metadata: { requestId, error: executionError }
+      })
+    }
+
+    // Prune query requests older than 7 days in the background
+    db.execute(sql`
+      DELETE FROM public.sql_query_requests 
+      WHERE created_at < now() - interval '7 days';
+    `).catch(err => console.error('Failed to prune old SQL query requests:', err))
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Failed to review SQL request:', error)
+    return { success: false, error: error.message || 'Failed to process request.' }
+  }
 }
 
