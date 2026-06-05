@@ -70,6 +70,7 @@ export default auth(async (req) => {
     pathname.startsWith('/api/waitlist') ||
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/auth') ||
+    pathname.endsWith('/opengraph-image') ||
     isPublicProfilePath(pathname)
 
   // If waitlist is active and the user doesn't have site_access

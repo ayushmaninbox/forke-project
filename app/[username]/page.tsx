@@ -33,14 +33,13 @@ export async function generateMetadata({
   const level = getLevelFromXp(dbUser.xp || 0)
   const title = `${dbUser.name} (@${dbUser.username})`
   const description = `${dbUser.bio || dbUser.headline || 'Building real, verified work on Forke.'} · Level ${level} ${getLevelTitle(level)}.`
-  const avatar = resolveAvatarUrl(dbUser.image) || 'https://www.forke.space/icon.png'
 
   return {
     title,
     description,
     alternates: { canonical: `/${dbUser.username}` },
-    openGraph: { title, description, images: [{ url: avatar, width: 800, height: 800, alt: dbUser.name }], type: 'profile', username: dbUser.username || undefined },
-    twitter: { card: 'summary_large_image', title, description, images: [avatar] },
+    openGraph: { title, description, type: 'profile', username: dbUser.username || undefined },
+    twitter: { card: 'summary_large_image', title, description },
   }
 }
 
