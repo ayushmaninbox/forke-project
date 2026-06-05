@@ -501,3 +501,225 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
     return false
   }
 }
+
+// --- Shared helpers for owner lifecycle emails ---------------------------------
+
+// Resolves the Resend API key with the same quote-stripping the other senders use.
+function resolveResendApiKey(): string {
+  let apiKey = process.env.RESEND_API_KEY || ''
+  if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.slice(1, -1)
+  if (apiKey.startsWith("'") && apiKey.endsWith("'")) apiKey = apiKey.slice(1, -1)
+  return apiKey
+}
+
+// Resolves the "from" address with the same quote-stripping the other senders use.
+function resolveFromEmail(): string {
+  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
+  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) fromEmail = fromEmail.slice(1, -1)
+  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) fromEmail = fromEmail.slice(1, -1)
+  return fromEmail
+}
+
+function resolveBaseUrl(): string {
+  let baseUrl = process.env.AUTH_URL || 'https://forke.space'
+  if (baseUrl.startsWith('"') && baseUrl.endsWith('"')) baseUrl = baseUrl.slice(1, -1)
+  if (baseUrl.startsWith("'") && baseUrl.endsWith("'")) baseUrl = baseUrl.slice(1, -1)
+  return baseUrl.replace(/\/$/, '')
+}
+
+// Wraps body markup in the standard dark Forke email shell (banner + logo + footer).
+function ownerEmailShell(opts: {
+  title: string
+  heading: string
+  headingAccent: string
+  bodyHtml: string
+  footerLabel: string
+}): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="color-scheme" content="dark only">
+        <title>${opts.title}</title>
+      </head>
+      <body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
+          <tr>
+            <td align="center" style="padding:48px 16px;">
+              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
+                <tr>
+                  <td align="center" style="padding:0;line-height:0;font-size:0;">
+                    <img src="https://forke.space/forke-assets/banner.png" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:48px 40px;text-align:left;color:#ffffff;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+                      <tr>
+                        <td>
+                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="80" style="width:80px;height:auto;display:block;" />
+                        </td>
+                      </tr>
+                    </table>
+
+                    <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
+                      ${opts.heading}<br><span style="color:#FF7A00;font-style:italic;">${opts.headingAccent}</span>
+                    </h1>
+
+                    ${opts.bodyHtml}
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+                      <tr>
+                        <td style="height:1px;background-color:#1a1a24;font-size:0;line-height:0;">&nbsp;</td>
+                      </tr>
+                    </table>
+
+                    <p style="font-family:Georgia,serif;font-size:14px;color:#555562;margin:0 0 16px 0;text-align:center;">
+                      The Forke Team <span style="color:#FF7A00;font-size:16px;font-weight:bold;line-height:1;vertical-align:middle;display:inline-block;">♥</span>
+                    </p>
+                    <p style="font-size:9px;color:#40404a;font-weight:700;text-transform:uppercase;letter-spacing:0.25em;margin:0;text-align:center;">
+                      &copy; 2026 FORKE &middot; ${opts.footerLabel}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `
+}
+
+// Renders a standard orange CTA button used across the owner lifecycle emails.
+function ctaButton(href: string, label: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 36px auto;">
+      <tr>
+        <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
+          <a href="${href}" target="_blank" style="display:inline-block;padding:16px 32px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);white-space:nowrap;">
+            ${label}
+          </a>
+        </td>
+      </tr>
+    </table>
+  `
+}
+
+// Posts an email through Resend. Fail-soft: logs and returns false, never throws,
+// so a Resend outage can never block the underlying DB action.
+async function sendResendEmail(toEmail: string, subject: string, html: string, label: string): Promise<boolean> {
+  const apiKey = resolveResendApiKey()
+  if (!apiKey) {
+    console.warn(`⚠️ RESEND_API_KEY is not configured. Skipping ${label} email.`)
+    return false
+  }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ from: resolveFromEmail(), to: toEmail, subject, html }),
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error(`Failed to send ${label} email via Resend:`, errText)
+      return false
+    }
+    return true
+  } catch (error) {
+    console.error(`Error dispatching ${label} email:`, error)
+    return false
+  }
+}
+
+export async function sendOwnerApprovedEmail(toEmail: string, name: string): Promise<boolean> {
+  const baseUrl = resolveBaseUrl()
+  const signInLink = `${baseUrl}/signin`
+  const html = ownerEmailShell({
+    title: 'Forke - Your Owner Account is Approved',
+    heading: 'Application approved.',
+    headingAccent: 'Welcome aboard.',
+    footerLabel: 'OWNER ACCESS GRANTED',
+    bodyHtml: `
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
+        Great news — your owner application has been reviewed and <strong style="color:#ffffff;">approved</strong>. You now have full access to the Forke owner dashboard, where you can post tasks, manage submissions, and collaborate with developers.
+      </p>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
+        Click below to sign in and open your dashboard:
+      </p>
+      ${ctaButton(signInLink, 'Enter Owner Dashboard')}
+      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
+        If the button does not work, paste this link into your browser:<br>
+        <a href="${signInLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${signInLink}</a>
+      </p>
+    `,
+  })
+  return sendResendEmail(toEmail, 'Your Forke owner account is approved', html, 'owner approval')
+}
+
+export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reason: string): Promise<boolean> {
+  const baseUrl = resolveBaseUrl()
+  const applyLink = `${baseUrl}/signin`
+  const safeReason = (reason || '').trim() || 'Your application did not meet our current onboarding criteria.'
+  const html = ownerEmailShell({
+    title: 'Forke - Owner Application Update',
+    heading: 'Application update.',
+    headingAccent: 'You can apply again.',
+    footerLabel: 'OWNER APPLICATION REVIEW',
+    bodyHtml: `
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
+        Thank you for your interest in becoming an owner on Forke. After review, we were unable to approve your application at this time.
+      </p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
+        <tr>
+          <td style="background-color:rgba(255,122,0,0.04);border:1px solid rgba(255,122,0,0.18);border-radius:12px;padding:16px 18px;">
+            <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#FF7A00;margin:0 0 8px 0;">Reason</p>
+            <p style="font-size:14px;line-height:1.7;color:#cfcfd6;margin:0;font-weight:300;">${safeReason}</p>
+          </td>
+        </tr>
+      </table>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
+        You're welcome to address the above and re-apply at any time. We'd be glad to take another look.
+      </p>
+      ${ctaButton(applyLink, 'Apply Again')}
+      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
+        If the button does not work, paste this link into your browser:<br>
+        <a href="${applyLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${applyLink}</a>
+      </p>
+    `,
+  })
+  return sendResendEmail(toEmail, 'Update on your Forke owner application', html, 'owner decline')
+}
+
+export async function sendOwnerBannedEmail(toEmail: string, name: string): Promise<boolean> {
+  const baseUrl = resolveBaseUrl()
+  const reviewLink = `${baseUrl}/auth-error?error=AccessDenied`
+  const html = ownerEmailShell({
+    title: 'Forke - Account Suspended',
+    heading: 'Account suspended.',
+    headingAccent: 'You can request a review.',
+    footerLabel: 'ACCOUNT SUSPENSION NOTICE',
+    bodyHtml: `
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
+        Your Forke owner account has been <strong style="color:#ffffff;">suspended</strong> and access has been temporarily restricted. This may be the result of a policy review or activity that requires further verification.
+      </p>
+      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
+        If you believe this was a mistake, you can submit a request for review using the form below and our team will look into it:
+      </p>
+      ${ctaButton(reviewLink, 'Request a Review')}
+      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
+        If the button does not work, paste this link into your browser:<br>
+        <a href="${reviewLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${reviewLink}</a>
+      </p>
+    `,
+  })
+  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, 'owner ban')
+}

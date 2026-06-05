@@ -6,8 +6,9 @@ import {
   getPendingOwners, 
   getApprovedOwners, 
   getDevelopers, 
-  approveOwner, 
-  declineOwner, 
+  approveOwner,
+  declineOwner,
+  toggleOwnerBan,
   toggleDeveloperBan,
   getWaitlistConfig,
   updateWaitlistConfig,
@@ -19,6 +20,7 @@ import {
   deleteAdmin,
   updateAdminProfile,
   toggleAdminDisabledAction,
+  updateAdminRoleAction,
   resetAdminPasswordAction,
   changeAdminPasswordAction,
   logSubscribersExportAction,
@@ -62,7 +64,8 @@ import {
   Menu,
   X,
   Activity,
-  Table
+  Table,
+  Pencil
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
@@ -139,7 +142,13 @@ export default function AdminDashboard() {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false)
 
   // Owners panel sub-tab
-  const [ownersSubTab, setOwnersSubTab] = useState<'approved' | 'requests'>('approved')
+  const [ownersSubTab, setOwnersSubTab] = useState<'approved' | 'requests' | 'banned'>('approved')
+
+  // Decline-owner modal
+  const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false)
+  const [declineTargetOwner, setDeclineTargetOwner] = useState<any>(null)
+  const [declineReason, setDeclineReason] = useState('')
+  const [isDeclining, setIsDeclining] = useState(false)
 
   // Data states
   const [ownersList, setOwnersList] = useState<any[]>([])
@@ -174,6 +183,12 @@ export default function AdminDashboard() {
   const [resetTargetAdmin, setResetTargetAdmin] = useState<any>(null)
   const [resetNewPassword, setResetNewPassword] = useState('')
   const [isResetting, setIsResetting] = useState(false)
+
+  // Edit role modal states
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false)
+  const [editRoleTargetAdmin, setEditRoleTargetAdmin] = useState<any>(null)
+  const [editRoleValue, setEditRoleValue] = useState<'super_admin' | 'admin'>('admin')
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false)
 
   // Change Password states
   const [oldPassword, setOldPassword] = useState('')
@@ -342,14 +357,45 @@ export default function AdminDashboard() {
     }
   }
 
-  async function handleDecline(userId: string) {
-    if (confirm('Are you sure you want to decline and DELETE this user?')) {
-      try {
-        await declineOwner(userId)
+  async function handleDeclineOwner(e: React.FormEvent) {
+    e.preventDefault()
+    if (!declineTargetOwner) return
+    const reason = declineReason.trim()
+    if (!reason) {
+      toast('Please provide a reason for declining.', "error")
+      return
+    }
+    setIsDeclining(true)
+    try {
+      const res = await declineOwner(declineTargetOwner.user.id, reason)
+      if (res.success) {
+        toast(`${declineTargetOwner.owner.firstName}'s application was declined and they were notified.`, "success")
+        setIsDeclineModalOpen(false)
+        setDeclineTargetOwner(null)
+        setDeclineReason('')
         fetchData()
-      } catch (err) {
-        console.error('Failed to decline owner:', err)
+      } else {
+        toast(res.error || 'Failed to decline application.', "error")
       }
+    } catch (err) {
+      console.error('Failed to decline owner:', err)
+      toast('Something went wrong.', "error")
+    } finally {
+      setIsDeclining(false)
+    }
+  }
+
+  async function handleToggleOwnerBan(userId: string, isBanned: boolean) {
+    // Confirm only when banning (an irreversible-feeling action); unban is safe
+    if (!isBanned && !confirm('Ban this owner? They will lose access and be emailed an unban-request link.')) {
+      return
+    }
+    try {
+      await toggleOwnerBan(userId, !isBanned)
+      fetchData()
+    } catch (err) {
+      console.error('Failed to toggle owner ban:', err)
+      toast('Something went wrong.', "error")
     }
   }
 
@@ -508,6 +554,32 @@ export default function AdminDashboard() {
       toast('Something went wrong.', "error")
     } finally {
       setIsResetting(false)
+    }
+  }
+
+  async function handleUpdateRole(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editRoleTargetAdmin) return
+    if (editRoleValue === editRoleTargetAdmin.role) {
+      setIsEditRoleModalOpen(false)
+      return
+    }
+    setIsUpdatingRole(true)
+    try {
+      const res = await updateAdminRoleAction(editRoleTargetAdmin.id, editRoleValue)
+      if (res.success) {
+        toast(`${editRoleTargetAdmin.name} is now a ${editRoleValue === 'super_admin' ? 'Super Admin' : 'Admin'}.`, "success")
+        setIsEditRoleModalOpen(false)
+        setEditRoleTargetAdmin(null)
+        fetchData()
+      } else {
+        toast(res.error || 'Failed to update administrator role.', "error")
+      }
+    } catch (err) {
+      console.error('Role update error:', err)
+      toast('Something went wrong.', "error")
+    } finally {
+      setIsUpdatingRole(false)
     }
   }
 
@@ -1201,9 +1273,18 @@ export default function AdminDashboard() {
           {/* ==================== OWNERS PANEL ==================== */}
           {activeTab === 'owner-approval' && (() => {
             const pendingOwners = filteredOwners.filter(({ user }) => !user.isApproved)
-            const approvedOwners = filteredOwners.filter(({ user }) => user.isApproved)
-            const activeOwners = ownersSubTab === 'requests' ? pendingOwners : approvedOwners
+            const approvedOwners = filteredOwners.filter(({ user }) => user.isApproved && !user.isBanned)
+            const bannedOwners = filteredOwners.filter(({ user }) => user.isApproved && user.isBanned)
+            const activeOwners =
+              ownersSubTab === 'requests' ? pendingOwners
+              : ownersSubTab === 'banned' ? bannedOwners
+              : approvedOwners
             const paginatedActive = activeOwners.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+            // Unfiltered totals for the tab count badges
+            const totalApproved = ownersList.filter(({ user }) => user.isApproved && !user.isBanned).length
+            const totalRequests = ownersList.filter(({ user }) => !user.isApproved).length
+            const totalBanned = ownersList.filter(({ user }) => user.isApproved && user.isBanned).length
 
             return (
               <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
@@ -1221,7 +1302,7 @@ export default function AdminDashboard() {
                     >
                       Approved
                       <span className={`ml-1.5 text-[10px] font-mono ${ownersSubTab === 'approved' ? 'text-white/60' : 'text-white/25'}`}>
-                        {ownersList.filter(({ user }) => user.isApproved).length}
+                        {totalApproved}
                       </span>
                     </button>
                     <button
@@ -1233,12 +1314,29 @@ export default function AdminDashboard() {
                       }`}
                     >
                       Requests
-                      {ownersList.filter(({ user }) => !user.isApproved).length > 0 ? (
+                      {totalRequests > 0 ? (
                         <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-orange-500/15 border border-orange-500/25 text-orange-400 leading-none">
-                          {ownersList.filter(({ user }) => !user.isApproved).length}
+                          {totalRequests}
                         </span>
                       ) : (
                         <span className={`text-[10px] font-mono ${ownersSubTab === 'requests' ? 'text-white/60' : 'text-white/25'}`}>0</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => { setOwnersSubTab('banned'); setCurrentPage(1) }}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                        ownersSubTab === 'banned'
+                          ? 'bg-white/[0.08] text-white'
+                          : 'text-[var(--color-text-muted)] hover:text-white'
+                      }`}
+                    >
+                      Banned
+                      {totalBanned > 0 ? (
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-red-500/15 border border-red-500/25 text-red-400 leading-none">
+                          {totalBanned}
+                        </span>
+                      ) : (
+                        <span className={`text-[10px] font-mono ${ownersSubTab === 'banned' ? 'text-white/60' : 'text-white/25'}`}>0</span>
                       )}
                     </button>
                   </div>
@@ -1262,7 +1360,7 @@ export default function AdminDashboard() {
                       <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
                         <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">User Details</th>
                         <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Company / Designation</th>
-                        {ownersSubTab === 'approved' && (
+                        {ownersSubTab !== 'requests' && (
                           <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Status</th>
                         )}
                         <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)]">Actions</th>
@@ -1276,7 +1374,11 @@ export default function AdminDashboard() {
                       ) : activeOwners.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">
-                            {ownersSubTab === 'requests' ? 'No pending requests' : 'No matching records found'}
+                            {ownersSubTab === 'requests'
+                              ? 'No pending requests'
+                              : ownersSubTab === 'banned'
+                              ? 'No banned owners'
+                              : 'No matching records found'}
                           </td>
                         </tr>
                       ) : (
@@ -1288,7 +1390,20 @@ export default function AdminDashboard() {
                                   {user.image && <img src={user.image} alt={user.name} className="object-cover w-full h-full" />}
                                 </div>
                                 <div>
-                                  <p className="font-medium text-white text-sm">{owner.firstName} {owner.lastName}</p>
+                                  {user.username ? (
+                                    <a
+                                      href={`/${user.username}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="font-medium text-white text-sm hover:text-accent transition-colors"
+                                      title={`View @${user.username}'s profile`}
+                                    >
+                                      {owner.firstName} {owner.lastName}
+                                      <span className="text-xs text-accent ml-1.5">@{user.username}</span>
+                                    </a>
+                                  ) : (
+                                    <p className="font-medium text-white text-sm">{owner.firstName} {owner.lastName}</p>
+                                  )}
                                   <div className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-1">
                                     <span>{owner.contactEmail}</span>
                                     {owner.contactNumber && <span>&middot; {owner.contactNumber}</span>}
@@ -1306,31 +1421,61 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                             </td>
-                            {ownersSubTab === 'approved' && (
+                            {ownersSubTab !== 'requests' && (
                               <td className="px-6 py-4">
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Approved
-                                </span>
+                                {ownersSubTab === 'banned' ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
+                                    <UserX className="w-3.5 h-3.5" /> Banned
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Approved
+                                  </span>
+                                )}
                               </td>
                             )}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 {ownersSubTab === 'requests' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprove(user.id)}
+                                      className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
+                                      title="Approve Owner"
+                                    >
+                                      <CheckCircle2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setDeclineTargetOwner({ user, owner })
+                                        setDeclineReason('')
+                                        setIsDeclineModalOpen(true)
+                                      }}
+                                      className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                      title="Decline with Reason"
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                                {ownersSubTab === 'approved' && (
                                   <button
-                                    onClick={() => handleApprove(user.id)}
-                                    className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
-                                    title="Approve Owner"
+                                    onClick={() => handleToggleOwnerBan(user.id, false)}
+                                    className="h-8 px-3 rounded-lg text-xs font-medium border bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                    title="Ban Owner"
                                   >
-                                    <CheckCircle2 className="w-4 h-4" />
+                                    Ban
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => handleDecline(user.id)}
-                                  className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
-                                  title="Decline & Delete"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
+                                {ownersSubTab === 'banned' && (
+                                  <button
+                                    onClick={() => handleToggleOwnerBan(user.id, true)}
+                                    className="h-8 px-3 rounded-lg text-xs font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors cursor-pointer"
+                                    title="Unban Owner"
+                                  >
+                                    Unban
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1819,6 +1964,19 @@ export default function AdminDashboard() {
                                     {adm.isDisabled ? <CheckCircle2 className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
                                   </button>
 
+                                  {/* Edit Role */}
+                                  <button
+                                    onClick={() => {
+                                      setEditRoleTargetAdmin(adm)
+                                      setEditRoleValue(adm.role)
+                                      setIsEditRoleModalOpen(true)
+                                    }}
+                                    className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors cursor-pointer"
+                                    title="Edit Access Role"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+
                                   {/* Reset Password */}
                                   <button
                                     onClick={() => {
@@ -2059,6 +2217,129 @@ export default function AdminDashboard() {
                       </>
                     ) : (
                       <span>Reset Password</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- EDIT ROLE GLASS MODAL --- */}
+      {isEditRoleModalOpen && editRoleTargetAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="space-y-4 text-left">
+              <div className="border-b border-[var(--color-border)] pb-3">
+                <h3 className="text-base font-semibold text-white">Edit Access Role</h3>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                  Change the access level for <strong>{editRoleTargetAdmin.name}</strong> (@{editRoleTargetAdmin.username || editRoleTargetAdmin.email}).
+                </p>
+              </div>
+
+              <form onSubmit={handleUpdateRole} noValidate className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Access Role Level</label>
+                  <Select
+                    aria-label="Access role level"
+                    value={editRoleValue}
+                    onChange={(v) => setEditRoleValue(v as 'super_admin' | 'admin')}
+                    className="h-9 text-[13px]"
+                    options={[
+                      { value: 'admin', label: 'Admin (Standard)' },
+                      { value: 'super_admin', label: 'Super Admin (All Privileges)' },
+                    ]}
+                  />
+                  {editRoleValue === 'super_admin' && editRoleTargetAdmin.role !== 'super_admin' && (
+                    <p className="text-[11px] text-orange-400/80 mt-1.5">
+                      Super Admins can manage other admins, the database, and SQL — grant carefully.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--color-border)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditRoleModalOpen(false)
+                      setEditRoleTargetAdmin(null)
+                    }}
+                    className="h-8 px-3 rounded-lg text-xs font-medium transition-colors border border-[var(--color-border)] hover:bg-white/[0.05]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingRole || editRoleValue === editRoleTargetAdmin.role}
+                    className="h-8 px-3 rounded-lg text-xs font-medium bg-accent text-black transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isUpdatingRole ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Role</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- DECLINE OWNER GLASS MODAL --- */}
+      {isDeclineModalOpen && declineTargetOwner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            <div className="space-y-4 text-left">
+              <div className="border-b border-[var(--color-border)] pb-3">
+                <h3 className="text-base font-semibold text-white">Decline Application</h3>
+                <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                  Reject <strong>{declineTargetOwner.owner.firstName} {declineTargetOwner.owner.lastName}</strong>. The reason below is emailed to them, and their account is removed so they can apply again.
+                </p>
+              </div>
+
+              <form onSubmit={handleDeclineOwner} noValidate className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-[var(--color-text-muted)]">Reason for declining</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    placeholder="e.g. We couldn't verify your company details. Please include a valid company website and re-apply."
+                    className="w-full bg-white/[0.02] border border-[var(--color-border)] rounded-lg p-3 text-[13px] text-white focus:outline-none focus:border-accent transition-colors resize-none"
+                  />
+                  <p className="text-[11px] text-[var(--color-text-muted)]">This message will be sent to the applicant.</p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--color-border)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDeclineModalOpen(false)
+                      setDeclineTargetOwner(null)
+                      setDeclineReason('')
+                    }}
+                    className="h-8 px-3 rounded-lg text-xs font-medium transition-colors border border-[var(--color-border)] hover:bg-white/[0.05]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isDeclining || !declineReason.trim()}
+                    className="h-8 px-3 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDeclining ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-current/20 border-t-current rounded-full animate-spin" />
+                        <span>Declining...</span>
+                      </>
+                    ) : (
+                      <span>Decline &amp; Notify</span>
                     )}
                   </button>
                 </div>

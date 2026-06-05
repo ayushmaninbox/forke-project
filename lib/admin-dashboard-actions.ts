@@ -3,7 +3,7 @@
 import { db } from './db'
 import { users, owners, subscribers, admins, developers, accounts } from './db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
-import { sendBroadcastEmail, sendAdminInvitation } from './email'
+import { sendBroadcastEmail, sendAdminInvitation, sendOwnerApprovedEmail, sendOwnerDeclinedEmail, sendOwnerBannedEmail } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
 import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'
@@ -86,18 +86,62 @@ export async function getDevelopers() {
 export async function approveOwner(userId: string) {
   await ensureAdmin()
   const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, email: true } })
+  const o = await db.query.owners.findFirst({ where: eq(owners.id, userId), columns: { firstName: true, contactEmail: true } })
   await db.update(users).set({ isApproved: true }).where(eq(users.id, userId))
   await logAudit({ category: 'owner', action: 'owner.approved', target: u?.name || u?.email || userId })
+
+  // Notify the owner (fail-soft — never block the approval on email failure)
+  const toEmail = o?.contactEmail || u?.email
+  if (toEmail) {
+    await sendOwnerApprovedEmail(toEmail, o?.firstName || u?.name || 'there')
+  }
+
   revalidatePath('/admin')
   return { success: true }
 }
 
-export async function declineOwner(userId: string) {
+export async function declineOwner(userId: string, reason: string) {
   await ensureAdmin()
+  const cleanReason = (reason || '').trim()
+  if (!cleanReason) {
+    return { success: false, error: 'A decline reason is required.' }
+  }
   const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, email: true } })
+  const o = await db.query.owners.findFirst({ where: eq(owners.id, userId), columns: { firstName: true, contactEmail: true } })
+
+  // Notify BEFORE deletion (the user row is about to be removed)
+  const toEmail = o?.contactEmail || u?.email
+  if (toEmail) {
+    await sendOwnerDeclinedEmail(toEmail, o?.firstName || u?.name || 'there', cleanReason)
+  }
+
   // This will cascade delete from owners table due to FK
   await db.delete(users).where(eq(users.id, userId))
-  await logAudit({ category: 'owner', action: 'owner.declined', target: u?.name || u?.email || userId })
+  // Audit log keeps the reason — the only durable record once the user is gone
+  await logAudit({ category: 'owner', action: 'owner.declined', target: `${u?.name || u?.email || userId} — ${cleanReason}` })
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+export async function toggleOwnerBan(userId: string, shouldBan: boolean) {
+  await ensureAdmin()
+  const u = await db.query.users.findFirst({ where: eq(users.id, userId), columns: { name: true, email: true } })
+  const o = await db.query.owners.findFirst({ where: eq(owners.id, userId), columns: { firstName: true, contactEmail: true } })
+  await db.update(users).set({ isBanned: shouldBan }).where(eq(users.id, userId))
+  await logAudit({
+    category: 'owner',
+    action: shouldBan ? 'owner.banned' : 'owner.unbanned',
+    target: u?.name || u?.email || userId,
+  })
+
+  // On ban, email the owner the unban-request link (fail-soft)
+  if (shouldBan) {
+    const toEmail = o?.contactEmail || u?.email
+    if (toEmail) {
+      await sendOwnerBannedEmail(toEmail, o?.firstName || u?.name || 'there')
+    }
+  }
+
   revalidatePath('/admin')
   return { success: true }
 }
@@ -414,6 +458,51 @@ export async function toggleAdminDisabledAction(targetAdminId: string, isDisable
     return { success: true }
   } catch (error) {
     console.error('Failed to toggle admin status:', error)
+    return { success: false, error: 'Database transaction failed.' }
+  }
+}
+
+export async function updateAdminRoleAction(targetAdminId: string, newRole: 'super_admin' | 'admin') {
+  await ensureAdmin()
+  const current = await getCurrentAdmin()
+  if (!current || current.role !== 'super_admin') {
+    return { success: false, error: 'Only Super Admins can change administrator roles.' }
+  }
+  if (current.id === targetAdminId) {
+    return { success: false, error: 'System restriction: You cannot change your own access level.' }
+  }
+  if (newRole !== 'super_admin' && newRole !== 'admin') {
+    return { success: false, error: 'Invalid role specified.' }
+  }
+  try {
+    const target = await db.query.admins.findFirst({ where: eq(admins.id, targetAdminId), columns: { name: true, role: true } })
+    if (!target) {
+      return { success: false, error: 'Administrator not found.' }
+    }
+    // Prevent demoting the last remaining super admin
+    if (target.role === 'super_admin' && newRole === 'admin') {
+      const superAdminCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(admins)
+        .where(eq(admins.role, 'super_admin'))
+        .then((rows) => rows[0]?.count ?? 0)
+      if (superAdminCount <= 1) {
+        return { success: false, error: 'Cannot demote the last remaining Super Admin.' }
+      }
+    }
+    await db
+      .update(admins)
+      .set({ role: newRole })
+      .where(eq(admins.id, targetAdminId))
+    await logAudit({
+      category: 'admin',
+      action: 'admin.role_changed',
+      target: `${target.name || targetAdminId} → ${newRole === 'super_admin' ? 'Super Admin' : 'Admin'}`,
+    })
+    revalidatePath('/admin')
+    return { success: true }
+  } catch (error) {
+    console.error('Failed to update admin role:', error)
     return { success: false, error: 'Database transaction failed.' }
   }
 }
