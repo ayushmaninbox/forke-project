@@ -5,35 +5,37 @@ import { cn } from '@/lib/utils/cn'
 
 interface TechStackItem {
   name: string;
-  slug: string;
+  path: string;
   hoverFilter?: string;
 }
 
 const TECH_STACKS: TechStackItem[] = [
-  { name: "React", slug: "react" },
-  { name: "Next.js", slug: "nextdotjs", hoverFilter: "brightness(0) invert(1)" },
-  { name: "HTML5", slug: "html5" },
-  { name: "CSS3", slug: "css3" },
-  { name: "Python", slug: "python" },
-  { name: "PHP", slug: "php" },
-  { name: "Go (Golang)", slug: "go" },
-  { name: "Rust", slug: "rust" },
-  { name: "Nuxt.js", slug: "nuxt" },
-  { name: "Vue.js", slug: "vuedotjs" },
-  { name: "Vite", slug: "vite" },
-  { name: "Svelte", slug: "svelte" },
-  { name: "Spring Boot", slug: "springboot" },
-  { name: "Ruby", slug: "ruby" },
-  { name: "Laravel v2", slug: "laravel" },
-  { name: "NestJS", slug: "nestjs" },
-  { name: "Lua", slug: "lua" },
-  { name: "Laravel v1", slug: "laravel" },
-  { name: "Astro", slug: "astro" },
-  { name: "Flask", slug: "flask", hoverFilter: "brightness(0) invert(1)" },
-  { name: "C++", slug: "cplusplus" },
-  { name: "C#", slug: "csharp" },
-  { name: "C", slug: "c" },
-  { name: "Angular", slug: "angular" }
+  { name: "React", path: "react/react-original" },
+  { name: "Next.js", path: "nextjs/nextjs-original", hoverFilter: "brightness(0) invert(1)" },
+  { name: "HTML5", path: "html5/html5-original" },
+  { name: "CSS3", path: "css3/css3-original" },
+  { name: "JavaScript", path: "javascript/javascript-original" },
+  { name: "TypeScript", path: "typescript/typescript-original" },
+  { name: "Python", path: "python/python-original" },
+  { name: "PHP", path: "php/php-original" },
+  { name: "Go (Golang)", path: "go/go-original" },
+  { name: "Rust", path: "rust/rust-original" },
+  { name: "Nuxt.js", path: "nuxtjs/nuxtjs-original" },
+  { name: "Vue.js", path: "vuejs/vuejs-original" },
+  { name: "Vite", path: "vitejs/vitejs-original" },
+  { name: "Svelte", path: "svelte/svelte-original" },
+  { name: "Spring Boot", path: "spring/spring-original" },
+  { name: "Ruby", path: "ruby/ruby-original" },
+  { name: "Laravel v2", path: "laravel/laravel-original" },
+  { name: "NestJS", path: "nestjs/nestjs-original" },
+  { name: "Lua", path: "lua/lua-original" },
+  { name: "Laravel v1", path: "laravel/laravel-original" },
+  { name: "Astro", path: "astro/astro-original" },
+  { name: "Flask", path: "flask/flask-original", hoverFilter: "brightness(0) invert(1)" },
+  { name: "C++", path: "cplusplus/cplusplus-original" },
+  { name: "C#", path: "csharp/csharp-original" },
+  { name: "C", path: "c/c-original" },
+  { name: "Angular", path: "angular/angular-original" }
 ];
 
 export default function TechStackTicker({ isHeroEmbedded = false }: { isHeroEmbedded?: boolean }) {
@@ -72,7 +74,7 @@ export default function TechStackTicker({ isHeroEmbedded = false }: { isHeroEmbe
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
-                  src={`https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/${item.slug}.svg`}
+                  src={`https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${item.path}.svg`}
                   alt={item.name}
                   className="w-full h-full object-contain pointer-events-none select-none"
                 />
