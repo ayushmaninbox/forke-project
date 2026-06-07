@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
 import { gsap } from 'gsap'
@@ -9,6 +9,7 @@ import { useGSAP } from '@gsap/react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
+import CardSwap, { Card } from './CardSwap'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -18,89 +19,68 @@ if (typeof window !== 'undefined') {
 const LEVELS = [
   { 
     lvl: '1–5', 
-    label: 'Early', 
+    label: 'Early Game', 
+    title: 'Newcomer to Stack Explorer',
     tasks: 'HTML/CSS, Basic Bug Fixes', 
     range: '₹200 - ₹500', 
+    xpMultiplier: '1.0x XP',
+    perks: ['Unlock basic bounties', 'Public profile URL (LVL 3)', 'Team task applications (LVL 5)'],
     image: '/forke-assets/landing-assets/newcomer_forky.png',
-    imgClass: 'scale-[0.94] -translate-y-2'
+    imgClass: 'scale-[0.98] -translate-y-2'
   },
   { 
     lvl: '6–10', 
-    label: 'Mid', 
+    label: 'Mid Game', 
+    title: 'Code Runner to Sprint Soldier',
     tasks: 'React Components, CSS Logic', 
     range: '₹500 - ₹1200', 
+    xpMultiplier: '1.2x XP',
+    perks: ['Intermediate payout tiers', 'XP streak multipliers (LVL 10)', 'Warm standby queue access'],
     image: '/forke-assets/landing-assets/apprentice_forky.png',
-    imgClass: 'scale-[1.08] -translate-y-1'
+    imgClass: 'scale-[1.12] -translate-y-1'
   },
   { 
     lvl: '11–15', 
-    label: 'Skilled', 
+    label: 'Skilled Tier', 
+    title: 'Merge Specialist to Feature Shipper',
     tasks: 'API Hooks, Full-stack Features', 
     range: '₹1200 - ₹3000', 
+    xpMultiplier: '1.5x XP',
+    perks: ['Priority task queue (LVL 12)', 'Elite bounty eligibility (LVL 15)', 'Reviewer pathway entry'],
     image: '/forke-assets/landing-assets/builder_forky.png',
-    imgClass: '[transform:scale(-0.92,0.92)] -translate-y-1 translate-x-2.5'
+    imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
   { 
     lvl: '16–20', 
-    label: 'Elite', 
+    label: 'Elite Tier', 
+    title: 'Runtime Knight to Production Slayer',
     tasks: 'System Architecture, Database Fixes', 
     range: '₹3000 - ₹8000', 
+    xpMultiplier: '2.0x XP',
+    perks: ['Team lead eligibility (LVL 18)', 'Mentor access (LVL 20)', 'Advanced security clearance'],
     image: '/forke-assets/landing-assets/expert_forky.png',
-    imgClass: 'scale-[1.0] -translate-y-1.5'
+    imgClass: 'scale-[1.05] -translate-y-1.5'
   },
   { 
     lvl: '21–25', 
-    label: 'Legend', 
+    label: 'Legend Tier', 
+    title: 'Silicon Phantom to Forke Legend',
     tasks: 'Performance at Scale, Cloud DevOps', 
     range: '₹8000+', 
+    xpMultiplier: '2.5x XP',
+    perks: ['Private invite-only projects', 'Prestige reset options', 'Commit Warlord status badge'],
     image: '/forke-assets/landing-assets/architect_forky.png',
-    imgClass: '[transform:scale(-0.92,0.92)] -translate-y-1 translate-x-2.5'
+    imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
 ]
 
 export default function LevelSystem() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([])
   const router = useRouter()
-  const isFirstRender = useRef(true)
-  
   const [activeIndex, setActiveIndex] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
 
-  // Autoplay loop
-  useEffect(() => {
-    if (isPaused) return
-    const interval = setInterval(() => {
-      handleNext()
-    }, 4000)
-    return () => clearInterval(interval)
-  }, [isPaused, activeIndex])
-
-  // Resume autoplay after inactivity
-  useEffect(() => {
-    if (!isPaused) return
-    const timeout = setTimeout(() => {
-      setIsPaused(false)
-    }, 6000)
-    return () => clearTimeout(timeout)
-  }, [isPaused, activeIndex])
-
-  const handleNext = () => {
-    if (isAnimating) return
-    setActiveIndex(prev => (prev + 1) % LEVELS.length)
-  }
-
-  const handleManualInteraction = (index?: number) => {
-    if (isAnimating) return
-    setIsPaused(true)
-    if (typeof index === 'number') {
-      if (index !== activeIndex) {
-        setActiveIndex(index)
-      }
-    } else {
-      handleNext()
-    }
+  const handleManualInteraction = (index: number) => {
+    setActiveIndex(index)
   }
 
   useGSAP(() => {
@@ -123,99 +103,6 @@ export default function LevelSystem() {
       '-=0.6'
     )
   }, { scope: containerRef })
-
-  // Stack Animation using GSAP
-  useGSAP(() => {
-    if (isFirstRender.current) {
-       // Just set positions instantly on mount
-       LEVELS.forEach((_, i) => {
-         const card = cardsRef.current[i]
-         if (!card) return
-         const diff = (i - activeIndex + LEVELS.length) % LEVELS.length
-         const isFront = diff === 0
-         const isVisible = diff < 5
-         
-         const scale = isFront ? 1 : 1 - (diff * 0.04)
-         const y = isFront ? 0 : diff * 16
-         const x = isFront ? 0 : diff * 8
-         const opacity = isFront ? 1 : isVisible ? 1 - (diff * 0.18) : 0
-         const zIndex = LEVELS.length - diff
-
-         gsap.set(card, {
-          x,
-          y,
-          scale,
-          opacity,
-          rotationZ: diff * -1.5,
-          zIndex
-        })
-       })
-       isFirstRender.current = false
-       return
-    }
-
-    setIsAnimating(true)
-    
-    LEVELS.forEach((_, i) => {
-      const card = cardsRef.current[i]
-      if (!card) return
-
-      const diff = (i - activeIndex + LEVELS.length) % LEVELS.length
-      const isFront = diff === 0
-      const isVisible = diff < 5
-      const isDropping = diff === LEVELS.length - 1 // The card that just moved to the back
-
-      // Target properties for the "Reveal" phase (matching the user's tweaked resting values)
-      const targetScale = isFront ? 1 : 1 - (diff * 0.04)
-      const targetY = isFront ? 0 : diff * 16
-      const targetX = isFront ? 0 : diff * 8
-      const targetRotationZ = isFront ? 0 : diff * -1.5
-      const targetOpacity = isFront ? 1 : isVisible ? 1 - (diff * 0.18) : 0
-      const zIndex = LEVELS.length - diff
-
-      // Apply zIndex immediately so the cards order correctly before animating
-      gsap.set(card, { zIndex })
-
-      if (isDropping) {
-        // Phase 1 - Drop: Front card animates down with rotation, fade, and scale down.
-        gsap.to(card, {
-          y: 100, // drop down significantly
-          x: -20, // slide slightly left while dropping
-          scale: 0.92, // shrink a little
-          opacity: 0, // fade to 0
-          rotationZ: 8, // slight rotation for realism
-          duration: 0.65, // faster drop
-          ease: 'power2.in',
-          onComplete: () => {
-            // Reset to the very back of the stack invisibly
-            const resetDiff = LEVELS.length - 1
-            gsap.set(card, { 
-              y: resetDiff * 16, 
-              x: resetDiff * 8, 
-              scale: 1 - (resetDiff * 0.04), 
-              opacity: 0, 
-              rotationZ: resetDiff * -1.5 
-            })
-          }
-        })
-      } else {
-        // Phase 2 - Reveal: Next cards wait until drop phase begins, then slide up and scale into place.
-        gsap.to(card, {
-          y: targetY,
-          x: targetX,
-          scale: targetScale,
-          opacity: targetOpacity,
-          rotationZ: targetRotationZ,
-          duration: 0.6,
-          delay: 0.45, // wait for drop to get out of the way
-          ease: 'power3.out',
-          onComplete: () => {
-            if (isFront) setIsAnimating(false)
-          }
-        })
-      }
-    })
-  }, { dependencies: [activeIndex], scope: containerRef })
 
 
   return (
@@ -287,79 +174,96 @@ export default function LevelSystem() {
         </div>
 
         {/* Right Column: Stacked Cards */}
-        <div className="gsap-lvl-stack relative h-[450px] sm:h-[500px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-8 perspective-[1200px]">
-          <div 
-            className="relative w-full max-w-[340px] h-[400px] cursor-pointer"
-            onClick={() => handleManualInteraction()}
+        <div className="gsap-lvl-stack relative h-[520px] sm:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-16">
+          <CardSwap
+            width={780}
+            height={420}
+            cardDistance={60}
+            verticalDistance={70}
+            delay={3500}
+            pauseOnHover={false}
+            skewAmount={6}
+            easing="elastic"
+            activeIndex={activeIndex}
+            onActiveIndexChange={setActiveIndex}
           >
             {LEVELS.map((item, i) => {
               const isActive = i === activeIndex
-              
               return (
-                <div
+                <Card
                   key={item.lvl}
-                  ref={(el) => { cardsRef.current[i] = el }}
-                  className="absolute top-0 left-0 w-full pointer-events-none origin-center"
+                  className={cn(
+                    "w-full h-full rounded-2xl border p-8 text-left flex flex-row items-center justify-between group overflow-hidden transition-colors duration-500",
+                    isActive 
+                      ? "bg-[#0c0c0f] border-accent/40 shadow-[0_20px_50px_rgba(255,122,0,0.15),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
+                      : "bg-[#0c0c0f] border-white/[0.06] shadow-[0_20px_40px_rgba(0,0,0,0.7)]"
+                  )}
                 >
-                  <div 
-                    className={cn(
-                      "relative rounded-2xl border p-6 pt-7 pb-8 text-left flex flex-col group overflow-visible min-h-[400px] w-full shadow-2xl transition-colors duration-500",
-                      isActive 
-                        ? "bg-[#111] border-accent/70 shadow-[0_20px_60px_rgba(255,122,0,0.15),_0_0_20px_rgba(255,122,0,0.08),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
-                        : "bg-gradient-to-b from-[#151515] to-[#0d0d0d] border-white/[0.06] shadow-[0_20px_40px_rgba(0,0,0,0.8)]"
-                    )}
-                    style={{ pointerEvents: isActive ? 'auto' : 'none' }}
-                  >
-                    {/* Internal Card Glow for active */}
-                    <div className={cn("absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.12)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
-                    <div className={cn("absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_100%,_rgba(255,122,0,0.06)_0%,_transparent_50%)] pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
-                    <div className={cn("absolute -inset-px rounded-2xl border border-accent/30 pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
-
-                    {/* Card Header */}
-                    <div className="flex flex-col mb-4 relative z-10 w-full text-left">
-                      <div className="flex items-center justify-between w-full">
-                        <h4 className="font-bold text-xl text-white tracking-tight">{item.label}</h4>
-                        <div className={cn("transition-opacity duration-300", isActive ? "opacity-100" : "opacity-0")}>
-                          <span className="text-[8px] border border-accent/50 text-accent px-2.5 py-0.5 rounded-md uppercase font-black tracking-wider bg-accent/10 shrink-0">
-                            Active Tier
-                          </span>
-                        </div>
+                  {/* Internal Card Glow for active */}
+                  <div className={cn("absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.1)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
+                  
+                  {/* Left Column: Text Info */}
+                  <div className="flex-1 max-w-[420px] flex flex-col justify-between h-full pr-4 relative z-10">
+                    {/* Header */}
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono text-accent border border-accent/30 bg-accent/5 px-2.5 py-0.5 rounded-md uppercase font-bold tracking-wider">
+                          LVL {item.lvl}
+                        </span>
+                        <span className="text-[10px] font-mono text-white/50 border border-white/10 bg-white/5 px-2 py-0.5 rounded-md font-bold">
+                          {item.xpMultiplier}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-mono text-accent uppercase tracking-widest mt-1">LVL {item.lvl}</span>
+                      <h4 className="font-serif text-3xl text-white tracking-tight mt-3 font-semibold">{item.label}</h4>
+                      <p className="text-xs font-mono text-white/40 mt-1">{item.title}</p>
                     </div>
 
-                    {/* Unlocks */}
-                    <div className="mb-4 relative z-10">
-                      <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-1">Unlocks</p>
-                      <p className="text-sm text-white/80 leading-relaxed font-medium">{item.tasks}</p>
+                    {/* Unlocks / Perks */}
+                    <div className="my-4 space-y-2">
+                      <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest">Platform Unlocks</p>
+                      <ul className="space-y-1.5">
+                        {item.perks.map((perk, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-xs text-white/70">
+                            <span className="text-accent text-xs">✦</span>
+                            <span>{perk}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
-                    {/* Bounty Range */}
-                    <div className="mb-4 relative z-10">
-                      <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-0.5">Bounty Range</p>
-                      <p className="text-xl font-bold text-accent">{item.range}</p>
-                    </div>
-
-                    {/* Mascot Image */}
-                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-[260px] pointer-events-none overflow-visible">
-                      <div className={cn(
-                        "relative w-full h-full transition-transform duration-500",
-                        item.imgClass
-                      )}>
-                        <Image 
-                          src={item.image} 
-                          alt={item.label} 
-                          fill
-                          className="object-contain object-bottom"
-                          sizes="(max-width: 768px) 100vw, 400px"
-                        />
+                    {/* Footer Info */}
+                    <div className="flex items-baseline gap-6 border-t border-white/[0.04] pt-3">
+                      <div>
+                        <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest mb-0.5">Focus</p>
+                        <p className="text-xs text-white/70 font-mono font-semibold max-w-[190px] truncate">{item.tasks}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest mb-0.5">Bounty Range</p>
+                        <p className="text-xl font-bold font-mono text-accent leading-none">{item.range}</p>
                       </div>
                     </div>
                   </div>
-                </div>
+
+                  {/* Right Column: Mascot Image */}
+                  <div className="w-[300px] h-[95%] absolute bottom-2 right-2 pointer-events-none overflow-visible select-none flex items-end justify-center z-20">
+                    <div className={cn(
+                      "relative w-full h-[95%] transition-transform duration-500",
+                      item.imgClass
+                    )}>
+                      <Image 
+                        src={item.image} 
+                        alt={item.label} 
+                        fill
+                        className="object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.85)]"
+                        sizes="350px"
+                        priority={isActive}
+                      />
+                    </div>
+                  </div>
+                </Card>
               )
             })}
-          </div>
+          </CardSwap>
         </div>
 
       </div>
