@@ -1,65 +1,90 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
+import { ArrowRight } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { useRouter } from 'next/navigation'
+import CardSwap, { Card } from './CardSwap'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
 }
 
+// Single Source of Truth for the Component Data
 const LEVELS = [
   { 
     lvl: '1–5', 
-    label: 'Early', 
+    label: 'Early Game', 
+    title: 'Newcomer to Stack Explorer',
     tasks: 'HTML/CSS, Basic Bug Fixes', 
     range: '₹200 - ₹500', 
+    xpMultiplier: '1.0x XP',
+    perks: ['Unlock basic bounties', 'Public profile URL (LVL 3)', 'Team task applications (LVL 5)'],
     image: '/forke-assets/landing-assets/newcomer_forky.png',
-    imgClass: 'scale-[0.94] -translate-y-2'
+    imgClass: 'scale-[0.98] -translate-y-2'
   },
   { 
     lvl: '6–10', 
-    label: 'Mid', 
+    label: 'Mid Game', 
+    title: 'Code Runner to Sprint Soldier',
     tasks: 'React Components, CSS Logic', 
     range: '₹500 - ₹1200', 
+    xpMultiplier: '1.2x XP',
+    perks: ['Intermediate payout tiers', 'XP streak multipliers (LVL 10)', 'Warm standby queue access'],
     image: '/forke-assets/landing-assets/apprentice_forky.png',
-    imgClass: 'scale-[1.08] -translate-y-1'
+    imgClass: 'scale-[1.12] -translate-y-1'
   },
   { 
     lvl: '11–15', 
-    label: 'Skilled', 
+    label: 'Skilled Tier', 
+    title: 'Merge Specialist to Feature Shipper',
     tasks: 'API Hooks, Full-stack Features', 
     range: '₹1200 - ₹3000', 
-    isActive: true,
+    xpMultiplier: '1.5x XP',
+    perks: ['Priority task queue (LVL 12)', 'Elite bounty eligibility (LVL 15)', 'Reviewer pathway entry'],
     image: '/forke-assets/landing-assets/builder_forky.png',
-    imgClass: 'scale-x-[-0.92] scale-y-[0.92] -translate-y-1 translate-x-2.5'
+    imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
   { 
     lvl: '16–20', 
-    label: 'Elite', 
+    label: 'Elite Tier', 
+    title: 'Runtime Knight to Production Slayer',
     tasks: 'System Architecture, Database Fixes', 
     range: '₹3000 - ₹8000', 
+    xpMultiplier: '2.0x XP',
+    perks: ['Team lead eligibility (LVL 18)', 'Mentor access (LVL 20)', 'Advanced security clearance'],
     image: '/forke-assets/landing-assets/expert_forky.png',
-    imgClass: 'scale-[1.0] -translate-y-1.5'
+    imgClass: 'scale-[1.05] -translate-y-1.5'
   },
   { 
     lvl: '21–25', 
-    label: 'Legend', 
+    label: 'Legend Tier', 
+    title: 'Silicon Phantom to Forke Legend',
     tasks: 'Performance at Scale, Cloud DevOps', 
     range: '₹8000+', 
+    xpMultiplier: '2.5x XP',
+    perks: ['Private invite-only projects', 'Prestige reset options', 'Commit Warlord status badge'],
     image: '/forke-assets/landing-assets/architect_forky.png',
-    imgClass: 'scale-x-[-0.92] scale-y-[0.92] -translate-y-1 translate-x-2.5'
+    imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
 ]
 
 export default function LevelSystem() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const handleManualInteraction = (index: number) => {
+    setActiveIndex(index)
+  }
 
   useGSAP(() => {
-    // 1. Level System Main ScrollTrigger Timeline
+    // Scroll Entrance
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: containerRef.current,
@@ -68,225 +93,179 @@ export default function LevelSystem() {
       }
     })
 
-    // Header animate
-    tl.fromTo('.gsap-lvl-title',
+    tl.fromTo('.gsap-lvl-content > *',
       { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out' }
+      { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power2.out' }
     )
-    .fromTo('.gsap-lvl-desc',
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 },
+    .fromTo('.gsap-lvl-stack',
+      { x: 50, opacity: 0 },
+      { x: 0, opacity: 1, duration: 1, ease: 'power3.out' },
       '-=0.6'
     )
-    // Progress line animate (scale from left)
-    .fromTo('.gsap-lvl-line',
-      { scaleX: 0 },
-      { scaleX: 1, duration: 1.2, ease: 'power3.inOut' },
-      '-=0.4'
-    )
-    // Progress nodes animate
-    .fromTo('.gsap-lvl-node',
-      { scale: 0, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(2)' },
-      '-=0.8'
-    )
-    // Level cards stagger in
-    .fromTo('.gsap-lvl-card',
-      { y: 60, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' },
-      '-=0.6'
-    )
-
-    // 2. Stats Card Counter ScrollTrigger
-    const statsObj = { completed: 0, paid: 0, active: 0, colleges: 0 }
-    
-    gsap.to(statsObj, {
-      completed: 1240,
-      paid: 4.8,
-      active: 850,
-      colleges: 12,
-      duration: 2.2,
-      ease: 'power2.out',
-      scrollTrigger: {
-        trigger: '.gsap-stats-card',
-        start: 'top 85%',
-        toggleActions: 'play none none none'
-      },
-      onUpdate: () => {
-        const elCompleted = document.querySelector('.gsap-stat-completed')
-        const elPaid = document.querySelector('.gsap-stat-paid')
-        const elActive = document.querySelector('.gsap-stat-active')
-        const elColleges = document.querySelector('.gsap-stat-colleges')
-        
-        if (elCompleted) elCompleted.innerHTML = Math.floor(statsObj.completed).toLocaleString() + '+'
-        if (elPaid) elPaid.innerHTML = '₹' + statsObj.paid.toFixed(1) + 'L+'
-        if (elActive) elActive.innerHTML = Math.floor(statsObj.active) + '+'
-        if (elColleges) elColleges.innerHTML = Math.floor(statsObj.colleges) + '+'
-      }
-    })
   }, { scope: containerRef })
 
+
   return (
-    <section ref={containerRef} id="levels" className="py-32 px-4 bg-bg relative overflow-hidden">
+    <section ref={containerRef} id="levels" className="py-24 md:py-32 px-4 bg-bg relative overflow-hidden">
       {/* Background Gradients */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-10 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto text-center relative z-10">
-        {/* Header */}
-        <div className="space-y-4 mb-16">
-          <h2 className="gsap-lvl-title font-serif text-5xl md:text-7xl text-white flex items-center justify-center gap-3 opacity-0">
-            The Level System <span className="text-accent text-3xl">✦</span>
-          </h2>
-          <p className="gsap-lvl-desc text-muted text-lg max-w-2xl mx-auto font-light leading-relaxed opacity-0">
-            The more you ship, the faster you level up. <br />
-            Higher levels unlock bigger task budgets and exclusive bounties.
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
+        
+        {/* Left Column: Content */}
+        <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">
+          <div className="space-y-4">
+            <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight">
+              The Level System <span className="text-accent">✦</span>
+            </h2>
+            <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
+              Completing tasks earns XP. XP increases your level. Higher levels unlock larger bounties, better opportunities, and exclusive platform privileges. Consistency is rewarded—the more you ship, the faster you ascend.
+            </p>
+          </div>
 
-        {/* Progress Indicator Row */}
-        <div className="relative flex items-center justify-between max-w-4xl mx-auto mb-16 px-8">
-          {/* Base Connecting Line */}
-          <div className="absolute top-1/2 left-8 right-8 h-[2px] bg-white/5 -translate-y-1/2" />
-          
-          {/* Glowing Progress Line - Radiating from 3 */}
-          <div className="gsap-lvl-line absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent opacity-60 shadow-[0_0_15px_rgba(255,122,0,0.5)] origin-center" />
-          
-          {LEVELS.map((item) => (
-            <div 
-              key={item.lvl}
-              className={cn(
-                "gsap-lvl-node relative z-10 w-12 h-12 rounded-full flex items-center justify-center font-mono font-bold text-[10px] tracking-tighter transition-all duration-300 opacity-0 scale-50",
-                item.isActive 
-                  ? "bg-accent text-bg w-14 h-14 shadow-[0_0_30px_rgba(255,122,0,0.6)] border-2 border-accent text-xs" 
-                  : "bg-[#1a1a1a] text-white/40 border border-white/10"
-              )}
+          <div className="pt-2">
+            <Button 
+              size="lg" 
+              onClick={() => router.push('/levels')}
+              className="group gap-2 text-base px-8 py-6 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight"
             >
-              {item.lvl}
-              {item.isActive && (
-                <div className="absolute inset-0 rounded-full bg-accent/20 blur-md -z-10 animate-pulse" />
-              )}
-            </div>
-          ))}
-        </div>
+              Explore all 25 levels <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
 
-        {/* Cards Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {LEVELS.map((item, index) => (
+          {/* Progress Indicator Row - Option A (Glowing Progress Rail) */}
+          <div className="pt-12 w-full max-w-md">
+            <div className="relative flex items-center justify-between w-full">
+              {/* Base Connecting Line (Muted) */}
+              <div className="absolute top-1/2 left-4 right-4 h-[2px] bg-white/5 -translate-y-1/2" />
+            
+            {/* Active Connecting Line (Glowing Orange) */}
             <div 
-              key={index} 
-              className={cn(
-                "gsap-lvl-card relative rounded-2xl border p-6 pt-7 pb-8 text-left flex flex-col group overflow-visible min-h-[420px] opacity-0",
-                item.isActive 
-                  ? "bg-[#111] border-accent/70 shadow-[0_0_60px_rgba(255,122,0,0.15),_0_0_20px_rgba(255,122,0,0.08),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
-                  : "bg-gradient-to-b from-[#151515] to-[#0d0d0d] border-white/[0.06]"
-              )}
-            >
-              {/* Internal Card Glow for active */}
-              {item.isActive && (
-                <>
-                  <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.12)_0%,_transparent_60%)] pointer-events-none" />
-                  <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_100%,_rgba(255,122,0,0.06)_0%,_transparent_50%)] pointer-events-none" />
-                  <div className="absolute -inset-px rounded-2xl border border-accent/30 pointer-events-none" />
-                </>
-              )}
+              className="absolute top-1/2 left-4 h-[2px] bg-[#FF7A00] -translate-y-1/2 transition-all duration-[600ms] delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_30px_rgba(255,122,0,0.95)] origin-left z-0" 
+              style={{ width: `calc(${activeIndex * (100 / (LEVELS.length - 1))}% - 16px)` }}
+            />
+            
+            {LEVELS.map((item, index) => {
+              const isActive = index === activeIndex
+              const isPast = index < activeIndex
 
-              {/* Card Header */}
-              <div className="flex flex-col mb-4 relative z-10 w-full text-left">
-                <div className="flex items-center justify-between w-full">
-                  <h4 className="font-bold text-xl text-white tracking-tight">{item.label}</h4>
-                  {item.isActive && (
-                    <span className="text-[8px] border border-accent/50 text-accent px-2.5 py-0.5 rounded-md uppercase font-black tracking-wider bg-accent/10 shrink-0">
-                      Active Tier
-                    </span>
+              return (
+                <div 
+                  key={item.lvl}
+                  onClick={() => handleManualInteraction(index)}
+                  className={cn(
+                    "relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-mono font-bold text-[9px] tracking-tighter transition-all duration-500 cursor-pointer hover:scale-125",
+                    isActive 
+                      ? "bg-[#FF7A00] text-black w-12 h-12 shadow-[0_0_45px_rgba(255,122,0,1)] border-2 border-[#FF7A00] text-xs scale-125" 
+                      : isPast
+                        ? "bg-[#FF7A00] text-black border border-[#FF7A00] shadow-[0_0_10px_rgba(255,122,0,0.3)]"
+                        : "bg-[#1a1a1a] text-white/40 border border-white/10 hover:border-white/30"
+                  )}
+                >
+                  {item.lvl}
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-full bg-[#FF7A00]/20 blur-md -z-10 animate-pulse" />
                   )}
                 </div>
-                <span className="text-[10px] font-mono text-accent uppercase tracking-widest mt-1">LVL {item.lvl}</span>
-              </div>
-
-              {/* Unlocks */}
-              <div className="mb-4 relative z-10">
-                <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-1">Unlocks</p>
-                <p className="text-sm text-white/80 leading-relaxed font-medium">{item.tasks}</p>
-              </div>
-
-              {/* Bounty Range */}
-              <div className="mb-4 relative z-10">
-                <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest mb-0.5">Bounty Range</p>
-                <p className="text-xl font-bold text-accent">{item.range}</p>
-              </div>
-
-              {/* Mascot Image — Absolutely positioned to break out of the card width */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[160%] h-72 pointer-events-none overflow-visible">
-                <div className={cn(
-                  "gsap-lvl-mascot relative w-full h-full transition-transform duration-500",
-                  item.imgClass
-                )}>
-                  <Image 
-                    src={item.image} 
-                    alt={item.label} 
-                    fill
-                    className="object-contain object-bottom"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Stats Card */}
-        <div className="gsap-stats-card mt-32 p-12 rounded-[3rem] bg-[#0D0D0D] border border-white/[0.06] relative overflow-hidden group">
-          <div className="relative z-10 flex flex-wrap justify-center items-center gap-16 md:gap-24">
-            {/* Stat 1 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-completed text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Tasks Completed</p>
-              </div>
-            </div>
-
-            {/* Stat 2 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <span className="text-xl font-medium">₹</span>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-paid text-4xl font-bold text-white tracking-tight">₹0.0L+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Total Paid Out</p>
-              </div>
-            </div>
-
-            {/* Stat 3 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-active text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Active Developers</p>
-              </div>
-            </div>
-
-            {/* Stat 4 */}
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 rounded-full border border-white/[0.05] flex items-center justify-center text-accent/80">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="gsap-stat-colleges text-4xl font-bold text-white tracking-tight">0+</p>
-                <p className="text-[11px] text-white/30 font-normal tracking-wide">Colleges Reached</p>
-              </div>
+              )
+            })}
             </div>
           </div>
         </div>
+
+        {/* Right Column: Stacked Cards */}
+        <div className="gsap-lvl-stack relative h-[520px] sm:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-16">
+          <CardSwap
+            width={780}
+            height={420}
+            cardDistance={60}
+            verticalDistance={70}
+            delay={3500}
+            pauseOnHover={false}
+            skewAmount={6}
+            easing="elastic"
+            activeIndex={activeIndex}
+            onActiveIndexChange={setActiveIndex}
+          >
+            {LEVELS.map((item, i) => {
+              const isActive = i === activeIndex
+              return (
+                <Card
+                  key={item.lvl}
+                  className={cn(
+                    "w-full h-full rounded-2xl border p-8 text-left flex flex-row items-center justify-between group overflow-hidden transition-colors duration-500",
+                    isActive 
+                      ? "bg-[#0c0c0f] border-accent/40 shadow-[0_20px_50px_rgba(255,122,0,0.15),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
+                      : "bg-[#0c0c0f] border-white/[0.06] shadow-[0_20px_40px_rgba(0,0,0,0.7)]"
+                  )}
+                >
+                  {/* Internal Card Glow for active */}
+                  <div className={cn("absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.1)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
+                  
+                  {/* Left Column: Text Info */}
+                  <div className="flex-1 max-w-[420px] flex flex-col justify-between h-full pr-4 relative z-10">
+                    {/* Header */}
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono text-accent border border-accent/30 bg-accent/5 px-2.5 py-0.5 rounded-md uppercase font-bold tracking-wider">
+                          LVL {item.lvl}
+                        </span>
+                        <span className="text-[10px] font-mono text-white/50 border border-white/10 bg-white/5 px-2 py-0.5 rounded-md font-bold">
+                          {item.xpMultiplier}
+                        </span>
+                      </div>
+                      <h4 className="font-serif text-3xl text-white tracking-tight mt-3 font-semibold">{item.label}</h4>
+                      <p className="text-xs font-mono text-white/40 mt-1">{item.title}</p>
+                    </div>
+
+                    {/* Unlocks / Perks */}
+                    <div className="my-4 space-y-2">
+                      <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest">Platform Unlocks</p>
+                      <ul className="space-y-1.5">
+                        {item.perks.map((perk, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-xs text-white/70">
+                            <span className="text-accent text-xs">✦</span>
+                            <span>{perk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Footer Info */}
+                    <div className="flex items-baseline gap-6 border-t border-white/[0.04] pt-3">
+                      <div>
+                        <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest mb-0.5">Focus</p>
+                        <p className="text-xs text-white/70 font-mono font-semibold max-w-[190px] truncate">{item.tasks}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest mb-0.5">Bounty Range</p>
+                        <p className="text-xl font-bold font-mono text-accent leading-none">{item.range}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Mascot Image */}
+                  <div className="w-[300px] h-[95%] absolute bottom-2 right-2 pointer-events-none overflow-visible select-none flex items-end justify-center z-20">
+                    <div className={cn(
+                      "relative w-full h-[95%] transition-transform duration-500",
+                      item.imgClass
+                    )}>
+                      <Image 
+                        src={item.image} 
+                        alt={item.label} 
+                        fill
+                        className="object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.85)]"
+                        sizes="350px"
+                        priority={isActive}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </CardSwap>
+        </div>
+
       </div>
     </section>
   )

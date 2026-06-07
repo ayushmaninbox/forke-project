@@ -13,24 +13,24 @@ if (typeof window !== 'undefined') {
 
 const FAQS = [
   {
-    question: "How does Forke work?",
-    answer: "Forke is a micro-task marketplace where developers can claim bounties for real-world coding tasks. Once you claim a task, you ship the code via a PR. After the maintainer approves and merges your work, you get paid instantly."
+    question: "What is the task claim velocity engine and soft reservation?",
+    answer: "When you claim a task on Forke, you enter a 20-minute soft reservation window. During this time, you must initialize your workspace by making your first commit or clicking 'I'm Working' in the dashboard. If you don't, the task is automatically returned to the warm standby queue for other developers to claim, ensuring rapid task resolution without idle locks."
   },
   {
-    question: "What skills do I need to start?",
-    answer: "We have tasks for every level. Newcomers (Level 1) can start with basic HTML/CSS and bug fixes, while Experts (Level 4-5) tackle system architecture and performance optimization at scale."
+    question: "How do Forke-managed GitHub workspaces protect my code?",
+    answer: "All coding tasks are isolated in Forke-managed mirror repositories using branch-based workspaces. When you activate a task, Forke creates a specific development branch (e.g., dev-username/task-id) for your work. A strict file scope validator rejects any pull request that modifies files outside of the allowed task paths, protecting core configuration files (like .env) and preventing dependency injection attacks."
   },
   {
-    question: "How and when do I get paid?",
-    answer: "Payments are processed immediately after your task is merged. We support various payment methods including UPI and direct bank transfers, ensuring you get your rewards without delay."
+    question: "How does the AI and Automated Review Pipeline evaluate my work?",
+    answer: "Submissions go through a four-layer review pipeline. First, Automated Validation compiles the build, runs unit tests, lints, and runs vulnerability scans. Second, Context Assembly compiles the diff and validates your FORKE_SUBMISSION.md. Third, the AI Review Engine (powered by Claude Sonnet) rates code quality and logic. Finally, Risk Scoring determines if the PR is auto-approved or routed to the repository owner."
   },
   {
-    question: "Is Forke free for developers?",
-    answer: "Yes, Forke is 100% free for developers. There are no registration fees or hidden charges. You keep the full bounty amount listed on the task."
+    question: "What is the Three-Dimensional Skill Gating system?",
+    answer: "Unlike general freelance platforms, Forke gates task access using three real-time parameters: (1) Platform Level, which measures overall shipping experience and consistency; (2) Skill Tier, representing verified technical proficiency (e.g. React vs DevOps); and (3) Trust Score, evaluating reliability factors like completion rate and deadline adherence. A developer must meet all three criteria to claim a task."
   },
   {
-    question: "Can I post my own tasks?",
-    answer: "Absolutely! If you have a project that needs help, you can post a bounty. Set your budget, describe the task, and watch as top-tier developers help you ship faster."
+    question: "How does Razorpay Escrow handle my payouts?",
+    answer: "To ensure developers are paid securely and immediately, clients must deposit the full bounty amount into a Forke Razorpay Escrow before their task is posted. As soon as the client approves your submission and Forke merges the pull request, the escrow splits and releases the payout directly to your UPI address instantly."
   }
 ]
 

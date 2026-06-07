@@ -229,42 +229,38 @@ export default function WhatsForkePage() {
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           
           {/* Mission Card */}
-          <div className="gsap-wf-element relative p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.06] shadow-2xl hover:border-accent/30 hover:shadow-[0_15px_40px_-15px_rgba(255,122,0,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row gap-6 opacity-0 group overflow-hidden">
-            {/* Top Light Ray Edge Accent */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
+          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col sm:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
             
             {/* Ambient Card Radial Spotlight */}
-            <div className="absolute inset-0 rounded-[2.5rem] bg-[radial-gradient(circle_at_20%_20%,_rgba(255,122,0,0.06)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
             
             {/* Left double-ringed premium Icon Circle */}
-            <div className="w-16 h-16 rounded-2xl bg-accent/[0.04] border border-accent/20 flex items-center justify-center text-accent shrink-0 relative z-10 shadow-[0_0_15px_rgba(255,122,0,0.05)] group-hover:border-accent/40 group-hover:bg-accent/10 group-hover:shadow-[0_0_25px_rgba(255,122,0,0.2)] transition-all duration-300">
-              <Target className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
+              <Target className="w-7 h-7" strokeWidth={1.2} />
             </div>
             
-            <div className="space-y-3 relative z-10 text-left">
-              <h3 className="text-white font-bold text-2xl tracking-tight group-hover:text-accent transition-colors duration-300">Our Mission</h3>
-              <p className="text-sm md:text-base text-white/50 leading-relaxed font-light">
+            <div className="space-y-4 relative z-10 text-left mt-1">
+              <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">Our Mission</h3>
+              <p className="text-sm md:text-base text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
                 To make real-world experience accessible to every developer through meaningful work and fair opportunities.
               </p>
             </div>
           </div>
 
           {/* Vision Card */}
-          <div className="gsap-wf-element relative p-8 md:p-12 rounded-[2.5rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.06] shadow-2xl hover:border-accent/30 hover:shadow-[0_15px_40px_-15px_rgba(255,122,0,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row gap-6 opacity-0 group overflow-hidden">
-            {/* Top Light Ray Edge Accent */}
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
+          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col sm:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
             
             {/* Ambient Card Radial Spotlight */}
-            <div className="absolute inset-0 rounded-[2.5rem] bg-[radial-gradient(circle_at_20%_20%,_rgba(255,122,0,0.06)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-500 opacity-60 group-hover:opacity-100" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
             
             {/* Left double-ringed premium Icon Circle */}
-            <div className="w-16 h-16 rounded-2xl bg-accent/[0.04] border border-accent/20 flex items-center justify-center text-accent shrink-0 relative z-10 shadow-[0_0_15px_rgba(255,122,0,0.05)] group-hover:border-accent/40 group-hover:bg-accent/10 group-hover:shadow-[0_0_25px_rgba(255,122,0,0.2)] transition-all duration-300">
-              <Eye className="w-7 h-7" />
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
+              <Eye className="w-7 h-7" strokeWidth={1.2} />
             </div>
             
-            <div className="space-y-3 relative z-10 text-left">
-              <h3 className="text-white font-bold text-2xl tracking-tight group-hover:text-accent transition-colors duration-300">Our Vision</h3>
-              <p className="text-sm md:text-base text-white/50 leading-relaxed font-light">
+            <div className="space-y-4 relative z-10 text-left mt-1">
+              <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">Our Vision</h3>
+              <p className="text-sm md:text-base text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
                 A world where developers grow by building, not just by learning — and where contribution is recognized and rewarded.
               </p>
             </div>

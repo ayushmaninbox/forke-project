@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
+import { cn } from '@/lib/utils/cn'
 import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -33,6 +34,17 @@ const STEPS = [
 
 export default function HowItWorks() {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // ADD HERE
+  const [activeStep, setActiveStep] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep(prev => (prev + 1) % STEPS.length)
+    }, 2500)
+
+    return () => clearInterval(interval)
+  }, [])
 
   useGSAP(() => {
     // ScrollTrigger timeline
@@ -107,26 +119,59 @@ export default function HowItWorks() {
           {STEPS.map((step, index) => (
             <div key={index} className="gsap-how-step group relative flex flex-col items-center text-center opacity-0">
               {/* Background Number */}
-              <span className="absolute -top-16 left-0 text-[140px] font-black text-white/[0.07] leading-none pointer-events-none group-hover:text-accent/[0.15] transition-all duration-500">
+              <span className={cn(
+                "absolute -top-16 left-0 text-[180px] font-black leading-none pointer-events-none transition-all duration-700",
+                activeStep === index
+                  ? "text-accent/[0.18]"
+                  : "text-white/[0.04]"
+              )}>
                 {step.number}
               </span>
 
               {/* Mascot Image */}
-              <div className="gsap-how-mascot relative w-64 h-64 mb-6 z-10 opacity-0 scale-75">
-                <Image
-                  src={step.image}
-                  alt={step.title}
-                  fill
-                  className="object-contain transition-transform duration-500 group-hover:scale-110"
-                />
+              <div className="gsap-how-mascot relative w-64 h-64 mb-6 z-10">
+                <div 
+                  className={cn(
+                    "absolute inset-0 w-full h-full transition-all duration-700",
+                    activeStep === index
+                      ? "scale-110 opacity-100"
+                      : "scale-95 opacity-80"
+                  )}
+                >
+                  {/* Orange Glow Behind Active Mascot */}
+                  {activeStep === index && (
+                    <div className="absolute inset-0 rounded-full bg-accent/10 blur-3xl animate-pulse" />
+                  )}
+
+                  <Image
+                    src={step.image}
+                    alt={step.title}
+                    fill
+                    className="object-contain transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
               </div>
 
               {/* Text Content */}
               <div className="space-y-4 max-w-xs relative z-10">
-                <h3 className="text-2xl font-bold text-white tracking-tight">
+                <h3
+                  className={cn(
+                    "text-2xl font-bold tracking-tight transition-all duration-700",
+                    activeStep === index
+                      ? "text-white"
+                      : "text-white/60"
+                  )}
+>
                   {step.title}
                 </h3>
-                <p className="text-muted leading-relaxed font-light text-base px-2">
+                <p
+                  className={cn(
+                    "leading-relaxed font-light text-base px-2 transition-all duration-700",
+                    activeStep === index
+                      ? "text-white/80"
+                      : "text-white/40"
+                  )}
+>
                   {step.description}
                 </p>
               </div>
@@ -134,7 +179,12 @@ export default function HowItWorks() {
               {/* Curved Dashed Arrow (desktop only) */}
               {index < 2 && (
                 <div className="hidden md:block absolute top-28 -right-24 w-48 h-12 z-0">
-                  <svg width="100%" height="100%" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-accent/30 overflow-visible">
+                  <svg width="100%" height="100%" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn(
+                    "overflow-visible transition-all duration-700",
+                    activeStep > index
+                      ? "text-accent"
+                      : "text-accent/20"
+                  )}>
                     <path
                       d="M10 24C40 4 120 4 150 24"
                       stroke="currentColor"
