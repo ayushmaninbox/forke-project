@@ -72,11 +72,11 @@ export default function FirstMerge() {
   return (
     <div ref={containerRef} className="w-full relative overflow-hidden bg-bg">
       {/* Edge blending overlays */}
-      <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_80px_rgba(5,5,5,1)]" />
-      <div className="absolute top-0 left-0 right-0 h-16 md:h-28 bg-gradient-to-b from-[#050505] to-transparent pointer-events-none z-10" />
-      <div className="absolute bottom-0 left-0 right-0 h-16 md:h-28 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none z-10" />
-      <div className="absolute top-0 bottom-0 left-0 w-8 md:w-20 bg-gradient-to-r from-[#050505] to-transparent pointer-events-none z-10" />
-      <div className="absolute top-0 bottom-0 right-0 w-8 md:w-20 bg-gradient-to-l from-[#050505] to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_30px_rgba(5,5,5,1)] md:shadow-[inset_0_0_80px_rgba(5,5,5,1)]" />
+      <div className="absolute top-0 left-0 right-0 h-8 md:h-28 bg-gradient-to-b from-[#050505] to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-8 md:h-28 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none z-10" />
+      <div className="absolute top-0 bottom-0 left-0 w-3 md:w-20 bg-gradient-to-r from-[#050505] to-transparent pointer-events-none z-10" />
+      <div className="absolute top-0 bottom-0 right-0 w-3 md:w-20 bg-gradient-to-l from-[#050505] to-transparent pointer-events-none z-10" />
 
       {/* Video Content */}
       <div className="w-full flex items-center justify-center">

@@ -13,24 +13,24 @@ if (typeof window !== 'undefined') {
 
 const FAQS = [
   {
-    question: "What is the task claim velocity engine and soft reservation?",
-    answer: "When you claim a task on Forke, you enter a 20-minute soft reservation window. During this time, you must initialize your workspace by making your first commit or clicking 'I'm Working' in the dashboard. If you don't, the task is automatically returned to the warm standby queue for other developers to claim, ensuring rapid task resolution without idle locks."
+    question: "How do I get paid for completing bounties?",
+    answer: "Startups deposit the full bounty amount into escrow before posting a task. Once you claim a task, build the solution in your branch, and submit a pull request, your code undergoes review. As soon as the client approves and merges your PR, the funds are immediately released directly to your registered UPI address."
   },
   {
-    question: "How do Forke-managed GitHub workspaces protect my code?",
-    answer: "All coding tasks are isolated in Forke-managed mirror repositories using branch-based workspaces. When you activate a task, Forke creates a specific development branch (e.g., dev-username/task-id) for your work. A strict file scope validator rejects any pull request that modifies files outside of the allowed task paths, protecting core configuration files (like .env) and preventing dependency injection attacks."
+    question: "What happens if I claim a task but cannot finish it?",
+    answer: "To keep project repositories active and unblocked, tasks have completion deadlines (and a 20-minute reservation window to start work). If you run into issues, you can forfeit the task from your dashboard, which releases it back to the standby queue for other builders. While forfeiting is allowed, maintaining a high completion rate protects your Trust Score and unlocks higher bounty limits."
   },
   {
-    question: "How does the AI and Automated Review Pipeline evaluate my work?",
-    answer: "Submissions go through a four-layer review pipeline. First, Automated Validation compiles the build, runs unit tests, lints, and runs vulnerability scans. Second, Context Assembly compiles the diff and validates your FORKE_SUBMISSION.md. Third, the AI Review Engine (powered by Claude Sonnet) rates code quality and logic. Finally, Risk Scoring determines if the PR is auto-approved or routed to the repository owner."
+    question: "Are there any prerequisites or resume screenings to claim tasks?",
+    answer: "No resume screenings, portfolio reviews, or interview rounds are required! Anyone can start claiming basic tasks. However, some advanced and higher-paying tasks are gated by your Platform Level and Skill Tier. You unlock access to these higher-tier tasks organically as you complete bounties, earn XP, and level up."
   },
   {
-    question: "What is the Three-Dimensional Skill Gating system?",
-    answer: "Unlike general freelance platforms, Forke gates task access using three real-time parameters: (1) Platform Level, which measures overall shipping experience and consistency; (2) Skill Tier, representing verified technical proficiency (e.g. React vs DevOps); and (3) Trust Score, evaluating reliability factors like completion rate and deadline adherence. A developer must meet all three criteria to claim a task."
+    question: "How does the level progression work, and what are the benefits?",
+    answer: "Every completed task earns you Experience Points (XP). As your XP builds, you level up through 25 developmental milestones across 5 prestige tiers. Higher levels grant you access to larger bounty pools, priority reservation queues, private invite-only enterprise tasks, and eligibility to become a platform reviewer."
   },
   {
-    question: "How does Razorpay Escrow handle my payouts?",
-    answer: "To ensure developers are paid securely and immediately, clients must deposit the full bounty amount into a Forke Razorpay Escrow before their task is posted. As soon as the client approves your submission and Forke merges the pull request, the escrow splits and releases the payout directly to your UPI address instantly."
+    question: "How is code review handled on Forke?",
+    answer: "Every pull request passes through an automated validation check that compiles the build, runs unit tests, lints, and checks for vulnerabilities. This is followed by an AI analysis to check logic. Finally, the startup's repository maintainers review and merge the PR. Once merged, your payout is automatically processed."
   }
 ]
 

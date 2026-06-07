@@ -106,6 +106,27 @@ const CardSwap: React.FC<CardSwapProps> = ({
 
   const numericWidth = typeof width === 'number' ? width : parseInt(String(width)) || 780;
 
+  const [responsiveDistances, setResponsiveDistances] = useState({ distX: cardDistance, distY: verticalDistance });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      const w = window.innerWidth;
+      if (w < 480) {
+        setResponsiveDistances({ distX: 30, distY: 35 });
+      } else if (w < 768) {
+        setResponsiveDistances({ distX: 40, distY: 45 });
+      } else {
+        setResponsiveDistances({ distX: cardDistance, distY: verticalDistance });
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [cardDistance, verticalDistance]);
+
   // Initialize positioning on mount / change of props
   useEffect(() => {
     const total = refs.length;
@@ -121,10 +142,10 @@ const CardSwap: React.FC<CardSwapProps> = ({
     refs.forEach((r, i) => {
       if (r.current) {
         const slotIdx = order.current.indexOf(i);
-        placeNow(r.current, makeSlot(slotIdx, cardDistance, verticalDistance, total), skewAmount);
+        placeNow(r.current, makeSlot(slotIdx, responsiveDistances.distX, responsiveDistances.distY, total), skewAmount);
       }
     });
-  }, [cardDistance, verticalDistance, skewAmount, refs.length]);
+  }, [responsiveDistances, skewAmount, refs.length]);
 
   // Transition handler
   useEffect(() => {
@@ -154,7 +175,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
       if (!el) return;
 
       const prevSlotIdx = order.current.indexOf(cardIdx);
-      const targetSlot = makeSlot(newSlotIdx, cardDistance, verticalDistance, total);
+      const targetSlot = makeSlot(newSlotIdx, responsiveDistances.distX, responsiveDistances.distY, total);
 
       if (cardIdx === prevFrontIdx) {
         // --- FALL AND GO BACK ANIMATION ---
@@ -221,7 +242,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
     return () => {
       tl.kill();
     };
-  }, [activeIndex, cardDistance, verticalDistance, refs, numericWidth, skewAmount]);
+  }, [activeIndex, responsiveDistances, refs, numericWidth, skewAmount]);
 
   // Autoplay Timer loop
   useEffect(() => {
@@ -295,7 +316,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
   return (
     <div
       ref={container}
-      className="absolute top-1/2 right-0 transform translate-x-[48%] -translate-y-[46%] origin-center overflow-visible max-[1024px]:translate-x-[36%] max-[1024px]:-translate-y-[40%] max-[768px]:scale-[0.8] max-[768px]:translate-x-[28%] max-[768px]:-translate-y-[40%] max-[480px]:scale-[0.6] max-[480px]:translate-x-[20%] max-[480px]:-translate-y-[40%]"
+      className="absolute top-1/2 lg:right-0 lg:left-auto lg:translate-x-[48%] lg:-translate-y-[36%] left-1/2 -translate-x-1/2 -translate-y-[30%] right-auto origin-center overflow-visible transition-all duration-300 max-[1024px]:scale-[0.85] max-[768px]:scale-[0.68] max-[480px]:scale-[0.48] max-[380px]:scale-[0.41]"
       style={{ width, height }}
     >
       {rendered}

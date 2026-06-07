@@ -89,20 +89,19 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Card 1: Email Support */}
-          <div className="gsap-contact-card relative p-8 rounded-[2.5rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] hover:border-accent/30 hover:shadow-[0_15px_30px_-10px_rgba(255,122,0,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden">
+          <div className="gsap-contact-card relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden text-left">
             {/* Spotlight Background Effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/[0.02] rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
             
             <div>
               {/* Premium Icon Badge */}
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-bg group-hover:border-accent group-hover:shadow-[0_0_20px_rgba(255,122,0,0.35)] transition-all duration-500 shrink-0 mb-6 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-6 relative z-10">
                 <Mail className="w-5 h-5" />
               </div>
               
               <div className="space-y-2 relative z-10 text-left">
-                <h3 className="text-white font-bold text-xl tracking-tight group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-white font-bold text-xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
                   Email Support
                 </h3>
                 <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
@@ -122,20 +121,19 @@ export default function ContactPage() {
           </div>
 
           {/* Card 2: SLA & Business Hours */}
-          <div className="gsap-contact-card relative p-8 rounded-[2.5rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] hover:border-accent/30 hover:shadow-[0_15px_30px_-10px_rgba(255,122,0,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden">
+          <div className="gsap-contact-card relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden text-left">
             {/* Spotlight Background Effect */}
-            <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent pointer-events-none" />
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/[0.02] rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
             
             <div>
               {/* Premium Icon Badge */}
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-bg group-hover:border-accent group-hover:shadow-[0_0_20px_rgba(255,122,0,0.35)] transition-all duration-500 shrink-0 mb-6 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-6 relative z-10">
                 <Clock className="w-5 h-5" />
               </div>
               
               <div className="space-y-2 relative z-10 text-left">
-                <h3 className="text-white font-bold text-xl tracking-tight group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-white font-bold text-xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
                   Support Hours
                 </h3>
                 <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
@@ -154,8 +152,9 @@ export default function ContactPage() {
         </div>
 
         {/* Support Scope Section */}
-        <section className="gsap-contact-scope relative p-8 rounded-[2.5rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] hover:border-accent/15 transition-colors duration-300 opacity-0 overflow-hidden text-left space-y-4">
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent pointer-events-none" />
+        <section className="gsap-contact-scope relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/15 transition-colors duration-300 opacity-0 overflow-hidden text-left space-y-4">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.01)_0%,_transparent_65%)] opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
           <h2 className="text-xl font-serif text-white">How to expedite your support request:</h2>
           <p className="text-sm text-white/45 leading-relaxed font-light">
             When emailing our team, please include the following details so we can resolve your query faster:

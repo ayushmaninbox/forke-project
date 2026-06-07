@@ -153,11 +153,46 @@ const XP_RULES = [
 ]
 
 const PRESTIGE_RANKS = [
-  { rank: 'I', title: 'Ascended Developer', perk: 'Animated Profile Border Cosmetics', color: 'from-[#D97706]/40 via-transparent to-transparent' },
-  { rank: 'II', title: 'Ghost in Production', perk: 'Glowing Neon Profile Card Themes', color: 'from-[#ff0055]/20 via-transparent to-transparent' },
-  { rank: 'III', title: 'Legendary Shipper', perk: 'Mythical Profile Custom Accents & Themes', color: 'from-[#8b5cf6]/20 via-transparent to-transparent' },
-  { rank: 'IV', title: 'Kernel Lord', perk: 'Direct Access to Private Beta Bounty Lists', color: 'from-[#3b82f6]/20 via-transparent to-transparent' },
-  { rank: 'V', title: 'Architect of Chaos', perk: 'Elite Leaderboards + Custom Legend Badge', color: 'from-[#10b981]/20 via-transparent to-transparent' }
+  { 
+    rank: 'I', 
+    title: 'Ascended Developer', 
+    perk: 'Animated Profile Border Cosmetics', 
+    color: 'from-[#D97706]/40 via-transparent to-transparent',
+    hexColor: '#D97706',
+    mobileGlow: 'rgba(217, 119, 6, 0.15)'
+  },
+  { 
+    rank: 'II', 
+    title: 'Ghost in Production', 
+    perk: 'Glowing Neon Profile Card Themes', 
+    color: 'from-[#ff0055]/20 via-transparent to-transparent',
+    hexColor: '#ff0055',
+    mobileGlow: 'rgba(255, 0, 85, 0.12)'
+  },
+  { 
+    rank: 'III', 
+    title: 'Legendary Shipper', 
+    perk: 'Mythical Profile Custom Accents & Themes', 
+    color: 'from-[#8b5cf6]/20 via-transparent to-transparent',
+    hexColor: '#8b5cf6',
+    mobileGlow: 'rgba(139, 92, 246, 0.12)'
+  },
+  { 
+    rank: 'IV', 
+    title: 'Kernel Lord', 
+    perk: 'Direct Access to Private Beta Bounty Lists', 
+    color: 'from-[#3b82f6]/20 via-transparent to-transparent',
+    hexColor: '#3b82f6',
+    mobileGlow: 'rgba(59, 130, 246, 0.12)'
+  },
+  { 
+    rank: 'V', 
+    title: 'Architect of Chaos', 
+    perk: 'Elite Leaderboards + Custom Legend Badge', 
+    color: 'from-[#10b981]/20 via-transparent to-transparent',
+    hexColor: '#10b981',
+    mobileGlow: 'rgba(16, 185, 129, 0.12)'
+  }
 ]
 
 
@@ -793,8 +828,22 @@ export default function LevelsPage() {
                 key={pIdx}
                 className="gsap-lvl-element relative rounded-2xl border border-white/[0.04] bg-[#0A0A0A] p-6 hover:border-[#FF7A00]/30 hover:scale-[1.02] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.98] group flex flex-col justify-between min-h-[220px] overflow-hidden text-left opacity-0"
               >
-                {/* Background Ambient Spotlights matching prestige color */}
-                <div className={`absolute inset-0 bg-gradient-to-tr ${pres.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+                {/* Background Ambient Spotlights matching prestige color - Desktop (Hover only) */}
+                <div className={`hidden md:block absolute inset-0 bg-gradient-to-tr ${pres.color} opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none`} />
+
+                {/* Background Ambient Spotlights matching prestige color - Mobile (Subtle top glow & border) */}
+                <div 
+                  className="block md:hidden absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle at 50% 0%, ${pres.mobileGlow} 0%, transparent 65%)`
+                  }}
+                />
+                <div 
+                  className="block md:hidden absolute top-0 left-0 right-0 h-[1.5px] pointer-events-none opacity-70"
+                  style={{
+                    background: `linear-gradient(to right, transparent, ${pres.hexColor} 30%, ${pres.hexColor} 70%, transparent)`
+                  }}
+                />
 
                 {/* Giant Roman Numeral Watermark */}
                 <div className="font-serif text-6xl md:text-8xl font-semibold text-white/[0.015] group-hover:text-[#FF7A00]/[0.03] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 select-none absolute right-4 top-2 leading-none">

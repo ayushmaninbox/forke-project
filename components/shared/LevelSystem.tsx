@@ -174,7 +174,7 @@ export default function LevelSystem() {
         </div>
 
         {/* Right Column: Stacked Cards */}
-        <div className="gsap-lvl-stack relative h-[520px] sm:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-16">
+        <div className="gsap-lvl-stack relative h-[360px] sm:h-[460px] lg:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-16">
           <CardSwap
             width={780}
             height={420}

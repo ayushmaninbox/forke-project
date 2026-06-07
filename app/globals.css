@@ -181,6 +181,12 @@ img {
   animation: ticker 40s linear infinite;
 }
 
+@media (max-width: 640px) {
+  .animate-ticker {
+    animation: ticker 75s linear infinite;
+  }
+}
+
 .animate-ticker:hover {
   animation-play-state: paused;
 }

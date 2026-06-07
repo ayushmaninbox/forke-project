@@ -233,6 +233,7 @@ export default function WhatsForkePage() {
             
             {/* Ambient Card Radial Spotlight */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
             
             {/* Left double-ringed premium Icon Circle */}
             <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
@@ -252,6 +253,7 @@ export default function WhatsForkePage() {
             
             {/* Ambient Card Radial Spotlight */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
             
             {/* Left double-ringed premium Icon Circle */}
             <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
@@ -289,19 +291,19 @@ export default function WhatsForkePage() {
             return (
               <div 
                 key={idx} 
-                className="gsap-wf-element relative p-8 rounded-[2rem] bg-gradient-to-b from-[#141414] to-[#090909] border border-white/[0.05] hover:border-accent/30 hover:shadow-[0_15px_30px_-10px_rgba(255,122,0,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between min-h-[260px] group opacity-0 overflow-hidden"
+                className="gsap-wf-element relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden text-left"
               >
                 {/* Spotlight Background Effect */}
-                <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/[0.02] rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
                 
                 {/* Premium Icon Badge */}
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-bg group-hover:border-accent group-hover:shadow-[0_0_20px_rgba(255,122,0,0.35)] transition-all duration-500 shrink-0 mb-8 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-8 relative z-10">
                   <Icon className="w-5 h-5" />
                 </div>
                 
                 <div className="space-y-2.5 relative z-10 text-left">
-                  <h3 className="text-white font-bold text-lg md:text-xl tracking-tight group-hover:text-accent transition-colors duration-300">
+                  <h3 className="text-white font-bold text-lg md:text-xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
                     {val.title}
                   </h3>
                   <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
