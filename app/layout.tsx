@@ -63,6 +63,7 @@ export const metadata: Metadata = {
 }
 
 import { NextAuthProvider } from '@/components/providers/NextAuthProvider'
+import { ScrollToTopOnLoad } from '@/components/providers/ScrollToTopOnLoad'
 
 export default function RootLayout({
   children,
@@ -76,6 +77,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased bg-[#0A0A0A]">
+        <ScrollToTopOnLoad />
         <NextAuthProvider>
           {children}
         </NextAuthProvider>

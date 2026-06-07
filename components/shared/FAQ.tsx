@@ -143,10 +143,10 @@ export default function FAQ() {
     <section ref={containerRef} className="py-32 bg-bg relative overflow-hidden">
       <div className="max-w-4xl mx-auto px-4 relative z-10">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="gsap-faq-title font-serif text-5xl md:text-7xl text-white opacity-0">
+          <h2 className="gsap-faq-title font-serif text-4xl md:text-6xl text-white opacity-0">
             Common Questions
           </h2>
-          <p className="gsap-faq-desc text-muted text-lg font-light opacity-0">
+          <p className="gsap-faq-desc text-muted text-base md:text-lg font-light opacity-0">
             Everything you need to know about shipping and earning on Forke.
           </p>
         </div>

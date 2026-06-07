@@ -79,10 +79,6 @@ export default function LevelSystem() {
   const router = useRouter()
   const [activeIndex, setActiveIndex] = useState(0)
 
-  const handleManualInteraction = (index: number) => {
-    setActiveIndex(index)
-  }
-
   useGSAP(() => {
     // Scroll Entrance
     const tl = gsap.timeline({
@@ -115,61 +111,22 @@ export default function LevelSystem() {
         {/* Left Column: Content */}
         <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
-            <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight">
+            <h2 className="font-serif text-4xl md:text-6xl text-white tracking-tight">
               The Level System <span className="text-accent">✦</span>
             </h2>
-            <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
+            <p className="text-white/60 text-base md:text-lg font-light leading-relaxed">
               Completing tasks earns XP. XP increases your level. Higher levels unlock larger bounties, better opportunities, and exclusive platform privileges. Consistency is rewarded—the more you ship, the faster you ascend.
             </p>
           </div>
 
           <div className="pt-2">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => router.push('/levels')}
               className="group gap-2 text-base px-8 py-6 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight"
             >
               Explore all 25 levels <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-          </div>
-
-          {/* Progress Indicator Row - Option A (Glowing Progress Rail) */}
-          <div className="pt-12 w-full max-w-md">
-            <div className="relative flex items-center justify-between w-full">
-              {/* Base Connecting Line (Muted) */}
-              <div className="absolute top-1/2 left-4 right-4 h-[2px] bg-white/5 -translate-y-1/2" />
-            
-            {/* Active Connecting Line (Glowing Orange) */}
-            <div 
-              className="absolute top-1/2 left-4 h-[2px] bg-[#FF7A00] -translate-y-1/2 transition-all duration-[600ms] delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_30px_rgba(255,122,0,0.95)] origin-left z-0" 
-              style={{ width: `calc(${activeIndex * (100 / (LEVELS.length - 1))}% - 16px)` }}
-            />
-            
-            {LEVELS.map((item, index) => {
-              const isActive = index === activeIndex
-              const isPast = index < activeIndex
-
-              return (
-                <div 
-                  key={item.lvl}
-                  onClick={() => handleManualInteraction(index)}
-                  className={cn(
-                    "relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-mono font-bold text-[9px] tracking-tighter transition-all duration-500 cursor-pointer hover:scale-125",
-                    isActive 
-                      ? "bg-[#FF7A00] text-black w-12 h-12 shadow-[0_0_45px_rgba(255,122,0,1)] border-2 border-[#FF7A00] text-xs scale-125" 
-                      : isPast
-                        ? "bg-[#FF7A00] text-black border border-[#FF7A00] shadow-[0_0_10px_rgba(255,122,0,0.3)]"
-                        : "bg-[#1a1a1a] text-white/40 border border-white/10 hover:border-white/30"
-                  )}
-                >
-                  {item.lvl}
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-full bg-[#FF7A00]/20 blur-md -z-10 animate-pulse" />
-                  )}
-                </div>
-              )
-            })}
-            </div>
           </div>
         </div>
 
@@ -193,17 +150,17 @@ export default function LevelSystem() {
                 <Card
                   key={item.lvl}
                   className={cn(
-                    "w-full h-full rounded-2xl border p-8 text-left flex flex-row items-center justify-between group overflow-hidden transition-colors duration-500",
-                    isActive 
-                      ? "bg-[#0c0c0f] border-accent/40 shadow-[0_20px_50px_rgba(255,122,0,0.15),_inset_0_1px_0_rgba(255,122,0,0.15)]" 
+                    "w-full h-full rounded-2xl border p-6 md:p-8 text-left flex flex-col md:flex-row items-stretch md:items-center justify-between group overflow-hidden transition-colors duration-500",
+                    isActive
+                      ? "bg-[#0c0c0f] border-accent/40 shadow-[0_20px_50px_rgba(255,122,0,0.15),_inset_0_1px_0_rgba(255,122,0,0.15)]"
                       : "bg-[#0c0c0f] border-white/[0.06] shadow-[0_20px_40px_rgba(0,0,0,0.7)]"
                   )}
                 >
                   {/* Internal Card Glow for active */}
                   <div className={cn("absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.1)_0%,_transparent_60%)] pointer-events-none transition-opacity duration-700", isActive ? "opacity-100" : "opacity-0")} />
-                  
+
                   {/* Left Column: Text Info */}
-                  <div className="flex-1 max-w-[420px] flex flex-col justify-between h-full pr-4 relative z-10">
+                  <div className="flex-1 w-full md:max-w-[420px] flex flex-col justify-between h-full md:pr-4 relative z-10">
                     {/* Header */}
                     <div>
                       <div className="flex items-center gap-3">
@@ -244,17 +201,17 @@ export default function LevelSystem() {
                     </div>
                   </div>
 
-                  {/* Right Column: Mascot Image */}
-                  <div className="w-[300px] h-[95%] absolute bottom-2 right-2 pointer-events-none overflow-visible select-none flex items-end justify-center z-20">
+                  {/* Right Column: Mascot Image (desktop only — mobile uses the top mascot above) */}
+                  <div className="hidden md:flex w-[520px] h-full absolute top-0 right-20 pointer-events-none overflow-visible select-none items-center justify-center z-20">
                     <div className={cn(
-                      "relative w-full h-[95%] transition-transform duration-500",
+                      "relative w-full h-[90%] transition-transform duration-500",
                       item.imgClass
                     )}>
-                      <Image 
-                        src={item.image} 
-                        alt={item.label} 
+                      <Image
+                        src={item.image}
+                        alt={item.label}
                         fill
-                        className="object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.85)]"
+                        className="object-contain object-center drop-shadow-[0_20px_30px_rgba(0,0,0,0.85)]"
                         sizes="350px"
                         priority={isActive}
                       />

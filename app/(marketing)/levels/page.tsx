@@ -396,12 +396,12 @@ export default function LevelsPage() {
 
           {/* Typographic Progression Explanation (Replaces the 2nd photo's tabs bar to fill the space beautifully) */}
           <div className="gsap-lvl-element max-w-3xl mx-auto text-center space-y-5 opacity-0">
-            <p className="text-white/40 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto">
+            <p className="text-white/40 text-base md:text-lg font-light leading-relaxed max-w-xl mx-auto">
               Accumulate XP by shipping high-quality code, keeping active daily streaks, and delivering ahead of deadlines. Advance through 25 milestones divided into 5 prestige tiers to unlock exclusive developer badges, custom UI themes, and private enterprise projects.
             </p>
             
             {/* Elegant horizontal legend roadmap (replaces the tab selectors from the 2nd photo with beautiful static copy) */}
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 max-w-4xl mx-auto pt-2 text-[10px] font-mono uppercase tracking-wider text-white/30">
+            <div className="hidden sm:flex flex-wrap justify-center items-center gap-x-4 gap-y-2 max-w-4xl mx-auto pt-2 text-[10px] font-mono uppercase tracking-wider text-white/30">
               <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/60" /> EARLY <span className="text-white/10 font-light">1-5</span></span>
               <span className="text-white/10 hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#FF7A00]/70" /> MID <span className="text-white/10 font-light">6-10</span></span>
@@ -697,7 +697,7 @@ export default function LevelsPage() {
             <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
               How to earn <span className="text-accent italic font-normal">XP</span>
             </h2>
-            <p className="gsap-lvl-element text-white/50 text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
               XP rewards consistency, high execution speed, and immaculate client review scores.
             </p>
           </div>
@@ -816,7 +816,7 @@ export default function LevelsPage() {
             <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
               The Prestige <span className="text-accent italic font-normal">ranks</span>
             </h2>
-            <p className="gsap-lvl-element text-white/50 text-sm md:text-base max-w-xl mx-auto font-light leading-relaxed opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
               Reaching Level 25 unlocks the option to Prestige. Reset your level progression to claim permanent cosmetic titles and high-value platform perks.
             </p>
           </div>
@@ -874,10 +874,10 @@ export default function LevelsPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           
           <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-            <h2 className="gsap-lvl-element font-serif text-3xl md:text-5xl text-white leading-tight tracking-tight opacity-0">
+            <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white leading-tight tracking-tight opacity-0">
               Earn your XP. Forge your path.
             </h2>
-            <p className="gsap-lvl-element text-white/50 text-sm md:text-base leading-relaxed font-light opacity-0">
+            <p className="gsap-lvl-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0">
               Claim real tasks, ship verified code, level up, and cash out instantly. Ready to start grinding?
             </p>
             <div className="gsap-lvl-element flex flex-col sm:flex-row justify-center items-center gap-4 opacity-0">
@@ -890,14 +890,6 @@ export default function LevelsPage() {
                 <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-500 group-hover/btn:translate-x-0.5 shrink-0">
                   <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
                 </span>
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider border border-white/10 text-white hover:bg-white/5 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center bg-transparent"
-                onClick={() => window.location.href = '/bounties'}
-              >
-                Browse Bounties
               </Button>
             </div>
           </div>

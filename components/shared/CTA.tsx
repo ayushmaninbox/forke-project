@@ -128,8 +128,8 @@ export default function CTA() {
     <section ref={containerRef} className="py-24 bg-bg relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 relative z-10">
         {/* CTA Card */}
-        <div 
-          className="gsap-cta-card relative rounded-[2.5rem] overflow-x-clip overflow-y-visible border border-white/[0.06] min-h-[320px] opacity-0"
+        <div
+          className="gsap-cta-card relative rounded-[1.5rem] sm:rounded-[2.5rem] overflow-x-clip overflow-y-visible border border-white/[0.06] min-h-[200px] md:min-h-[320px] opacity-0"
           style={{
             background: 'linear-gradient(135deg, #0a0a0a 0%, #111 30%, #1a1208 60%, #1f1510 80%, #1a1008 100%)'
           }}
@@ -143,20 +143,20 @@ export default function CTA() {
           <div className="gsap-cta-particle absolute top-[35%] right-[48%] w-1 h-1 rounded-full bg-accent/30 animate-pulse [animation-delay:1s]" />
           <div className="gsap-cta-particle absolute bottom-[30%] right-[40%] w-1.5 h-1.5 rounded-full bg-accent/20 animate-pulse [animation-delay:0.5s]" />
 
-          <div className="relative z-10 flex items-center min-h-[320px]">
+          <div className="relative z-10 flex items-center min-h-[460px] md:min-h-[320px]">
             {/* Left side — Text + CTA */}
-            <div className="flex-1 p-8 sm:p-12 md:p-16 space-y-6">
-              <h2 className="gsap-cta-title font-serif text-3xl sm:text-4xl md:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
+            <div className="flex-1 p-8 sm:p-12 md:p-16 space-y-6 text-center md:text-left">
+              <h2 className="gsap-cta-title font-serif text-4xl md:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
                 Ready to ship?
               </h2>
-              <p className="gsap-cta-text text-lg text-white/50 font-light max-w-md opacity-0">
+              <p className="gsap-cta-text text-base md:text-lg text-white/50 font-light max-w-md mx-auto md:mx-0 opacity-0">
                 Join Forke and start earning while you code.
               </p>
-              <Button 
+              <Button
                 ref={buttonRef}
-                size="lg" 
+                size="lg"
                 variant="primary"
-                className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0 active:scale-[0.98] transition-transform"
+                className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0 active:scale-[0.98] transition-transform mx-auto md:mx-0"
                 onClick={() => {
                   if (showWaitlisterView) {
                     router.push('/')
@@ -181,11 +181,13 @@ export default function CTA() {
             </div>
           </div>
 
-          {/* Right side — Chilling Forky Mascot (massive, overflows card) */}
-          <div className="gsap-cta-mascot hidden md:block absolute -bottom-18 right-4 w-[750px] h-[520px] pointer-events-none opacity-0">
-            <Image 
-              src="/forke-assets/landing-assets/chilling_forky.png" 
-              alt="Chilling Forky" 
+          {/* Right side — Chilling Forky Mascot (massive, overflows card). Mobile: centered at the bottom of the card. */}
+          <div className="gsap-cta-mascot absolute opacity-0 pointer-events-none
+            bottom-0 left-1/2 -translate-x-1/2 w-[420px] max-w-[95%] h-[260px]
+            md:bottom-[-4.5rem] md:left-auto md:translate-x-0 md:right-4 md:w-[750px] md:max-w-none md:h-[520px]">
+            <Image
+              src="/forke-assets/landing-assets/chilling_forky.png"
+              alt="Chilling Forky"
               fill
               className="object-contain object-bottom"
             />

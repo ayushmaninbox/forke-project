@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Zap, Flame, Star, Mail, Check, AlertCircle } from 'lucide-react'
 import DotField from '@/components/shared/DotField'
+import { Loader } from '@/components/ui/Loader'
 import { gsap } from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { useSearchParams } from 'next/navigation'
@@ -283,12 +284,9 @@ function WaitlistPageContent() {
 
               <div className="relative z-10">
                 {verifying ? (
-                  <div className="flex flex-col items-center justify-center text-center space-y-4 py-6">
-                    <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-serif text-white/80">Checking waitlist status...</h3>
-                      <p className="text-[10px] text-white/30">Verifying your early access email.</p>
-                    </div>
+                  <div className="flex flex-col items-center justify-center text-center py-6">
+                    <Loader text="Checking waitlist status..." />
+                    <p className="text-[10px] text-white/30 mt-3">Verifying your early access email.</p>
                   </div>
                 ) : status === 'success' ? (
                   <div className="gsap-wl-success flex flex-col items-center justify-center text-center space-y-4 py-2">
@@ -498,11 +496,7 @@ function WaitlistPageContent() {
 
 export default function WaitlistPage() {
   return (
-    <Suspense fallback={
-      <div className="h-[100dvh] bg-[#050505] text-white flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<Loader fullScreen />}>
       <WaitlistPageContent />
     </Suspense>
   )

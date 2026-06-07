@@ -75,7 +75,7 @@ export default function WhatsForkePage() {
     .fromTo('.gsap-wf-hero-row',
       { y: 20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 },
-      '-=0.5'
+      '-=0.7'
     )
     .fromTo('.gsap-wf-hero-image-wrap',
       { scale: 0.95, opacity: 0 },
@@ -110,14 +110,14 @@ export default function WhatsForkePage() {
       <Navbar />
 
       {/* --- HERO WRAPPER (Confines dotted background to top section & fits viewport) --- */}
-      <div className="relative w-full min-h-screen flex items-center overflow-hidden">
-        {/* Ambient background Dot Grid */}
-        <div 
-          className="absolute inset-0 z-[1] pointer-events-none opacity-50"
-          style={{
-            maskImage: 'radial-gradient(circle at 80% 50%, transparent 15%, black 45%)',
-            WebkitMaskImage: 'radial-gradient(circle at 80% 50%, transparent 15%, black 45%)',
-          }}
+      <div className="relative w-full h-screen lg:min-h-screen lg:h-auto flex items-start lg:items-center overflow-hidden">
+        {/* Ambient background Dot Grid — clear circle follows Forky (lower-center on mobile, right on desktop) */}
+        <div
+          className="absolute inset-0 z-[1] pointer-events-none opacity-50
+            [mask-image:radial-gradient(circle_at_50%_78%,transparent_18%,black_48%)]
+            [-webkit-mask-image:radial-gradient(circle_at_50%_78%,transparent_18%,black_48%)]
+            lg:[mask-image:radial-gradient(circle_at_80%_50%,transparent_15%,black_45%)]
+            lg:[-webkit-mask-image:radial-gradient(circle_at_80%_50%,transparent_15%,black_45%)]"
         >
           <DotField
             dotRadius={1.2}
@@ -136,15 +136,15 @@ export default function WhatsForkePage() {
         </div>
 
         {/* --- HERO SECTION (Homepage Hero Layout & Sizing Match) --- */}
-        <section className="relative z-10 w-full pt-32 pb-16 px-6 max-w-7xl mx-auto">
+        <section className="relative z-10 w-full pt-28 pb-6 sm:pt-32 sm:pb-16 px-6 max-w-7xl mx-auto">
           <div className="max-w-7xl mx-auto w-full relative">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
               
               {/* Hero Left Content */}
-              <div className="space-y-10 text-left relative z-30">
+              <div className="space-y-10 text-center lg:text-left relative z-30 pt-8 lg:pt-0">
                 
                 {/* Small badge */}
-                <div className="gsap-wf-hero-badge flex items-center gap-2 opacity-0">
+                <div className="gsap-wf-hero-badge flex items-center justify-center lg:justify-start gap-2 opacity-0">
                   <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                   <span className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">About Us</span>
                 </div>
@@ -155,12 +155,12 @@ export default function WhatsForkePage() {
                 </h1>
 
                 {/* Description (Upscaled to text-lg md:text-xl to match homepage description) */}
-                <p className="gsap-wf-hero-desc text-muted text-lg md:text-xl font-light leading-relaxed max-w-xl opacity-0">
+                <p className="gsap-wf-hero-desc text-muted text-lg md:text-xl font-light leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-0">
                   Forke is a gamified open-source contribution space. Claim verified coding tasks, level up your engineering tier, and cash out rewards instantly.
                 </p>
 
                 {/* Row of Three Features */}
-                <div className="gsap-wf-hero-row grid grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 opacity-0 max-w-2xl">
+                <div className="gsap-wf-hero-row grid grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 opacity-0 max-w-2xl mx-auto lg:mx-0">
                   {[
                     { title: 'Real tasks', desc: 'from real projects', icon: Code },
                     { title: 'Verified work', desc: 'you can be proud of', icon: Shield },
@@ -168,7 +168,7 @@ export default function WhatsForkePage() {
                   ].map((item, idx) => {
                     const Icon = item.icon
                     return (
-                      <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-white/[0.01] border border-white/[0.04] backdrop-blur-md flex flex-col gap-3 sm:gap-4 hover:border-white/10 transition-colors">
+                      <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#0A0A0A]/90 border border-white/[0.06] backdrop-blur-md flex flex-col gap-3 sm:gap-4 hover:border-white/10 transition-colors">
                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
                           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
@@ -183,27 +183,46 @@ export default function WhatsForkePage() {
 
               </div>
 
-              {/* Hero Right Image Render (Absolutely positioned, static, edge-faded mascot visual) */}
-              <div className="hidden lg:block absolute right-[-10%] top-1/2 -translate-y-1/2 w-[55vw] h-[55vw] max-w-[850px] max-h-[850px] pointer-events-none z-0">
-                <div 
+              {/* DESKTOP Hero Image — absolute right-side (original layout, lg+ only) */}
+              <div className="hidden lg:block absolute right-[-10%] top-1/2 -translate-y-1/2 w-[55vw] h-[55vw] max-w-[850px] max-h-[850px] z-0 pointer-events-none">
+                <div
                   className="gsap-wf-hero-image-wrap relative w-full h-full"
                   style={{
                     maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
                     WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
                   }}
                 >
-                  <Image 
-                    src="/forke-assets/about-assets/hero-bg.png" 
-                    alt="Chibi Rabbit Coding at Night Rooftop" 
+                  <Image
+                    src="/forke-assets/about-assets/hero-bg.png"
+                    alt="Chibi Rabbit Coding at Night Rooftop"
                     fill
                     className="object-cover"
                     priority
                   />
                 </div>
               </div>
+
             </div>
           </div>
         </section>
+
+        {/* MOBILE Hero Image — pinned to the very bottom of the full-height hero, behind the text (lg:hidden) */}
+        <div className="lg:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[135%] aspect-square z-0 pointer-events-none">
+          <div
+            className="relative w-full h-full"
+            style={{
+              maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+              WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+            }}
+          >
+            <Image
+              src="/forke-assets/about-assets/hero-bg.png"
+              alt="Chibi Rabbit Coding at Night Rooftop"
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
       </div>
 
       {/* --- CONTEXT STORY SECTION --- */}
@@ -291,14 +310,14 @@ export default function WhatsForkePage() {
             return (
               <div 
                 key={idx} 
-                className="gsap-wf-element relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-between min-h-[280px] group opacity-0 overflow-hidden text-left"
+                className="gsap-wf-element relative p-6 sm:p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-start sm:justify-between sm:min-h-[280px] group opacity-0 overflow-hidden text-left"
               >
                 {/* Spotlight Background Effect */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
                 
                 {/* Premium Icon Badge */}
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-8 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-5 sm:mb-8 relative z-10">
                   <Icon className="w-5 h-5" />
                 </div>
                 
@@ -343,14 +362,6 @@ export default function WhatsForkePage() {
                 onClick={() => router.push('/register')}
               >
                 Join the movement <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="rounded-xl px-8 py-3.5 h-auto text-xs font-bold uppercase tracking-wider border border-white/10 text-white hover:bg-white/5 transition-all flex items-center justify-center bg-transparent"
-                onClick={() => router.push('/bounties')}
-              >
-                Browse Bounties
               </Button>
             </div>
           </div>

@@ -107,6 +107,8 @@ const CardSwap: React.FC<CardSwapProps> = ({
   const numericWidth = typeof width === 'number' ? width : parseInt(String(width)) || 780;
 
   const [responsiveDistances, setResponsiveDistances] = useState({ distX: cardDistance, distY: verticalDistance });
+  // On phones the card flips to a portrait (vertical) shape; desktop keeps the wide landscape card.
+  const [isMobileCard, setIsMobileCard] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -115,10 +117,13 @@ const CardSwap: React.FC<CardSwapProps> = ({
       const w = window.innerWidth;
       if (w < 480) {
         setResponsiveDistances({ distX: 30, distY: 35 });
+        setIsMobileCard(true);
       } else if (w < 768) {
         setResponsiveDistances({ distX: 40, distY: 45 });
+        setIsMobileCard(true);
       } else {
         setResponsiveDistances({ distX: cardDistance, distY: verticalDistance });
+        setIsMobileCard(false);
       }
     };
 
@@ -126,6 +131,10 @@ const CardSwap: React.FC<CardSwapProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [cardDistance, verticalDistance]);
+
+  // Portrait dimensions for mobile, landscape for desktop
+  const cardWidth = isMobileCard ? 360 : width;
+  const cardHeight = isMobileCard ? 420 : height;
 
   // Initialize positioning on mount / change of props
   useEffect(() => {
@@ -295,10 +304,10 @@ const CardSwap: React.FC<CardSwapProps> = ({
     return cloneElement(child, {
       key: i,
       ref: refs[i],
-      style: { 
-        width, 
-        height, 
-        ...(child.props.style ?? {}) 
+      style: {
+        width: cardWidth,
+        height: cardHeight,
+        ...(child.props.style ?? {})
       },
       onClick: (e) => {
         child.props.onClick?.(e as React.MouseEvent<HTMLDivElement>);
@@ -316,8 +325,8 @@ const CardSwap: React.FC<CardSwapProps> = ({
   return (
     <div
       ref={container}
-      className="absolute top-1/2 lg:right-0 lg:left-auto lg:translate-x-[48%] lg:-translate-y-[36%] left-1/2 -translate-x-1/2 -translate-y-[30%] right-auto origin-center overflow-visible transition-all duration-300 max-[1024px]:scale-[0.85] max-[768px]:scale-[0.68] max-[480px]:scale-[0.48] max-[380px]:scale-[0.41]"
-      style={{ width, height }}
+      className="absolute top-1/2 lg:right-0 lg:left-auto lg:translate-x-[48%] lg:-translate-y-[36%] left-1/2 -translate-x-1/2 -translate-y-[30%] right-auto origin-center overflow-visible transition-all duration-300 max-[1024px]:scale-[0.85] max-[768px]:scale-[0.78] max-[480px]:scale-[0.74] max-[380px]:scale-[0.64]"
+      style={{ width: cardWidth, height: cardHeight }}
     >
       {rendered}
     </div>
