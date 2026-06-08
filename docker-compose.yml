@@ -12,5 +12,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: forke_pgbouncer
+    restart: always
+    environment:
+      - DB_USER=forke
+      - DB_PASSWORD=forke_secret
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=forke_dev
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=100
+      - DEFAULT_POOL_SIZE=20
+    ports:
+      - "6432:6432"
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:

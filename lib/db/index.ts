@@ -14,6 +14,7 @@ const connectionOptions: postgres.Options<{}> = {
   max: 10,            // max connections held by this client
   idle_timeout: 20,   // close idle connections after 20s (frees RDS slots)
   connect_timeout: 10, // fail fast if RDS can't be reached in 10s
+  prepare: false,      // disable prepared statements for pgBouncer compatibility
 }
 
 export let client: postgres.Sql;

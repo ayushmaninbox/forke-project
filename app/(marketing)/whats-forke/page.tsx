@@ -206,8 +206,8 @@ export default function WhatsForkePage() {
           </div>
         </section>
 
-        {/* MOBILE Hero Image — pinned to the very bottom of the full-height hero, behind the text (lg:hidden) */}
-        <div className="lg:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[115%] max-[420px]:w-[108%] sm:w-[min(95%,50dvh)] md:w-[min(85%,55dvh)] aspect-square z-0 pointer-events-none">
+        {/* MOBILE Hero Image — pinned to the very bottom of the full-height hero, behind the text (md:hidden) */}
+        <div className="md:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[115%] max-[420px]:w-[108%] sm:w-[min(95%,50dvh)] aspect-square z-0 pointer-events-none">
           <div
             className="relative w-full h-full"
             style={{
@@ -248,7 +248,7 @@ export default function WhatsForkePage() {
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           
           {/* Mission Card */}
-          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col sm:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col lg:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
             
             {/* Ambient Card Radial Spotlight */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
@@ -268,7 +268,7 @@ export default function WhatsForkePage() {
           </div>
 
           {/* Vision Card */}
-          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col sm:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col lg:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
             
             {/* Ambient Card Radial Spotlight */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
@@ -310,14 +310,14 @@ export default function WhatsForkePage() {
             return (
               <div 
                 key={idx} 
-                className="gsap-wf-element relative p-6 sm:p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-start sm:justify-between sm:min-h-[280px] group opacity-0 overflow-hidden text-left"
+                className="gsap-wf-element relative p-6 sm:p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-start group opacity-0 overflow-hidden text-left"
               >
                 {/* Spotlight Background Effect */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
                 
                 {/* Premium Icon Badge */}
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-5 sm:mb-8 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-5 sm:mb-6 relative z-10">
                   <Icon className="w-5 h-5" />
                 </div>
                 
@@ -372,7 +372,7 @@ export default function WhatsForkePage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_rgba(255,122,0,0.05)_0%,_transparent_60%)] pointer-events-none" />
 
           {/* Left Text / CTAs */}
-          <div className="w-7/12 space-y-6 lg:space-y-8 relative z-10 text-left">
+          <div className="w-full lg:w-7/12 space-y-6 lg:space-y-8 relative z-10 text-left">
             <div className="space-y-4">
               <h2 className="gsap-wf-element font-serif text-4xl lg:text-6xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
                 This is just the beginning.
@@ -392,8 +392,8 @@ export default function WhatsForkePage() {
             </div>
           </div>
 
-          {/* Right Peeking Mascot Illustration (tablet: contained right column; desktop: absolute breakout) */}
-          <div className="gsap-wf-element w-5/12 lg:w-[700px] lg:h-[700px] lg:absolute lg:right-6 lg:-top-85 flex justify-center relative z-10 opacity-0 select-none pointer-events-none">
+          {/* Right Peeking Mascot Illustration (tablet: hidden; desktop: absolute breakout) */}
+          <div className="gsap-wf-element hidden lg:flex lg:w-[700px] lg:h-[700px] lg:absolute lg:right-6 lg:-top-85 justify-center relative z-10 opacity-0 select-none pointer-events-none">
             <div
               className="relative w-full max-w-none lg:w-full lg:h-full aspect-square lg:aspect-auto"
               style={{
