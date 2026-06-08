@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: forke_pgbouncer_prod
+    restart: always
+    environment:
+      - DB_USER=${PROD_DB_USER:-postgres}
+      - DB_PASSWORD=${PROD_DB_PASSWORD}
+      - DB_HOST=${PROD_DB_HOST}
+      - DB_PORT=${PROD_DB_PORT:-5432}
+      - DB_NAME=${PROD_DB_NAME:-forkedb}
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=500
+      - DEFAULT_POOL_SIZE=30
+    ports:
+      - "6432:5432"
