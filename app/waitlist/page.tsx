@@ -13,6 +13,8 @@ import { useSearchParams } from 'next/navigation'
 function WaitlistPageContent() {
   const searchParams = useSearchParams()
   const emailParam = searchParams.get('email')
+  // Marketing channel this visitor arrived from — supports ?source= and ?utm_source=
+  const sourceParam = searchParams.get('source') || searchParams.get('utm_source') || 'direct'
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [email, setEmail] = useState('')
@@ -190,7 +192,7 @@ function WaitlistPageContent() {
       const res = await fetch('/api/waitlist/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), source: sourceParam }),
       })
 
       const data = await res.json()

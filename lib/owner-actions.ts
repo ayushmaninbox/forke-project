@@ -6,6 +6,7 @@ import { auth } from '@/auth'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { logAudit } from './actions/audit-actions'
+import { readAttributionCookie } from './utils/attribution'
 
 export async function submitOwnerApplication(formData: any) {
   const session = await auth()
@@ -25,10 +26,28 @@ export async function submitOwnerApplication(formData: any) {
       return { success: false, error: 'Cannot register a Developer account as an Owner.' }
     }
 
+    // Preserve first-touch attribution; just tag the conversion role as 'owner'.
+    // Backfill source from the cookie only if the user had none recorded at original signup.
+    const existingAttribution = (existingUser?.attribution as Record<string, any> | null) || null
+    const cookieAttribution = await readAttributionCookie()
+    const mergedAttribution = {
+      ...(existingAttribution && Object.keys(existingAttribution).length > 0
+        ? existingAttribution
+        : {
+            source: cookieAttribution.source,
+            medium: cookieAttribution.medium,
+            campaign: cookieAttribution.campaign,
+            referrer: cookieAttribution.referrer,
+            landingPage: cookieAttribution.landingPage,
+          }),
+      signupRole: 'owner',
+    }
+
     // 2. Update user role and status
     await db.update(users).set({
       role: 'owner',
-      isApproved: false
+      isApproved: false,
+      attribution: mergedAttribution,
     }).where(eq(users.id, userId))
 
     // 2. Save application data to owners table
@@ -67,6 +86,13 @@ export async function submitOwnerApplication(formData: any) {
       try {
         await db.insert(subscribers).values({
           email: formData.contactEmail,
+          source: cookieAttribution.source,
+          attribution: {
+            medium: cookieAttribution.medium,
+            campaign: cookieAttribution.campaign,
+            referrer: cookieAttribution.referrer,
+            landingPage: cookieAttribution.landingPage,
+          },
           createdAt: new Date()
         }).onConflictDoNothing()
       } catch (e) {

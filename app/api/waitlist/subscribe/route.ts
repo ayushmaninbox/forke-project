@@ -5,15 +5,21 @@ import { z } from 'zod'
 import { sendWelcomeEmail } from '@/lib/email'
 import { eq } from 'drizzle-orm'
 import { logAudit } from '@/lib/actions/audit-actions'
+import { readAttributionCookie, normalizeSource } from '@/lib/utils/attribution'
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
+  source: z.string().trim().max(64).optional(),
 })
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email } = emailSchema.parse(body)
+    const { email, source } = emailSchema.parse(body)
+
+    // First-touch cookie is authoritative; the form's ?source= is a fallback for the rare no-cookie case.
+    const attribution = await readAttributionCookie()
+    const channel = attribution.source !== 'direct' ? attribution.source : normalizeSource(source)
 
     // Check if subscriber already exists in Drizzle
     const existing = await db
@@ -30,7 +36,16 @@ export async function POST(request: Request) {
       })
     }
 
-    await db.insert(subscribers).values({ email }).onConflictDoNothing()
+    await db.insert(subscribers).values({
+      email,
+      source: channel,
+      attribution: {
+        medium: attribution.medium,
+        campaign: attribution.campaign,
+        referrer: attribution.referrer,
+        landingPage: attribution.landingPage,
+      },
+    }).onConflictDoNothing()
 
     // Log the event explicitly for the activity feed
     await logAudit({

@@ -24,7 +24,8 @@ import {
   resetAdminPasswordAction,
   changeAdminPasswordAction,
   logSubscribersExportAction,
-  getSidebarCounts
+  getSidebarCounts,
+  getSignupSourceBreakdown
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -97,6 +98,9 @@ export default function AdminDashboard() {
     owners: 0, pendingOwners: 0, developers: 0, subscribers: 0,
     admins: 0, enquiries: 0, tables: 0, pendingSqlRequests: 0
   })
+
+  // Cross-funnel signup source breakdown (users + subscribers) for the dashboard donut
+  const [signupSources, setSignupSources] = useState<{ source: string; count: number }[]>([])
 
   // Keep the sidebar Activity badge in sync with the global live/paused status
   useEffect(() => {
@@ -262,6 +266,10 @@ export default function AdminDashboard() {
       if (activeTab === 'dashboard' || activeTab === 'admins') {
         const res = await getAdmins()
         if (res.success) setAdminsList(res.data || [])
+      }
+      if (activeTab === 'dashboard') {
+        const res = await getSignupSourceBreakdown()
+        if (res.success) setSignupSources(res.breakdown || [])
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
@@ -660,12 +668,19 @@ export default function AdminDashboard() {
   }
 
   async function handleExportCSV() {
-    const headers = ['ID', 'Email', 'Created At']
-    const rows = filteredSubscribers.map((sub) => [
-      sub.id,
-      sub.email,
-      new Date(sub.createdAt).toLocaleString()
-    ])
+    const headers = ['ID', 'Email', 'Source', 'Medium', 'Campaign', 'Referrer', 'Created At']
+    const rows = filteredSubscribers.map((sub) => {
+      const a = (sub.attribution as Record<string, any> | null) || {}
+      return [
+        sub.id,
+        sub.email,
+        sub.source || 'direct',
+        a.medium || '',
+        a.campaign || '',
+        a.referrer || '',
+        new Date(sub.createdAt).toLocaleString()
+      ]
+    })
 
     const csvContent = [
       headers.join(','),
@@ -717,8 +732,44 @@ export default function AdminDashboard() {
   })
 
   const filteredSubscribers = subscribersList.filter((sub) => {
-    return sub.email.toLowerCase().includes(searchQuery.toLowerCase())
+    const q = searchQuery.toLowerCase()
+    return sub.email.toLowerCase().includes(q) || (sub.source || 'direct').toLowerCase().includes(q)
   })
+
+  // Signups grouped by marketing channel — sorted most → least, for the Sources breakdown card.
+  const sourceBreakdown = (() => {
+    const counts = new Map<string, number>()
+    for (const sub of subscribersList) {
+      const key = sub.source || 'direct'
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+    return Array.from(counts.entries())
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+  })()
+  const topSourceCount = sourceBreakdown[0]?.count || 0
+
+  // Donut chart geometry for the dashboard "Signup Sources" card.
+  // Uses the cross-funnel breakdown (real users + subscribers), falling back to subscriber-only
+  // if the cross-funnel query hasn't loaded yet.
+  const SOURCE_COLORS = ['#FF7A00', '#3b82f6', '#10b981', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e']
+  const donutData = signupSources.length > 0 ? signupSources : sourceBreakdown
+  const sourceTotal = donutData.reduce((sum, e) => sum + e.count, 0)
+  const sourceSegments = (() => {
+    let cumulative = 0
+    return donutData.map((entry, i) => {
+      const fraction = sourceTotal > 0 ? entry.count / sourceTotal : 0
+      const seg = {
+        ...entry,
+        color: SOURCE_COLORS[i % SOURCE_COLORS.length],
+        pct: Math.round(fraction * 100),
+        offset: cumulative,          // fraction where this slice starts
+        length: fraction,            // fraction of the circle this slice spans
+      }
+      cumulative += fraction
+      return seg
+    })
+  })()
 
   const filteredAdmins = adminsList.filter((admin) => {
     return admin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1309,6 +1360,62 @@ export default function AdminDashboard() {
 
               </div>
 
+              {/* Signup Sources — donut breakdown of where waitlist signups come from */}
+              <div className="p-6 rounded-xl border border-[var(--color-border)] bg-white/[0.018]">
+                <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3 mb-5">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-white">Signup Sources</h3>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Where all your signups (users + waitlist) come from</p>
+                  </div>
+                  <span className="text-xs font-mono text-[var(--color-text-muted)] shrink-0">{sourceTotal} total</span>
+                </div>
+
+                {sourceTotal === 0 ? (
+                  <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">No signups yet</div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row items-center gap-8">
+                    {/* Donut */}
+                    <div className="relative shrink-0">
+                      <svg width="160" height="160" viewBox="0 0 36 36" className="-rotate-90">
+                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3.5" />
+                        {sourceSegments.map((seg) => (
+                          <circle
+                            key={seg.source}
+                            cx="18"
+                            cy="18"
+                            r="15.915"
+                            fill="none"
+                            stroke={seg.color}
+                            strokeWidth="3.5"
+                            strokeDasharray={`${seg.length * 100} ${100 - seg.length * 100}`}
+                            strokeDashoffset={`${-seg.offset * 100}`}
+                          >
+                            <title>{`${seg.source}: ${seg.count} (${seg.pct}%)`}</title>
+                          </circle>
+                        ))}
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-2xl font-semibold text-white font-mono leading-none">{sourceTotal}</span>
+                        <span className="text-[10px] text-[var(--color-text-muted)] mt-1 uppercase tracking-wider">Signups</span>
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex-grow w-full space-y-2.5">
+                      {sourceSegments.map((seg) => (
+                        <div key={seg.source} className="flex items-center gap-3">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: seg.color }} />
+                          <span className="flex-grow text-xs font-mono text-white/75 truncate" title={seg.source}>{seg.source}</span>
+                          <span className="text-xs font-mono text-white/80 shrink-0">
+                            {seg.count} <span className="text-[var(--color-text-muted)]">({seg.pct}%)</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 
@@ -1807,8 +1914,46 @@ export default function AdminDashboard() {
 
           {/* ==================== SUBSCRIBERS PANEL ==================== */}
           {activeTab === 'subscribers' && (
+            <div className="flex flex-col min-h-0 flex-grow gap-4 overflow-y-auto pr-1">
+
+            {/* Sources breakdown — where signups are coming from */}
+            {!isLoading && sourceBreakdown.length > 0 && (
+              <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] p-5 shrink-0">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-white">Signup Sources</h3>
+                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      Tag your shared links with <span className="font-mono text-white/70">?source=twitter</span> to see which channels convert.
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono text-[var(--color-text-muted)] shrink-0">
+                    {subscribersList.length} total
+                  </span>
+                </div>
+                <div className="space-y-2.5">
+                  {sourceBreakdown.map(({ source, count }) => {
+                    const pct = subscribersList.length > 0 ? Math.round((count / subscribersList.length) * 100) : 0
+                    return (
+                      <div key={source} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 text-xs font-mono text-white/70 truncate" title={source}>{source}</span>
+                        <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-accent/70"
+                            style={{ width: `${topSourceCount > 0 ? (count / topSourceCount) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <span className="w-20 shrink-0 text-right text-xs font-mono text-white/80">
+                          {count} <span className="text-[var(--color-text-muted)]">({pct}%)</span>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] overflow-hidden flex flex-col min-h-0 flex-grow">
-              
+
               {/* Search & Action Buttons */}
               <div className="p-4 border-b border-[var(--color-border)] flex flex-col md:flex-row md:items-center justify-between bg-white/[0.005] gap-4">
                 <div className="relative w-full max-w-md">
@@ -1838,6 +1983,7 @@ export default function AdminDashboard() {
                     <tr className="border-b border-[var(--color-border)] bg-white/[0.01]">
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Subscriber ID</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Email Address</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Source</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Date & Time Joined</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                     </tr>
@@ -1845,11 +1991,11 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-[var(--color-border)]/50">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
+                        <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
                       </tr>
                     ) : filteredSubscribers.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">No matching records found</td>
+                        <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">No matching records found</td>
                       </tr>
                     ) : (
                       paginatedSubscribers.map((sub) => (
@@ -1859,6 +2005,18 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <p className="text-sm font-medium text-white">{sub.email}</p>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium font-mono bg-white/[0.04] border border-[var(--color-border)] text-white/70">
+                              {sub.source || 'direct'}
+                            </span>
+                            {(() => {
+                              const a = sub.attribution as Record<string, any> | null
+                              const detail = a ? [a.medium, a.campaign].filter(Boolean).join(' · ') : ''
+                              return detail ? (
+                                <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1" title={a?.referrer || undefined}>{detail}</p>
+                              ) : null
+                            })()}
                           </td>
                           <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
                             <p>{new Date(sub.createdAt).toLocaleString()}</p>
@@ -1881,6 +2039,7 @@ export default function AdminDashboard() {
 
               {renderPagination()}
 
+            </div>
             </div>
           )}
 

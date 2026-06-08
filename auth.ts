@@ -125,6 +125,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // Capture and cache OAuth profile pictures on sign in
       if (user && token.id) {
 
+        // First-touch marketing attribution for brand-new OAuth users.
+        // Only write if the user has none yet, so re-logins never overwrite the original channel.
+        if (account?.provider === 'google' || account?.provider === 'github') {
+          try {
+            const existing = await db.query.users.findFirst({
+              where: eq(users.id, token.id as string),
+              columns: { attribution: true },
+            })
+            const current = existing?.attribution as Record<string, any> | null
+            if (!current || Object.keys(current).length === 0) {
+              const { readAttributionCookie } = await import('@/lib/utils/attribution')
+              const attribution = await readAttributionCookie()
+              await db.update(users).set({
+                attribution: {
+                  source: attribution.source,
+                  medium: attribution.medium,
+                  campaign: attribution.campaign,
+                  referrer: attribution.referrer,
+                  landingPage: attribution.landingPage,
+                  signupRole: 'developer',
+                },
+              }).where(eq(users.id, token.id as string))
+            }
+          } catch (e) {
+            console.error('Failed to stamp OAuth attribution:', e)
+          }
+        }
+
         if (account?.provider === 'google' && user.image) {
           try {
             await db.update(users).set({ googleAvatarUrl: user.image }).where(eq(users.id, token.id as string))

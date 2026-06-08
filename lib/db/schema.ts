@@ -56,6 +56,7 @@ export const users = pgTable('users', {
   slackWebhooks: boolean('slack_webhooks').default(false),
   college: text('college'),
   deletionScheduledAt: timestamp('deletion_scheduled_at'),
+  attribution: jsonb('attribution'), // first-touch marketing attribution { source, medium, campaign, referrer, landingPage, signupRole }
   lastActiveAt: timestamp('last_active_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
@@ -196,6 +197,8 @@ export const supportEnquiries = pgTable('support_enquiries', {
 export const subscribers = pgTable('subscribers', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
+  source: text('source').notNull().default('direct'), // primary, queryable marketing channel
+  attribution: jsonb('attribution'), // full first-touch blob { medium, campaign, referrer, landingPage }
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

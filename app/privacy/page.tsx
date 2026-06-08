@@ -87,6 +87,7 @@ export default function PrivacyPage() {
                   'IP Address & general geo-location',
                   'Pages visited, time spent, & navigation paths',
                   'Click interactions, transaction logs, & claims history',
+                  'Referral source: marketing channel, campaign tags (UTM), & referring website at signup',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-accent/60 shrink-0" />
@@ -152,7 +153,10 @@ export default function PrivacyPage() {
             Cookies & Tracking
           </h2>
           <p className="text-sm text-white/50 leading-relaxed">
-            Forke uses persistent and session cookies to keep you signed in, preserve your interface theme settings, and analyze anonymous traffic performance. You may disable cookies in your web browser, but doing so will prevent you from claiming bounties or accessing private dashboards.
+            Forke uses persistent and session cookies to keep you signed in, preserve your interface theme settings, and analyze traffic performance. You may disable cookies in your web browser, but doing so will prevent you from claiming bounties or accessing private dashboards.
+          </p>
+          <p className="text-sm text-white/50 leading-relaxed">
+            When you first arrive via a tagged or referring link, we store a first-party attribution cookie that records the marketing channel, campaign tags (UTM parameters), and referring website. This helps us understand which channels bring people to Forke and is associated with your account if you sign up. We do <strong>not</strong> use third-party advertising trackers or device fingerprinting for this purpose.
           </p>
         </section>
 

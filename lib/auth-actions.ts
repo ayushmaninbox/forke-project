@@ -7,6 +7,7 @@ import { users, developers, subscribers } from '@/lib/db/schema'
 import { eq, ilike, or } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { logAudit } from './actions/audit-actions'
+import { readAttributionCookie } from './utils/attribution'
 
 export async function signInWithGoogle(role?: 'developer' | 'owner', redirectTo?: string) {
   const cookieStore = await cookies()
@@ -101,6 +102,17 @@ export async function registerDeveloperWithCredentials(formData: any) {
     const passwordHash = await bcrypt.hash(password, 10)
     const fullName = `${firstName} ${lastName}`
 
+    // First-touch marketing attribution, tagged with the conversion role.
+    const attribution = await readAttributionCookie()
+    const userAttribution = {
+      source: attribution.source,
+      medium: attribution.medium,
+      campaign: attribution.campaign,
+      referrer: attribution.referrer,
+      landingPage: attribution.landingPage,
+      signupRole: 'developer' as const,
+    }
+
     const [newUser] = await db.insert(users).values({
       name: fullName,
       email: email,
@@ -108,6 +120,7 @@ export async function registerDeveloperWithCredentials(formData: any) {
       passwordHash: passwordHash,
       role: 'developer',
       isApproved: true, // Developers are instantly approved
+      attribution: userAttribution,
     }).returning({ id: users.id })
 
     if (newUser) {
@@ -124,6 +137,13 @@ export async function registerDeveloperWithCredentials(formData: any) {
         try {
           await db.insert(subscribers).values({
             email: email,
+            source: attribution.source,
+            attribution: {
+              medium: attribution.medium,
+              campaign: attribution.campaign,
+              referrer: attribution.referrer,
+              landingPage: attribution.landingPage,
+            },
             createdAt: new Date()
           }).onConflictDoNothing()
         } catch (e) {

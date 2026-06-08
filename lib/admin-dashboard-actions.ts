@@ -589,6 +589,29 @@ export async function logSubscribersExportAction(count: number) {
   return { success: true }
 }
 
+// Signup-source breakdown across BOTH real users (owners + developers) and waitlist subscribers.
+// Returns counts grouped by channel so the dashboard can render a true cross-funnel donut.
+export async function getSignupSourceBreakdown() {
+  await ensureAdmin()
+  try {
+    const rows = await db.execute(sql`
+      SELECT source, count(*)::int AS count FROM (
+        SELECT COALESCE(NULLIF(attribution->>'source', ''), 'direct') AS source FROM public.users
+        UNION ALL
+        SELECT COALESCE(NULLIF(source, ''), 'direct') AS source FROM public.subscribers
+      ) combined
+      GROUP BY source
+      ORDER BY count DESC
+    `)
+    const breakdown = (rows as any[]).map((r) => ({ source: r.source as string, count: Number(r.count) }))
+    const total = breakdown.reduce((sum, r) => sum + r.count, 0)
+    return { success: true, breakdown, total }
+  } catch (error) {
+    console.error('Failed to get signup source breakdown:', error)
+    return { success: false, error: 'Database query failed', breakdown: [], total: 0 }
+  }
+}
+
 // Lightweight sidebar counts – fetched once on mount for badge display
 export async function getSidebarCounts() {
   await ensureAdmin()
