@@ -4,7 +4,7 @@ import React, { useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import { Zap } from 'lucide-react'
+import { Zap, ArrowRight } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -125,8 +125,38 @@ export default function CTA() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} className="py-24 bg-bg relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
+    <section ref={containerRef} className="py-16 sm:py-24 bg-bg relative overflow-hidden">
+      {/* ===== PHONE-ONLY CTA — clean centered card (matches /levels styling) ===== */}
+      <div className="md:hidden max-w-7xl mx-auto px-4 relative z-10">
+        <div className="gsap-cta-card p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center opacity-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
+          <div className="space-y-6 relative z-10">
+            <h2 className="gsap-cta-title font-serif text-3xl text-white leading-tight tracking-tight opacity-0">
+              Ready to ship?
+            </h2>
+            <p className="gsap-cta-text text-white/50 text-sm leading-relaxed font-light opacity-0">
+              Join Forke and start earning while you code.
+            </p>
+            <div className="flex justify-center opacity-0 gsap-cta-text">
+              <Button
+                size="lg"
+                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
+                onClick={() => router.push(showWaitlisterView ? '/' : '/register')}
+              >
+                {showWaitlisterView ? 'Coming Soon' : 'Join the movement'}
+                {!showWaitlisterView && (
+                  <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
+                    <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+                  </span>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== TABLET + DESKTOP CTA — original "Ready to ship?" + Forky layout ===== */}
+      <div className="hidden md:block max-w-7xl mx-auto px-4 relative z-10">
         {/* CTA Card */}
         <div
           className="gsap-cta-card relative rounded-[1.5rem] sm:rounded-[2.5rem] overflow-x-clip overflow-y-visible border border-white/[0.06] min-h-[200px] md:min-h-[320px] opacity-0"
@@ -145,11 +175,11 @@ export default function CTA() {
 
           <div className="relative z-10 flex items-center min-h-[460px] md:min-h-[320px]">
             {/* Left side — Text + CTA */}
-            <div className="flex-1 p-8 sm:p-12 md:p-16 space-y-6 text-center md:text-left">
-              <h2 className="gsap-cta-title font-serif text-4xl md:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
+            <div className="flex-1 p-8 sm:p-12 md:p-10 lg:p-16 space-y-6 text-center md:text-left">
+              <h2 className="gsap-cta-title font-serif text-4xl md:text-5xl lg:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
                 Ready to ship?
               </h2>
-              <p className="gsap-cta-text text-base md:text-lg text-white/50 font-light max-w-md mx-auto md:mx-0 opacity-0">
+              <p className="gsap-cta-text text-base md:text-base lg:text-lg text-white/50 font-light max-w-md mx-auto md:mx-0 opacity-0">
                 Join Forke and start earning while you code.
               </p>
               <Button
@@ -184,7 +214,8 @@ export default function CTA() {
           {/* Right side — Chilling Forky Mascot (massive, overflows card). Mobile: centered at the bottom of the card. */}
           <div className="gsap-cta-mascot absolute opacity-0 pointer-events-none
             bottom-0 left-1/2 -translate-x-1/2 w-[420px] max-w-[95%] h-[260px]
-            md:bottom-[-4.5rem] md:left-auto md:translate-x-0 md:right-4 md:w-[750px] md:max-w-none md:h-[520px]">
+            md:bottom-[-3rem] md:left-auto md:translate-x-0 md:right-2 md:w-[520px] md:max-w-none md:h-[360px]
+            lg:bottom-[-4.5rem] lg:right-4 lg:w-[750px] lg:h-[520px]">
             <Image
               src="/forke-assets/landing-assets/chilling_forky.png"
               alt="Chilling Forky"

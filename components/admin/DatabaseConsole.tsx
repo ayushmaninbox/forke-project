@@ -2406,11 +2406,13 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                   onClick={() => setSelectedCell({ rowIndex: rIdx, colName: col.name })}
                                   onDoubleClick={() => handleStartEdit(rIdx, col.name, val)}
                                   className={cn(
-                                    "px-4 py-3 font-mono text-[11px] max-w-xs truncate transition-all duration-300 relative group/cell",
+                                    "px-4 py-3 font-mono text-[11px] transition-all duration-300 relative group/cell",
+                                    !isEditing && "max-w-xs truncate",
                                     isPk ? "text-accent font-semibold" : "text-white/80",
                                     isFlashing ? "bg-emerald-500/10 text-emerald-400 font-bold" : "",
                                     isSuperAdmin && !isPk ? "cursor-cell hover:bg-white/[0.015]" : "",
-                                    isSelected ? "outline outline-2 outline-accent -outline-offset-2 z-20 relative" : ""
+                                    isSelected ? "outline outline-2 outline-accent -outline-offset-2 z-20 relative" : "",
+                                    isEditing ? "z-30" : ""
                                   )}
                                   title={isSuperAdmin && !isPk ? "Double-click to inline edit cell" : ""}
                                 >

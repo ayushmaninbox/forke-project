@@ -129,8 +129,8 @@ export default function Hero() {
       {/* Animated Background Components — clear circle follows Forky (center-low on mobile, right on desktop) */}
       <div
         className="absolute inset-0 z-[1] pointer-events-none opacity-50
-          [mask-image:radial-gradient(circle_at_50%_68%,transparent_10%,black_40%)]
-          [-webkit-mask-image:radial-gradient(circle_at_50%_68%,transparent_10%,black_40%)]
+          [mask-image:radial-gradient(circle_at_50%_66%,transparent_8%,black_34%)]
+          [-webkit-mask-image:radial-gradient(circle_at_50%_66%,transparent_8%,black_34%)]
           lg:[mask-image:radial-gradient(circle_at_80%_50%,transparent_10%,black_40%)]
           lg:[-webkit-mask-image:radial-gradient(circle_at_80%_50%,transparent_10%,black_40%)]"
       >
@@ -155,12 +155,12 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-12 relative z-30">
             <div className="space-y-6 text-center lg:text-left">
-              <h1 className="gsap-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-[1.1] tracking-tight opacity-0">
+              <h1 className="gsap-hero-title font-serif text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-8xl text-white leading-[1.1] tracking-tight opacity-0">
                 Ship real work. <br />
                 Earn XP. <span className="text-accent text-glow">Get paid.</span>
               </h1>
 
-              <p className="gsap-hero-subtitle text-lg md:text-xl text-white/50 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light opacity-0">
+              <p className="gsap-hero-subtitle text-base max-[420px]:text-sm sm:text-base md:text-lg lg:text-xl text-white/50 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light opacity-0">
                 Micro-task marketplace for developers. Claim bounties, build reputation and cash out instantly.
               </p>
             </div>
@@ -189,7 +189,7 @@ export default function Hero() {
           </div>
 
           {/* Hero Visual Area - Orbital Layout (Mobile: absolute overlay pinned to the lower half so it never pushes the ticker down; Desktop: absolute right) */}
-          <div className="absolute left-1/2 -translate-x-1/2 top-[44%] w-[165%] sm:w-[135%] aspect-square lg:top-1/2 lg:left-auto lg:translate-x-0 lg:-translate-y-1/2 lg:absolute lg:w-[1200px] lg:h-[1200px] lg:aspect-auto lg:right-[-300px] pointer-events-none z-0">
+          <div className="absolute left-1/2 -translate-x-1/2 top-[44%] sm:top-[42%] w-[130%] max-[420px]:w-[120%] sm:w-[min(85%,56dvh)] md:w-[min(72%,60dvh)] aspect-square lg:top-1/2 lg:left-auto lg:translate-x-0 lg:-translate-y-1/2 lg:absolute lg:w-[1200px] lg:h-[1200px] lg:aspect-auto lg:right-[-300px] pointer-events-none z-0">
             
             {/* Connecting Lines SVG Layer */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible opacity-20">
@@ -289,7 +289,7 @@ export default function Hero() {
         {showWaitlisterView ? (
           <Button
             size="lg"
-            className="gsap-hero-btn w-full gap-2 text-lg px-8 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0 flex items-center justify-center"
+            className="gsap-hero-btn w-full gap-2 text-base sm:text-lg px-8 py-3.5 sm:py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0 flex items-center justify-center"
             onClick={() => router.push('/')}
           >
             Coming Soon
@@ -297,7 +297,7 @@ export default function Hero() {
         ) : (
           <Button
             size="lg"
-            className="gsap-hero-btn w-full gap-2 text-lg px-10 py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0 flex items-center justify-center"
+            className="gsap-hero-btn w-full gap-2 text-base sm:text-lg px-10 py-3.5 sm:py-5 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight opacity-0 flex items-center justify-center"
             onClick={() => router.push('/register')}
           >
             Join Forke Now <Zap className="w-5 h-5 fill-current animate-pulse" />

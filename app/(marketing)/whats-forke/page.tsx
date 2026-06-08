@@ -150,12 +150,12 @@ export default function WhatsForkePage() {
                 </div>
 
                 {/* Headline (Upscaled to text-6xl md:text-8xl to match homepage title exactly) */}
-                <h1 className="gsap-wf-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-[1.05] tracking-tight opacity-0">
+                <h1 className="gsap-wf-hero-title font-serif text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-8xl text-white leading-[1.05] tracking-tight opacity-0">
                   What is <span className="text-accent italic font-normal text-glow">Forke?</span>
                 </h1>
 
                 {/* Description (Upscaled to text-lg md:text-xl to match homepage description) */}
-                <p className="gsap-wf-hero-desc text-muted text-lg md:text-xl font-light leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-0">
+                <p className="gsap-wf-hero-desc text-muted text-base max-[420px]:text-sm sm:text-base md:text-lg lg:text-xl font-light leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-0">
                   Forke is a gamified open-source contribution space. Claim verified coding tasks, level up your engineering tier, and cash out rewards instantly.
                 </p>
 
@@ -207,7 +207,7 @@ export default function WhatsForkePage() {
         </section>
 
         {/* MOBILE Hero Image — pinned to the very bottom of the full-height hero, behind the text (lg:hidden) */}
-        <div className="lg:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[135%] aspect-square z-0 pointer-events-none">
+        <div className="lg:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[115%] max-[420px]:w-[108%] sm:w-[min(95%,50dvh)] md:w-[min(85%,55dvh)] aspect-square z-0 pointer-events-none">
           <div
             className="relative w-full h-full"
             style={{
@@ -339,19 +339,45 @@ export default function WhatsForkePage() {
 
 
       {/* --- BOTTOM CTA VISUAL SECTION --- */}
-      <section className="gsap-wf-section relative z-10 py-20 px-6 max-w-7xl mx-auto mb-16">
-        <div className="p-8 md:p-14 rounded-[3.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-x-clip overflow-y-visible flex flex-col lg:flex-row items-center gap-12 group">
-          
+      <section className="gsap-wf-section relative z-10 py-16 sm:py-20 px-6 max-w-7xl mx-auto mb-16">
+        {/* PHONE-ONLY clean centered card (matches /levels styling) */}
+        <div className="md:hidden p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
+          <div className="space-y-6 relative z-10">
+            <h2 className="gsap-wf-element font-serif text-3xl text-white leading-tight tracking-tight opacity-0">
+              This is just the beginning.
+            </h2>
+            <p className="gsap-wf-element text-white/50 text-sm leading-relaxed font-light opacity-0">
+              Join the movement and help us build the future of developer work.
+            </p>
+            <div className="gsap-wf-element flex justify-center opacity-0">
+              <Button
+                size="lg"
+                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
+                onClick={() => router.push('/register')}
+              >
+                Join the movement
+                <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
+                  <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* TABLET + DESKTOP — original card with mascot (tablet = scaled-down side-by-side, desktop unchanged) */}
+        <div className="hidden md:flex p-8 md:p-10 lg:p-14 rounded-[3.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-x-clip overflow-y-visible flex-row items-center gap-6 lg:gap-12 group">
+
           {/* Ambient card highlight background */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,_rgba(255,122,0,0.05)_0%,_transparent_60%)] pointer-events-none" />
 
           {/* Left Text / CTAs */}
-          <div className="lg:w-7/12 space-y-8 relative z-10 text-left">
+          <div className="w-7/12 space-y-6 lg:space-y-8 relative z-10 text-left">
             <div className="space-y-4">
-              <h2 className="gsap-wf-element font-serif text-4xl md:text-6xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
+              <h2 className="gsap-wf-element font-serif text-4xl lg:text-6xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
                 This is just the beginning.
               </h2>
-              <p className="gsap-wf-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0 max-w-xl">
+              <p className="gsap-wf-element text-white/50 text-base lg:text-lg leading-relaxed font-light opacity-0 max-w-xl">
                 Join the movement and help us build the future of developer work.
               </p>
             </div>
@@ -366,10 +392,10 @@ export default function WhatsForkePage() {
             </div>
           </div>
 
-          {/* Right Peeking Mascot Illustration (Absolute breakout on desktop, flow on mobile) */}
-          <div className="gsap-wf-element lg:absolute lg:right-6 lg:-top-85 lg:w-[700px] lg:h-[700px] w-full flex justify-center relative z-10 opacity-0 select-none pointer-events-none">
-            <div 
-              className="relative w-full max-w-[380px] lg:max-w-none lg:w-full lg:h-full aspect-[4/3] lg:aspect-auto"
+          {/* Right Peeking Mascot Illustration (tablet: contained right column; desktop: absolute breakout) */}
+          <div className="gsap-wf-element w-5/12 lg:w-[700px] lg:h-[700px] lg:absolute lg:right-6 lg:-top-85 flex justify-center relative z-10 opacity-0 select-none pointer-events-none">
+            <div
+              className="relative w-full max-w-none lg:w-full lg:h-full aspect-square lg:aspect-auto"
               style={{
                 maskImage: 'radial-gradient(circle at center, black 45%, transparent 85%)',
                 WebkitMaskImage: 'radial-gradient(circle at center, black 45%, transparent 85%)',

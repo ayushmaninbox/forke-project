@@ -24,8 +24,7 @@ import {
   resetAdminPasswordAction,
   changeAdminPasswordAction,
   logSubscribersExportAction,
-  getSidebarCounts,
-  getSignupSourceBreakdown
+  getSidebarCounts
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -99,8 +98,6 @@ export default function AdminDashboard() {
     admins: 0, enquiries: 0, tables: 0, pendingSqlRequests: 0
   })
 
-  // Cross-funnel signup source breakdown (users + subscribers) for the dashboard donut
-  const [signupSources, setSignupSources] = useState<{ source: string; count: number }[]>([])
 
   // Keep the sidebar Activity badge in sync with the global live/paused status
   useEffect(() => {
@@ -266,10 +263,6 @@ export default function AdminDashboard() {
       if (activeTab === 'dashboard' || activeTab === 'admins') {
         const res = await getAdmins()
         if (res.success) setAdminsList(res.data || [])
-      }
-      if (activeTab === 'dashboard') {
-        const res = await getSignupSourceBreakdown()
-        if (res.success) setSignupSources(res.breakdown || [])
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err)
@@ -748,28 +741,6 @@ export default function AdminDashboard() {
       .sort((a, b) => b.count - a.count)
   })()
   const topSourceCount = sourceBreakdown[0]?.count || 0
-
-  // Donut chart geometry for the dashboard "Signup Sources" card.
-  // Uses the cross-funnel breakdown (real users + subscribers), falling back to subscriber-only
-  // if the cross-funnel query hasn't loaded yet.
-  const SOURCE_COLORS = ['#FF7A00', '#3b82f6', '#10b981', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e']
-  const donutData = signupSources.length > 0 ? signupSources : sourceBreakdown
-  const sourceTotal = donutData.reduce((sum, e) => sum + e.count, 0)
-  const sourceSegments = (() => {
-    let cumulative = 0
-    return donutData.map((entry, i) => {
-      const fraction = sourceTotal > 0 ? entry.count / sourceTotal : 0
-      const seg = {
-        ...entry,
-        color: SOURCE_COLORS[i % SOURCE_COLORS.length],
-        pct: Math.round(fraction * 100),
-        offset: cumulative,          // fraction where this slice starts
-        length: fraction,            // fraction of the circle this slice spans
-      }
-      cumulative += fraction
-      return seg
-    })
-  })()
 
   const filteredAdmins = adminsList.filter((admin) => {
     return admin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -1358,62 +1329,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-              </div>
-
-              {/* Signup Sources — donut breakdown of where waitlist signups come from */}
-              <div className="p-6 rounded-xl border border-[var(--color-border)] bg-white/[0.018]">
-                <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3 mb-5">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-white">Signup Sources</h3>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Where all your signups (users + waitlist) come from</p>
-                  </div>
-                  <span className="text-xs font-mono text-[var(--color-text-muted)] shrink-0">{sourceTotal} total</span>
-                </div>
-
-                {sourceTotal === 0 ? (
-                  <div className="py-10 text-center text-sm text-[var(--color-text-muted)]">No signups yet</div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row items-center gap-8">
-                    {/* Donut */}
-                    <div className="relative shrink-0">
-                      <svg width="160" height="160" viewBox="0 0 36 36" className="-rotate-90">
-                        <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3.5" />
-                        {sourceSegments.map((seg) => (
-                          <circle
-                            key={seg.source}
-                            cx="18"
-                            cy="18"
-                            r="15.915"
-                            fill="none"
-                            stroke={seg.color}
-                            strokeWidth="3.5"
-                            strokeDasharray={`${seg.length * 100} ${100 - seg.length * 100}`}
-                            strokeDashoffset={`${-seg.offset * 100}`}
-                          >
-                            <title>{`${seg.source}: ${seg.count} (${seg.pct}%)`}</title>
-                          </circle>
-                        ))}
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-2xl font-semibold text-white font-mono leading-none">{sourceTotal}</span>
-                        <span className="text-[10px] text-[var(--color-text-muted)] mt-1 uppercase tracking-wider">Signups</span>
-                      </div>
-                    </div>
-
-                    {/* Legend */}
-                    <div className="flex-grow w-full space-y-2.5">
-                      {sourceSegments.map((seg) => (
-                        <div key={seg.source} className="flex items-center gap-3">
-                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: seg.color }} />
-                          <span className="flex-grow text-xs font-mono text-white/75 truncate" title={seg.source}>{seg.source}</span>
-                          <span className="text-xs font-mono text-white/80 shrink-0">
-                            {seg.count} <span className="text-[var(--color-text-muted)]">({seg.pct}%)</span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
             </div>

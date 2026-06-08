@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react'
 
 export default function FirstMerge() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const shadowHostRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
 
   // 1. Lazy loading observer
@@ -28,47 +27,6 @@ export default function FirstMerge() {
     return () => observer.disconnect()
   }, [])
 
-  // 2. Mount video inside a closed Shadow DOM when visible to hide it from browser extensions
-  useEffect(() => {
-    if (!isVisible || !shadowHostRef.current) return
-
-    // Clean up any existing content
-    shadowHostRef.current.innerHTML = ''
-
-    // Attach a closed shadow root to completely hide it from DOM selectors
-    const shadowRoot = shadowHostRef.current.attachShadow({ mode: 'closed' })
-
-    // Create the video element
-    const video = document.createElement('video')
-    video.autoplay = true
-    video.loop = true
-    video.muted = true
-    video.setAttribute('playsinline', 'true')
-    video.setAttribute('webkit-playsinline', 'true')
-    video.preload = 'metadata'
-    
-    // Style encapsulation inside the shadow DOM
-    video.style.width = '100%'
-    video.style.height = 'auto'
-    video.style.display = 'block'
-    video.style.objectFit = 'cover'
-
-    // Create video sources
-    const sourceWebM = document.createElement('source')
-    sourceWebM.src = '/forke-assets/landing-assets/the first merge.webm'
-    sourceWebM.type = 'video/webm'
-
-    const sourceMP4 = document.createElement('source')
-    sourceMP4.src = '/forke-assets/landing-assets/the first merge.mp4'
-    sourceMP4.type = 'video/mp4'
-
-    video.appendChild(sourceWebM)
-    video.appendChild(sourceMP4)
-
-    // Append video to the closed shadow root
-    shadowRoot.appendChild(video)
-  }, [isVisible])
-
   return (
     <div ref={containerRef} className="w-full relative overflow-hidden bg-bg">
       {/* Edge blending overlays */}
@@ -81,7 +39,17 @@ export default function FirstMerge() {
       {/* Video Content */}
       <div className="w-full flex items-center justify-center">
         {isVisible ? (
-          <div ref={shadowHostRef} className="w-full" />
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="w-full h-auto block object-cover"
+          >
+            <source src="/forke-assets/landing-assets/the first merge.webm" type="video/webm" />
+            <source src="/forke-assets/landing-assets/the first merge.mp4" type="video/mp4" />
+          </video>
         ) : (
           /* Placeholder to maintain height during lazy load */
           <div className="w-full aspect-[1280/302] bg-[#050505]" />
