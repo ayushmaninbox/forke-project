@@ -1140,20 +1140,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <Layers className="w-3.5 h-3.5" />
                     <span>STRUCTURE</span>
                   </button>
-                  {isSuperAdmin && (
-                    <button
-                      onClick={() => setActiveSubTab('sql')}
-                      className={cn(
-                        "px-3 py-1 rounded-md text-xs font-semibold tracking-wider transition-all duration-200 cursor-pointer flex items-center gap-1.5",
-                        activeSubTab === 'sql'
-                          ? "bg-white/[0.06] text-white shadow-sm"
-                          : "text-white/40 hover:text-white/80"
-                      )}
-                    >
-                      <Terminal className="w-3.5 h-3.5" />
-                      <span>SQL EDITOR</span>
-                    </button>
-                  )}
+
                 </>
               ) : (
                 <div className="px-3 py-1 text-xs font-semibold text-white tracking-wider flex items-center gap-1.5 select-none font-mono text-accent">
@@ -1167,7 +1154,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
             {/* Table-level interactive dropdowns */}
             {selectedTable && activeSubTab === 'data' && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full py-1">
                 
                 {/* Filters Button */}
                 <button
@@ -1178,7 +1165,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     setShowActionsDropdown(false)
                   }}
                   className={cn(
-                    "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                    "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0",
                     showFilterBar || filtersList.some(f => f.value.trim() !== '' || f.operator.includes('null'))
                       ? "border-accent/30 bg-accent/10 text-accent"
                       : "border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04]"
@@ -1202,7 +1189,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                       setShowActionsDropdown(false)
                     }}
                     className={cn(
-                      "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer",
+                      "h-8 px-3 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0",
                       sortBy
                         ? "border-accent/30 bg-accent/10 text-accent"
                         : "border-white/[0.06] bg-white/[0.02] text-white/70 hover:text-white hover:bg-white/[0.04]"
@@ -1279,7 +1266,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                       setShowSortDropdown(false)
                       setShowActionsDropdown(false)
                     }}
-                    className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.04] flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs font-medium text-white/70 hover:text-white hover:bg-white/[0.04] flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
                     <Layers className="w-3.5 h-3.5" />
                     <span>Columns</span>
@@ -1365,7 +1352,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                       setNewRecordData({})
                       setIsAddModalOpen(true)
                     }}
-                    className="h-8 px-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-xs font-semibold flex items-center gap-1.5 hover:bg-accent hover:text-[#0a0a0a] transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-lg bg-accent/10 border border-accent/20 text-accent text-xs font-semibold flex items-center gap-1.5 hover:bg-accent hover:text-[#0a0a0a] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add record</span>
@@ -1376,7 +1363,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 {isSuperAdmin && selectedRowKeys.length > 0 && (
                   <button
                     onClick={handleDeleteSelectedRecords}
-                    className="h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-1.5 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-1.5 hover:bg-red-500 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete ({selectedRowKeys.length})</span>
@@ -1396,7 +1383,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 </span>
 
                 {/* Pagination indicator (compact style) */}
-                <div className="flex items-center gap-2 border border-white/[0.06] rounded-lg p-0.5 bg-white/[0.02] text-[11px] font-mono text-white/50 select-none">
+                <div className="flex items-center gap-2 border border-white/[0.06] rounded-lg p-0.5 bg-white/[0.02] text-[11px] font-mono text-white/50 select-none whitespace-nowrap shrink-0">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1 || isLoadingData}
@@ -1404,7 +1391,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-1 text-white">
+                  <span className="px-1 text-white whitespace-nowrap shrink-0">
                     {rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, tableRowsCountEnabled ? totalRecords : ((currentPage - 1) * pageSize + rows.length))} {tableRowsCountEnabled && `of ${totalRecords}`}
                   </span>
                   <button
@@ -2424,7 +2411,8 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
                                   {isEditing ? (
                                     <div className={cn(
-                                      "absolute top-0 z-50 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl p-3 min-w-[320px] flex flex-col gap-2 text-left",
+                                      "absolute z-50 bg-[#0d0d11] border border-white/10 rounded-lg shadow-2xl p-3 min-w-[320px] flex flex-col gap-2 text-left",
+                                      (rows.length === pageSize && rows.length - rIdx <= 2) ? "bottom-0" : "top-0",
                                       isRightHalf ? "right-0" : "left-0"
                                     )}>
                                       <div className="text-[10px] text-white/40 font-semibold uppercase flex items-center justify-between">
@@ -2439,7 +2427,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                         autoFocus
                                         disabled={updatingCellProgress}
                                         onKeyDown={(e) => {
-                                          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                                          if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault()
                                             handleSaveCellEdit(row, col.name, rIdx)
                                           } else if (e.key === 'Escape') {
@@ -2472,7 +2460,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                             disabled={updatingCellProgress}
                                             className="px-2.5 py-1 bg-accent text-[#0a0a0a] font-semibold hover:bg-accent/80 rounded transition-colors flex items-center gap-1 cursor-pointer"
                                           >
-                                            Save <span className="bg-[#0a0a0a]/10 px-1 rounded text-[8px]">⌘↵</span>
+                                            Save <span className="bg-[#0a0a0a]/10 px-1 rounded text-[8px]">↵</span>
                                           </button>
                                         </div>
                                       </div>
