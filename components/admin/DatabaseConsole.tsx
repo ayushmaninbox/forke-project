@@ -1154,7 +1154,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
             {/* Table-level interactive dropdowns */}
             {selectedTable && activeSubTab === 'data' && (
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full py-1">
+              <div className="flex items-center gap-2 flex-wrap max-w-full py-1">
                 
                 {/* Filters Button */}
                 <button
@@ -2587,7 +2587,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 >
                   Cancel
                 </button>
-                <Button type="submit" disabled={isSubmittingRecord}>
+                <Button type="submit" disabled={isSubmittingRecord} className="h-9 px-4 text-xs font-semibold rounded-lg">
                   {isSubmittingRecord ? 'Inserting...' : 'Insert row'}
                 </Button>
               </div>
