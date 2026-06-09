@@ -636,6 +636,7 @@ export async function getSidebarCounts() {
     subscribers,
     adminsCount,
     enquiries,
+    blogs,
     tables,
     pendingSqlRequests,
   ] = await Promise.all([
@@ -645,6 +646,7 @@ export async function getSidebarCounts() {
     countOf(sql`SELECT count(*)::int AS count FROM public.subscribers`),
     countOf(sql`SELECT count(*)::int AS count FROM public.admins`),
     countOf(sql`SELECT count(*)::int AS count FROM public.support_enquiries`),
+    countOf(sql`SELECT count(*)::int AS count FROM public.blogs`),
     countOf(sql`SELECT count(*)::int AS count FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = 'public' AND c.relkind = 'r'`),
     admin.role === 'super_admin'
       ? countOf(sql`SELECT count(*)::int AS count FROM public.sql_query_requests WHERE status = 'pending'`)
@@ -660,6 +662,7 @@ export async function getSidebarCounts() {
       subscribers,
       admins: adminsCount,
       enquiries,
+      blogs,
       tables,
       pendingSqlRequests,
     }

@@ -55,7 +55,7 @@ export default function Navbar() {
     { name: "What's Forke?", href: '/whats-forke' },
     { name: 'Bounties', href: '/bounties' },
     { name: 'Levels', href: '/levels' },
-    { name: 'Blog', href: '/blog' },
+    { name: 'Blogs', href: '/blogs' },
     { name: 'Contact Us', href: '/contact' },
   ]
 

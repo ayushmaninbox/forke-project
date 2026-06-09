@@ -97,7 +97,7 @@ function isPublicProfilePath(pathname: string): boolean {
     'waitlist', 'checkout', 'admin', 'api', 'signin', 'register', 'onboarding',
     'dashboard', 'profile', 'tasks', 'submissions', 'earnings', 'settings',
     'analytics', 'developers', 'escrow', 'messages', 'notifications', 'post-task',
-    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund'
+    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund', 'blogs'
   ]
   return !reservedNames.includes(segments[0])
 }
@@ -163,7 +163,7 @@ export default auth(async (req) => {
   }
 
   // ===== WAITLIST GATE =====
-  const isWaitlistAllowed = 
+  const isWaitlistAllowed =
     pathname === '/waitlist' ||
     pathname === '/checkout' ||
     pathname.startsWith('/admin') ||
@@ -171,6 +171,10 @@ export default auth(async (req) => {
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/auth') ||
     pathname.endsWith('/opengraph-image') ||
+    // The blog is a public, indexable surface — readable even during the
+    // waitlist gate so posts can be shared and crawled.
+    pathname === '/blogs' ||
+    pathname.startsWith('/blogs/') ||
     isPublicProfilePath(pathname)
 
   // If waitlist is active and the user doesn't have site_access

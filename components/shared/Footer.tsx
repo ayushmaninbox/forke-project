@@ -50,7 +50,7 @@ export default function Footer() {
             <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">What&apos;s Forke?</a></li>
             {!showWaitlisterView && <li><a href="/tasks" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>}
             <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Levels</a></li>
-            {!showWaitlisterView && <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">Blog</a></li>}
+            <li><a href="/blogs" className="text-muted hover:text-white transition-colors text-sm font-light">Blogs</a></li>
             <li><a href="/contact" className="text-muted hover:text-white transition-colors text-sm font-light">Contact Us</a></li>
           </ul>
         </div>

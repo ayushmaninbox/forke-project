@@ -66,9 +66,11 @@ import {
   X,
   Activity,
   Table,
-  Pencil
+  Pencil,
+  PenSquare
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
+import BlogPanel from '@/components/admin/BlogPanel'
 import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
 import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
 import ActivityFeedPanel from '@/components/admin/ActivityFeedPanel'
@@ -86,7 +88,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'blogs' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
   >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -95,7 +97,7 @@ export default function AdminDashboard() {
   // Sidebar counts – fetched once on mount
   const [sidebarCounts, setSidebarCounts] = useState({
     owners: 0, pendingOwners: 0, developers: 0, subscribers: 0,
-    admins: 0, enquiries: 0, tables: 0, pendingSqlRequests: 0
+    admins: 0, enquiries: 0, blogs: 0, tables: 0, pendingSqlRequests: 0
   })
 
 
@@ -117,8 +119,8 @@ export default function AdminDashboard() {
       const params = new URLSearchParams(window.location.search)
       const tab = params.get('tab')
       const validTabs = [
-        'dashboard', 'owner-approval', 'developer-ban', 'enquiries', 
-        'admins', 'subscribers', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor'
+        'dashboard', 'owner-approval', 'developer-ban', 'enquiries',
+        'admins', 'subscribers', 'blogs', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor'
       ]
       if (tab && validTabs.includes(tab)) {
         setActiveTab(tab as any)
@@ -994,6 +996,24 @@ export default function AdminDashboard() {
               </div>
               <span className="text-[10px] font-mono text-white/25 leading-none">
                 {sidebarCounts.subscribers}
+              </span>
+            </button>
+
+            {/* Blog */}
+            <button
+              onClick={() => selectTab('blogs')}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                activeTab === 'blogs'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <PenSquare className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'blogs' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
+                <span>Blog</span>
+              </div>
+              <span className="text-[10px] font-mono text-white/25 leading-none">
+                {sidebarCounts.blogs}
               </span>
             </button>
 
@@ -2135,6 +2155,13 @@ export default function AdminDashboard() {
                 </table>
               </div>
 
+            </div>
+          )}
+
+          {/* ==================== BLOG PANEL ==================== */}
+          {activeTab === 'blogs' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <BlogPanel />
             </div>
           )}
 

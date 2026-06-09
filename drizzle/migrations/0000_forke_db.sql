@@ -260,5 +260,27 @@ CREATE TABLE IF NOT EXISTS "sql_query_requests" (
 --> statement-breakpoint
 ALTER TABLE "sql_query_requests" ADD CONSTRAINT "sql_query_requests_requester_id_admins_id_fk" FOREIGN KEY ("requester_id") REFERENCES "public"."admins"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sql_query_requests" ADD CONSTRAINT "sql_query_requests_reviewed_by_admins_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sql_query_requests" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "sql_query_requests" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TYPE "public"."blog_status" AS ENUM('draft', 'published');--> statement-breakpoint
+CREATE TABLE "blogs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"author_id" uuid,
+	"author_name" text,
+	"title" text DEFAULT 'Untitled' NOT NULL,
+	"slug" text NOT NULL,
+	"excerpt" text,
+	"cover_image" text,
+	"content" jsonb,
+	"content_html" text,
+	"status" "blog_status" DEFAULT 'draft' NOT NULL,
+	"reading_minutes" integer DEFAULT 1 NOT NULL,
+	"published_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "blogs_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+ALTER TABLE "blogs" ADD CONSTRAINT "blogs_author_id_admins_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "blogs" ENABLE ROW LEVEL SECURITY;
+
 

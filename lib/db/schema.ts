@@ -27,6 +27,7 @@ export const escrowStatusEnum = pgEnum('escrow_status', [
   'released',
   'refunded',
 ])
+export const blogStatusEnum = pgEnum('blog_status', ['draft', 'published'])
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -273,6 +274,28 @@ export const sqlQueryRequests = pgTable('sql_query_requests', {
   executionDurationMs: integer('execution_duration_ms'),
   executionResults: jsonb('execution_results'),
   executionError: text('execution_error'),
+})
+
+// Blog posts authored in the admin portal's Medium-style editor.
+// `content` holds Tiptap's structured JSON (the source of truth, queryable/re-editable);
+// `contentHtml` is the rendered HTML snapshot used by the public reader to avoid
+// re-serializing JSON on every page view. `coverImage` and inline images are URLs —
+// currently pasted by hand, later produced by the R2 upload pipeline.
+export const blogs = pgTable('blogs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  authorId: uuid('author_id').references(() => admins.id, { onDelete: 'set null' }),
+  authorName: text('author_name'),                 // snapshot of the author's name at write time
+  title: text('title').notNull().default('Untitled'),
+  slug: text('slug').notNull().unique(),
+  excerpt: text('excerpt'),                         // short summary for cards / SEO
+  coverImage: text('cover_image'),                 // URL (R2 later)
+  content: jsonb('content'),                       // Tiptap JSON document
+  contentHtml: text('content_html'),               // rendered HTML snapshot
+  status: blogStatusEnum('status').default('draft').notNull(),
+  readingMinutes: integer('reading_minutes').default(1).notNull(),
+  publishedAt: timestamp('published_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
 
