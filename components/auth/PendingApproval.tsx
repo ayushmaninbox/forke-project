@@ -34,7 +34,7 @@ export default function PendingApproval({ userEmail }: { userEmail?: string | nu
         </div>
         
         <div className="space-y-4">
-          <h2 className="text-4xl font-semibold text-white tracking-[-0.03em]">Application <span className="font-serif italic font-normal text-accent">Under Review</span></h2>
+          <h2 className="text-4xl font-medium text-white tracking-[-0.03em]">Application <span className="font-serif italic font-normal text-accent">Under Review</span></h2>
           <div className="space-y-6 text-white/50 leading-relaxed max-w-[400px] mx-auto text-sm">
             <p>
               Thank you for your interest in joining the Forke network. Our team is currently reviewing your professional credentials to maintain our platform's quality standards.

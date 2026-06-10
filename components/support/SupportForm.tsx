@@ -61,7 +61,7 @@ export default function SupportForm() {
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div className="space-y-1.5">
-            <h3 className="text-lg font-semibold text-white">Ticket submitted</h3>
+            <h3 className="text-lg font-medium text-white">Ticket submitted</h3>
             <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
               Your support request has been logged. An agent will respond shortly.
             </p>
@@ -83,7 +83,7 @@ export default function SupportForm() {
               <Headphones className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white tracking-tight">
+              <h3 className="text-lg font-medium text-white tracking-tight">
                 Contact support
               </h3>
               <p className="text-[13px] text-[var(--color-text-muted)]">We&apos;re available 24/7.</p>

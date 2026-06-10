@@ -74,7 +74,7 @@ export default function ContactPage() {
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           <span className="ui-eyebrow">{'//'} support portal</span>
         </div>
-        <h1 className="gsap-contact-title text-5xl md:text-7xl font-semibold text-white tracking-[-0.04em] leading-[1.02] opacity-0">
+        <h1 className="gsap-contact-title text-5xl md:text-7xl font-medium text-white tracking-[-0.04em] leading-[1.02] opacity-0">
           Contact <span className="font-serif italic font-normal text-accent">Forke.</span>
         </h1>
         <p className="gsap-contact-desc text-muted text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto opacity-0">

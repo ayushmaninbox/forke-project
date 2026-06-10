@@ -144,7 +144,7 @@ export default function FAQ() {
       <div className="max-w-4xl mx-auto px-4 relative z-10">
         <div className="text-center mb-16 space-y-4">
           <span className="gsap-faq-title ui-eyebrow block opacity-0">{'//'} faq</span>
-          <h2 className="gsap-faq-title text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] opacity-0">
+          <h2 className="gsap-faq-title text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] opacity-0">
             Common <span className="font-serif italic font-normal text-accent">questions.</span>
           </h2>
           <p className="gsap-faq-desc text-muted text-base md:text-lg font-light opacity-0">

@@ -125,7 +125,7 @@ function OwnerSection({ title, items, icon: Icon, colorClass, statusLabel, badge
           <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', colorClass)}>
             <Icon className="w-4 h-4" />
           </div>
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          <h3 className="text-sm font-medium text-white">{title}</h3>
         </div>
         <span className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full tabular-nums', badgeColor)}>
           {items.length} {items.length === 1 ? 'entry' : 'entries'}
@@ -155,7 +155,7 @@ function DevSection({ title, items, icon: Icon, colorClass, statusLabel, badgeCo
           <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center border', colorClass)}>
             <Icon className="w-4 h-4" />
           </div>
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          <h3 className="text-sm font-medium text-white">{title}</h3>
         </div>
         <span className={cn('px-2 py-0.5 text-[11px] font-medium rounded-full tabular-nums', badgeColor)}>
           {items.length} {items.length === 1 ? 'entry' : 'entries'}
@@ -222,7 +222,7 @@ export default async function SubmissionsPage() {
          <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
           <div className="space-y-1 text-left">
-            <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+            <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
               Incoming submissions
             </h2>
             <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -289,7 +289,7 @@ export default async function SubmissionsPage() {
        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
             Submission history
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">

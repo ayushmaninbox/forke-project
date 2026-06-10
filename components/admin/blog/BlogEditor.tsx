@@ -480,7 +480,7 @@ export default function BlogEditor({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#0b0b0e] p-5 shadow-2xl shadow-black/60"
           >
-            <h3 className="mb-1 text-sm font-semibold text-white">Add cover image</h3>
+            <h3 className="mb-1 text-sm font-medium text-white">Add cover image</h3>
             <p className="mb-4 text-xs text-[var(--color-text-muted)]">
               Upload an image (you can crop it) or paste an image link.
             </p>
@@ -490,7 +490,7 @@ export default function BlogEditor({
                 setCoverPromptOpen(false)
                 coverFileRef.current?.click()
               }}
-              className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
             >
               <ImagePlus className="h-4 w-4" /> Upload from device
             </button>
@@ -525,7 +525,7 @@ export default function BlogEditor({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/[0.05]"
+                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/[0.05]"
                 >
                   Use link
                 </button>
@@ -628,7 +628,7 @@ function UrlPrompt({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#0b0b0e] p-5 shadow-2xl shadow-black/60"
       >
-        <h3 className="mb-1 text-sm font-semibold text-white">{label}</h3>
+        <h3 className="mb-1 text-sm font-medium text-white">{label}</h3>
         {hint && (
           <p className="mb-4 text-xs text-[var(--color-text-muted)]">{hint}</p>
         )}
@@ -655,7 +655,7 @@ function UrlPrompt({
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+              className="rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
             >
               Insert
             </button>

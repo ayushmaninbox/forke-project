@@ -107,7 +107,7 @@ function SetupFormContent() {
           <ShieldAlert className="w-5 h-5" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-white tracking-tight">Verification Failed</h2>
+          <h2 className="text-lg font-medium text-white tracking-tight">Verification Failed</h2>
           <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">{validationError}</p>
         </div>
         <Button 
@@ -143,7 +143,7 @@ function SetupFormContent() {
       className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-left max-w-md w-full"
     >
       <div className="border-b border-[var(--color-border)] pb-3">
-        <h2 className="text-lg font-semibold text-white tracking-tight">Activate Admin Credentials</h2>
+        <h2 className="text-lg font-medium text-white tracking-tight">Activate Admin Credentials</h2>
         <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Choose your username and password</p>
       </div>
 
@@ -269,7 +269,7 @@ export default function AdminSetupPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold text-white tracking-tight">
+            <h1 className="text-xl font-medium text-white tracking-tight">
               Forke admin setup
             </h1>
             <p className="text-[13px] text-[var(--color-text-muted)]">

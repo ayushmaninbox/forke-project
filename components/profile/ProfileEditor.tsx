@@ -143,7 +143,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
               </div>
             </button>
             <div>
-              <p className="text-sm font-semibold text-white">Profile photo</p>
+              <p className="text-sm font-medium text-white">Profile photo</p>
               <p className="text-[12px] text-white/40 mt-0.5">PNG, JPG, WebP or GIF · up to 5MB</p>
               <button onClick={() => setAvatarModalOpen(true)} className="mt-2 h-8 px-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold text-white/80 cursor-pointer transition-colors">
                 Change photo
@@ -339,7 +339,7 @@ function Field({
   return (
     <label className="block space-y-1.5">
       <div className="flex justify-between items-center">
-        <span className="text-xs font-semibold text-white/60">{label}</span>
+        <span className="text-xs font-medium text-white/60">{label}</span>
         {maxLength && (
           <span className="text-[10px] text-white/30 font-mono">
             {value.length}/{maxLength}

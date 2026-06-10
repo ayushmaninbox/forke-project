@@ -847,7 +847,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           
           {/* Sidebar Header & Search */}
           <div className="p-3 border-b border-white/[0.06] space-y-2 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+            <div className="flex items-center gap-2 text-xs font-medium text-white/70">
               <Database className="w-3.5 h-3.5 text-accent" />
               <span>Tables ({tablesList.length})</span>
             </div>
@@ -1143,7 +1143,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
                 </>
               ) : (
-                <div className="px-3 py-1 text-xs font-semibold text-white tracking-wider flex items-center gap-1.5 select-none font-mono text-accent">
+                <div className="px-3 py-1 text-xs font-medium text-white tracking-wider flex items-center gap-1.5 select-none font-mono text-accent">
                   <Terminal className="w-3.5 h-3.5 text-accent shrink-0" />
                   <span>SQL EDITOR</span>
                 </div>
@@ -1204,7 +1204,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowSortDropdown(false)} />
                       <div className="absolute left-0 mt-1.5 w-56 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-[10px] uppercase font-semibold text-white/40 mb-1">
+                        <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
                           <span>Sort By</span>
                           <div className="flex items-center gap-1.5 lowercase">
                             <span className="text-[10px]">Ascending</span>
@@ -1277,7 +1277,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setShowColumnsDropdown(false)} />
                       <div className="absolute left-0 mt-1.5 w-64 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-[10px] uppercase font-semibold text-white/40 mb-1">
+                        <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
                           <span>Manage columns</span>
                           <button
                             type="button"
@@ -1556,7 +1556,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 </button>
 
                 {/* Condition label: where or and */}
-                <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px] font-semibold text-white/40 font-mono">
+                <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px] font-medium text-white/40 font-mono">
                   {fIdx === 0 ? 'where' : 'and'}
                 </span>
 
@@ -1618,7 +1618,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     { id: Math.random().toString(), column: columns[0]?.name || '', operator: 'equals', value: '' }
                   ])
                 }}
-                className="text-[11px] font-semibold text-white/70 hover:text-white flex items-center gap-1 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
+                className="text-[11px] font-medium text-white/70 hover:text-white flex items-center gap-1 hover:bg-white/5 px-2 py-1 rounded transition-colors cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
                 <span>Add filter</span>
@@ -1628,7 +1628,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
               <button
                 onClick={handleClearFilter}
-                className="text-[11px] font-semibold text-white/40 hover:text-white transition-colors cursor-pointer"
+                className="text-[11px] font-medium text-white/40 hover:text-white transition-colors cursor-pointer"
               >
                 Clear filters
               </button>
@@ -1690,7 +1690,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                   {/* SQL Query Editor Box */}
                   <div className="border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col shrink-0 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+                      <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                         <Terminal className="w-3.5 h-3.5 text-accent" />
                         <span>SQL Editor Console</span>
                       </div>
@@ -1735,7 +1735,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                             ? "bg-red-500/5 border-red-500/20 text-red-400/90 shadow-[0_0_15px_rgba(239,68,68,0.03)]" 
                             : "bg-white/[0.02] border-white/[0.06] text-white/70"
                         )}>
-                          <div className="flex items-center gap-1.5 font-semibold text-white/90">
+                          <div className="flex items-center gap-1.5 font-medium text-white/90">
                             <AlertCircle className={cn("w-3.5 h-3.5", explanation.isWarning ? "text-red-400" : "text-accent")} />
                             <span>Action: {explanation.action}</span>
                           </div>
@@ -1870,7 +1870,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 /* Requests Log Panel */
                 <div className="flex-grow border border-white/[0.06] rounded-xl bg-[#0d0d11] p-4 flex flex-col min-h-0 relative overflow-hidden">
                   <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] shrink-0">
-                    <h4 className="text-xs font-semibold text-white/85">SQL Changes Queue & Request Logs</h4>
+                    <h4 className="text-xs font-medium text-white/85">SQL Changes Queue & Request Logs</h4>
                     <button
                       onClick={fetchRequests}
                       disabled={isLoadingRequests}
@@ -1932,7 +1932,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                     ? "bg-red-500/5 border-red-500/15 text-red-400/90 shadow-[0_0_15px_rgba(239,68,68,0.02)]" 
                                     : "bg-white/[0.015] border-white/[0.05] text-white/60"
                                 )}>
-                                  <div className="flex items-center gap-1.5 font-semibold text-white/85">
+                                  <div className="flex items-center gap-1.5 font-medium text-white/85">
                                     <AlertCircle className={cn("w-3 h-3", explanation.isWarning ? "text-red-400" : "text-accent")} />
                                     <span>Action: {explanation.action}</span>
                                   </div>
@@ -2097,7 +2097,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 {/* RLS Toggle switch */}
                 <div className="flex items-center gap-3 ml-auto border-l border-white/10 pl-6 h-10">
                   <div className="flex flex-col gap-0.5 text-right">
-                    <span className="font-semibold text-white/80">Row Level Security</span>
+                    <span className="font-medium text-white/80">Row Level Security</span>
                     <span className="text-[10px] text-white/40">Isolate table queries by user policies</span>
                   </div>
                   <button
@@ -2541,7 +2541,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           <div className="bg-[#0a0a0c] border border-white/[0.06] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden text-left shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0 bg-white/[0.005]">
-              <h3 className="text-sm font-semibold text-white">Add new row in "{selectedTable}"</h3>
+              <h3 className="text-sm font-medium text-white">Add new row in "{selectedTable}"</h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
                 className="text-white/40 hover:text-white transition-colors cursor-pointer"
@@ -2560,7 +2560,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
                   return (
                     <div key={col.name} className="space-y-1.5 text-xs">
-                      <label className="flex items-center justify-between font-mono font-semibold text-white/70">
+                      <label className="flex items-center justify-between font-mono font-medium text-white/70">
                         <span>{col.name}</span>
                         <span className="text-[10px] text-white/30 normal-case font-sans">{labelHint}</span>
                       </label>
@@ -2602,7 +2602,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           <div className="w-full max-w-md bg-[#0c0c0e] border border-white/[0.08] rounded-xl p-5 shadow-2xl relative text-left">
             <div className="space-y-4">
               <div className="border-b border-white/[0.06] pb-3">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <h3 className="text-sm font-medium text-white flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500" />
                   <span>Write Permissions Required</span>
                 </h3>
@@ -2651,7 +2651,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           <div className="w-full max-w-md bg-[#0c0c0e] border border-white/[0.08] rounded-xl p-5 shadow-2xl relative text-left">
             <div className="space-y-4">
               <div className="border-b border-white/[0.06] pb-3">
-                <h3 className="text-sm font-semibold text-white">Reject Query Request</h3>
+                <h3 className="text-sm font-medium text-white">Reject Query Request</h3>
                 <p className="text-xs text-white/40 mt-0.5">
                   Provide a reason for rejecting this database change request.
                 </p>

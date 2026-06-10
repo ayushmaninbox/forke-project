@@ -150,7 +150,7 @@ export default function NotificationBell({ userId, initialUnreadCount = 0 }: Not
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
             <div className="flex items-center gap-2">
-              <h4 className="text-[13px] font-semibold text-white">Notifications</h4>
+              <h4 className="text-[13px] font-medium text-white">Notifications</h4>
               {unreadCount > 0 && (
                 <span className="text-[10px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">
                   {unreadCount} new

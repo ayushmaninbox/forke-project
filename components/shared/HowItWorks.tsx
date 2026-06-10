@@ -118,7 +118,7 @@ export default function HowItWorks() {
         <div className="gsap-how-header flex flex-col lg:flex-row justify-between items-start gap-6 mb-16 sm:mb-24">
           <div className="space-y-4">
             <span className="gsap-how-title ui-eyebrow block opacity-0">{'//'} the pipeline</span>
-            <h2 className="gsap-how-title text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+            <h2 className="gsap-how-title text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
               How it <span className="font-serif italic font-normal text-accent">works.</span>
             </h2>
           </div>
@@ -290,7 +290,7 @@ export default function HowItWorks() {
                 <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   01 / FOR OWNERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-medium text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Scoped tasks, zero overhead.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -333,7 +333,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(6deg)', filter: 'blur(2.5px)' }}
                 >
                   <div className="flex items-center justify-between mb-1 border-b border-white/[0.03] pb-1">
-                    <span className="font-semibold text-white/50">PR #40 - Failed</span>
+                    <span className="font-medium text-white/50">PR #40 - Failed</span>
                     <span className="text-[6px] font-mono text-red-400 bg-red-500/10 px-1 py-0.1 rounded">Failed</span>
                   </div>
                   <p className="text-[8px] text-white/30 font-light">Auto-tests failed on build step</p>
@@ -347,7 +347,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(-12deg)', filter: 'blur(1.8px)' }}
                 >
                   <div className="flex items-center justify-between mb-1 border-b border-white/[0.02] pb-1">
-                    <span className="font-semibold text-white/50">PR #41 - Merged</span>
+                    <span className="font-medium text-white/50">PR #41 - Merged</span>
                     <span className="text-[7px] font-mono text-purple-400 bg-purple-500/10 px-1 py-0.1 rounded">Merged</span>
                   </div>
                   <p className="text-[8px] text-white/30">Task escrow payout completed</p>
@@ -382,7 +382,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/80 border border-white/[0.04] rounded-xl p-2 font-sans text-[7px] text-white/20 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(11deg)', filter: 'blur(3px)' }}
                 >
-                  <p className="font-semibold text-white/40">PR #37 - Merged</p>
+                  <p className="font-medium text-white/40">PR #37 - Merged</p>
                   <p className="text-[6px] text-white/30">UPI release completed</p>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/75 border border-white/[0.02] rounded-xl p-2 font-sans text-[7px] text-white/15 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(-5deg)', filter: 'blur(4.5px)' }}
                 >
-                  <p className="font-semibold text-white/40">PR #36 - Approved</p>
+                  <p className="font-medium text-white/40">PR #36 - Approved</p>
                   <p className="text-[6px] text-white/30">Admin verified</p>
                 </div>
               </div>
@@ -404,7 +404,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/90 border border-white/[0.08] rounded-xl p-2 font-sans text-[7px] text-white/55 shadow-2xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(-13deg)', filter: 'blur(1.5px)' }}
                 >
-                  <p className="font-semibold text-white/50">PR #35 - Failed</p>
+                  <p className="font-medium text-white/50">PR #35 - Failed</p>
                 </div>
               </div>
 
@@ -414,7 +414,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/80 border border-white/[0.04] rounded-xl p-2 font-sans text-[7px] text-white/25 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(10deg)', filter: 'blur(3.5px)' }}
                 >
-                  <p className="font-semibold text-white/40">PR #34 - Closed</p>
+                  <p className="font-medium text-white/40">PR #34 - Closed</p>
                 </div>
               </div>
 
@@ -448,7 +448,7 @@ export default function HowItWorks() {
                 <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   02 / FOR OWNERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-medium text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Approve PRs, release funds.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -491,7 +491,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(-8deg)', filter: 'blur(1.5px)' }}
                 >
                   <div className="flex justify-between items-center mb-1.5 border-b border-white/[0.03] pb-1">
-                    <span className="font-semibold text-white/60">Fix Auth Bug</span>
+                    <span className="font-medium text-white/60">Fix Auth Bug</span>
                     <span className="text-accent/75 font-bold">₹450</span>
                   </div>
                 </div>
@@ -504,7 +504,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(14deg)', filter: 'blur(2px)' }}
                 >
                   <div className="flex justify-between items-center mb-1.5 border-b border-white/[0.02] pb-1">
-                    <span className="font-semibold text-white/50">Refactor Store</span>
+                    <span className="font-medium text-white/50">Refactor Store</span>
                     <span className="text-emerald-400/50 font-bold">₹1,500</span>
                   </div>
                 </div>
@@ -616,7 +616,7 @@ export default function HowItWorks() {
                 <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   03 / FOR DEVELOPERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-medium text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Claim matching tasks instantly.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -661,7 +661,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(13deg)', filter: 'blur(2px)' }}
                 >
                   <div className="flex items-center gap-1 mb-1.5 border-b border-white/[0.03] pb-1">
-                    <span className="font-semibold text-white/60">Payout Complete</span>
+                    <span className="font-medium text-white/60">Payout Complete</span>
                   </div>
                   <p className="text-emerald-500 font-mono font-bold">₹350.00</p>
                 </div>
@@ -674,7 +674,7 @@ export default function HowItWorks() {
                   style={{ transform: 'rotate(-6deg)', filter: 'blur(3px)' }}
                 >
                   <div className="flex items-center gap-1 mb-1.5 border-b border-white/[0.02] pb-1">
-                    <span className="font-semibold text-white/50">Payout Complete</span>
+                    <span className="font-medium text-white/50">Payout Complete</span>
                   </div>
                   <p className="text-emerald-500 font-mono font-bold">₹900.00</p>
                 </div>
@@ -708,7 +708,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/80 border border-white/[0.04] rounded-xl p-2 font-sans text-[7px] text-white/20 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(-8deg)', filter: 'blur(3.5px)' }}
                 >
-                  <p className="font-semibold text-white/45">LVL 8 XP +50</p>
+                  <p className="font-medium text-white/45">LVL 8 XP +50</p>
                   <p className="text-emerald-500/35">₹150.00</p>
                 </div>
               </div>
@@ -719,7 +719,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/75 border border-white/[0.02] rounded-xl p-2 font-sans text-[7px] text-white/15 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(11deg)', filter: 'blur(4px)' }}
                 >
-                  <p className="font-semibold text-white/45">LVL 9 XP +80</p>
+                  <p className="font-medium text-white/45">LVL 9 XP +80</p>
                   <p className="text-emerald-500/35">₹200.00</p>
                 </div>
               </div>
@@ -730,7 +730,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/90 border border-white/[0.08] rounded-xl p-2 font-sans text-[7.5px] text-white/60 shadow-2xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(-14deg)', filter: 'blur(1px)' }}
                 >
-                  <p className="font-semibold text-white/45">LVL 15 XP +500</p>
+                  <p className="font-medium text-white/45">LVL 15 XP +500</p>
                   <p className="text-emerald-500/35">₹2,500.00</p>
                 </div>
               </div>
@@ -741,7 +741,7 @@ export default function HowItWorks() {
                   className="bg-[#0C0C0C]/80 border border-white/[0.04] rounded-xl p-2 font-sans text-[7px] text-white/25 shadow-xl pointer-events-none w-full animate-relative"
                   style={{ transform: 'rotate(7deg)', filter: 'blur(3.2px)' }}
                 >
-                  <p className="font-semibold text-white/45">LVL 12 XP +150</p>
+                  <p className="font-medium text-white/45">LVL 12 XP +150</p>
                   <p className="text-emerald-500/35">₹800.00</p>
                 </div>
               </div>
@@ -776,7 +776,7 @@ export default function HowItWorks() {
                 <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   04 / FOR DEVELOPERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-medium text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Build reputation, cash out.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">

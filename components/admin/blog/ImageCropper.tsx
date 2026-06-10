@@ -216,7 +216,7 @@ export default function ImageCropper({
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3.5">
           <div className="flex items-center gap-2">
             <CropIcon className="h-4 w-4 text-accent" />
-            <h3 className="text-sm font-semibold text-white">Crop image</h3>
+            <h3 className="text-sm font-medium text-white">Crop image</h3>
             {natural.w > 0 && (
               <span className="font-mono text-[11px] text-[var(--color-text-muted)]">
                 {natural.w}×{natural.h}
@@ -327,7 +327,7 @@ export default function ImageCropper({
             <button
               onClick={exportCrop}
               disabled={working}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               <Check className="h-3.5 w-3.5" /> {working ? 'Processing…' : 'Crop & insert'}
             </button>

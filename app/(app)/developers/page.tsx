@@ -73,7 +73,7 @@ export default async function DevelopersPage() {
        <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Title Section */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
             Developers
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -106,7 +106,7 @@ export default async function DevelopersPage() {
                       </Link>
                       <div className="min-w-0 leading-tight space-y-1.5">
                         <Link href={profileHref} className="group-hover:text-accent transition-colors block">
-                          <h4 className="text-sm font-semibold text-white truncate hover:underline">
+                          <h4 className="text-sm font-medium text-white truncate hover:underline">
                             {dev.name}
                           </h4>
                         </Link>
@@ -140,7 +140,7 @@ export default async function DevelopersPage() {
                             >
                               <Link
                                 href={`/tasks/${t.id}`}
-                                className="text-xs font-semibold text-white/95 hover:text-accent truncate transition-colors max-w-[130px] md:max-w-[160px] block hover:underline"
+                                className="text-xs font-medium text-white/95 hover:text-accent truncate transition-colors max-w-[130px] md:max-w-[160px] block hover:underline"
                               >
                                 {t.title}
                               </Link>

@@ -198,7 +198,7 @@ function NeonChart({
       {/* Header with title + legends */}
       <div className="px-5 pt-4 pb-1 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="text-[13px] font-semibold text-white">{title}</div>
+          <div className="text-[13px] font-medium text-white">{title}</div>
           <div className="text-[10px] text-white/25 font-bold uppercase tracking-widest mt-0.5">{subtitle}</div>
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">
@@ -497,7 +497,7 @@ export default function DatabaseMonitoringPanel() {
             if (activeTab === 'performance') fetchPerformance()
             if (activeTab === 'advisors') fetchAdvisors()
           }}
-          className="p-1.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] rounded-lg text-xs font-semibold text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+          className="p-1.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] rounded-lg text-xs font-medium text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
           title="Refresh statistics"
         >
           <RefreshCw className="w-4 h-4" />
@@ -623,7 +623,7 @@ export default function DatabaseMonitoringPanel() {
               <button 
                 onClick={fetchQueries}
                 disabled={loadingQueries}
-                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-semibold text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-medium text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <RefreshCw className={cn("w-3 h-3", loadingQueries ? "animate-spin" : "")} />
                 Refresh queries
@@ -691,7 +691,7 @@ export default function DatabaseMonitoringPanel() {
               <button 
                 onClick={fetchPerformance}
                 disabled={loadingPerformance}
-                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-semibold text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-medium text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <RefreshCw className={cn("w-3 h-3", loadingPerformance ? "animate-spin" : "")} />
                 Refresh list
@@ -750,7 +750,7 @@ export default function DatabaseMonitoringPanel() {
               <button 
                 onClick={fetchAdvisors}
                 disabled={loadingAdvisors}
-                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-semibold text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-2.5 py-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] rounded text-[11px] font-medium text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <RefreshCw className={cn("w-3 h-3", loadingAdvisors ? "animate-spin" : "")} />
                 Run scan
@@ -766,7 +766,7 @@ export default function DatabaseMonitoringPanel() {
               ) : advisors.length === 0 ? (
                 <div className="col-span-2 border border-white/[0.06] rounded-xl bg-[#111114] p-12 text-center text-emerald-400 space-y-2 select-none">
                   <Check className="w-8 h-8 mx-auto" />
-                  <div className="text-sm font-semibold text-white">Database Optimization Scan Clean</div>
+                  <div className="text-sm font-medium text-white">Database Optimization Scan Clean</div>
                   <p className="text-xs text-white/40 max-w-sm mx-auto leading-relaxed">
                     All scanned tables have row-level security enabled and key lookup columns are properly indexed!
                   </p>
@@ -781,7 +781,7 @@ export default function DatabaseMonitoringPanel() {
                         ) : (
                           <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                         )}
-                        <h4 className="text-xs font-semibold text-white leading-tight">
+                        <h4 className="text-xs font-medium text-white leading-tight">
                           {rec.title}
                         </h4>
                       </div>

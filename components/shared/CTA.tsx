@@ -131,7 +131,7 @@ export default function CTA() {
         <div className="gsap-cta-card p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center opacity-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           <div className="space-y-6 relative z-10">
-            <h2 className="gsap-cta-title text-3xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+            <h2 className="gsap-cta-title text-3xl font-medium text-white leading-tight tracking-[-0.03em] opacity-0">
               Ready to <span className="font-serif italic font-normal text-accent">ship?</span>
             </h2>
             <p className="gsap-cta-text text-white/50 text-sm leading-relaxed font-light opacity-0">
@@ -177,7 +177,7 @@ export default function CTA() {
             {/* Left side — Text + CTA */}
             <div className="flex-1 p-8 sm:p-12 md:p-10 lg:p-16 space-y-6 text-center md:text-left">
               <span className="gsap-cta-text ui-eyebrow block opacity-0">{'//'} your first merge is waiting</span>
-              <h2 className="gsap-cta-title text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-[-0.03em] leading-[1.05] opacity-0">
+              <h2 className="gsap-cta-title text-4xl md:text-5xl lg:text-6xl font-medium text-white tracking-[-0.03em] leading-[1.05] opacity-0">
                 Ready to <span className="font-serif italic font-normal text-accent">ship?</span>
               </h2>
               <p className="gsap-cta-text text-base md:text-base lg:text-lg text-white/50 font-light max-w-md mx-auto md:mx-0 opacity-0">

@@ -200,7 +200,7 @@ export default function DatabaseSqlEditorPanel({ currentAdmin }: DatabaseSqlEdit
               type="text"
               value={queryName}
               onChange={(e) => setQueryName(e.target.value)}
-              className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-accent text-xs font-semibold text-white/80 focus:outline-none py-0.5 px-1 rounded transition-colors"
+              className="bg-transparent border-b border-transparent hover:border-white/20 focus:border-accent text-xs font-medium text-white/80 focus:outline-none py-0.5 px-1 rounded transition-colors"
             />
             <button
               onClick={handleSaveQuery}
@@ -270,7 +270,7 @@ export default function DatabaseSqlEditorPanel({ currentAdmin }: DatabaseSqlEdit
               <div className="bg-[#0a0a0a] border border-white/[0.08] px-4 py-3 rounded-xl flex items-center gap-2.5 shadow-2xl max-w-sm text-center flex-col pointer-events-auto">
                 <Terminal className="w-5 h-5 text-accent animate-pulse" />
                 <div className="space-y-0.5">
-                  <div className="text-xs font-semibold text-white/80">View Only Console</div>
+                  <div className="text-xs font-medium text-white/80">View Only Console</div>
                   <p className="text-[10px] text-white/40 leading-normal">
                     You are logged in as an Admin. Only Super Admins have permission to write queries and execute database transactions.
                   </p>
@@ -285,7 +285,7 @@ export default function DatabaseSqlEditorPanel({ currentAdmin }: DatabaseSqlEdit
           
           {/* Results Tab Bar */}
           <div className="h-9 border-b border-white/[0.06] px-4 flex items-center justify-between text-xs text-white/40 select-none">
-            <span className="font-semibold text-white/60">Results Log</span>
+            <span className="font-medium text-white/60">Results Log</span>
             {results && !results.error && (
               <div className="flex items-center gap-3 font-mono text-[10px]">
                 <span>{results.affectedRows} rows returned</span>

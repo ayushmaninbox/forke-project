@@ -110,8 +110,8 @@ export default function Footer() {
 
       {/* Giant outlined wordmark — clipped at the bottom edge */}
       <div aria-hidden="true" className="relative max-w-7xl mx-auto h-[17vw] md:h-[14vw] mt-10 select-none pointer-events-none overflow-hidden">
-        <span className="absolute left-1/2 -translate-x-1/2 top-0 text-[21vw] md:text-[17.5vw] leading-[0.78] font-semibold tracking-[-0.05em] text-outline whitespace-nowrap">
-          forke<span className="[-webkit-text-stroke:1px_rgba(255,122,0,0.4)]">*</span>
+        <span className="absolute left-1/2 -translate-x-1/2 top-0 text-[21vw] md:text-[17.5vw] leading-[0.78] font-medium tracking-[-0.05em] text-outline whitespace-nowrap">
+          forke<span className="[-webkit-text-stroke:1px_rgba(255,122,0,0.6)]">*</span>
         </span>
       </div>
     </footer>

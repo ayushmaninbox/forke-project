@@ -140,7 +140,7 @@ img {
   /* Outlined display type — giant footer wordmark */
   .text-outline {
     color: transparent;
-    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.09);
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.18);
   }
 
   .glass {

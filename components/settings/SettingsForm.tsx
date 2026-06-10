@@ -273,7 +273,7 @@ export default function SettingsForm({
 
         {/* Notification settings */}
         <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
-          <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+          <h4 className="text-sm font-medium text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
             <Bell className="w-4 h-4 text-accent" /> Notifications
           </h4>
 
@@ -323,7 +323,7 @@ export default function SettingsForm({
         {/* Connected Accounts (Developer only) */}
         {!isOwner && (
           <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
-            <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
               <Link2 className="w-4 h-4 text-accent" /> Connected Accounts
             </h4>
             
@@ -390,7 +390,7 @@ export default function SettingsForm({
         {/* Local Password Setup */}
         {!hasLocalPassword && (
           <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
-            <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
               <Key className="w-4 h-4 text-accent" /> Set Up Local Password
             </h4>
             
@@ -456,7 +456,7 @@ export default function SettingsForm({
         {/* Change Local Password */}
         {hasLocalPassword && (
           <div className="p-5 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5">
-            <h4 className="text-sm font-semibold text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-white border-b border-[var(--color-border)] pb-3 flex items-center gap-2">
               <Key className="w-4 h-4 text-accent" /> Change Password
             </h4>
             
@@ -546,7 +546,7 @@ export default function SettingsForm({
           </h4>
           
           <div className="p-4 rounded-lg bg-red-500/[0.02] border border-red-500/10 space-y-3">
-            <h5 className="text-[13px] font-semibold text-white">Delete Account</h5>
+            <h5 className="text-[13px] font-medium text-white">Delete Account</h5>
             <p className="text-[11px] text-white/50 leading-relaxed">
               Once you delete your account, your profile, active listings, and completed works will be scheduled for permanent erasure. 
               Your account will be deleted in <strong>30 days</strong> from our database. Logging back in at any time before the 30-day window expires will cancel the deletion request.

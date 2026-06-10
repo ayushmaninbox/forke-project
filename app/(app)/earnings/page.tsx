@@ -87,7 +87,7 @@ export default async function EarningsPage() {
        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
             {isDev ? 'My earnings' : 'Financial overview'}
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -123,7 +123,7 @@ export default async function EarningsPage() {
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-amber-400" />
               </div>
-              <h4 className="text-sm font-semibold text-white">Pending confirmation</h4>
+              <h4 className="text-sm font-medium text-white">Pending confirmation</h4>
             </div>
 
             <div className="space-y-2.5">
@@ -153,7 +153,7 @@ export default async function EarningsPage() {
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
               <Coins className="w-4 h-4 text-emerald-400" />
             </div>
-            <h4 className="text-sm font-semibold text-white">Settled {isDev ? 'payouts' : 'disbursements'}</h4>
+            <h4 className="text-sm font-medium text-white">Settled {isDev ? 'payouts' : 'disbursements'}</h4>
           </div>
 
           {completedTasks.length > 0 ? (

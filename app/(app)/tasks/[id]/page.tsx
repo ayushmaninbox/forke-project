@@ -68,7 +68,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               <Clock className="w-[18px] h-[18px]" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white leading-tight">Work submitted</h3>
+              <h3 className="text-sm font-medium text-white leading-tight">Work submitted</h3>
               <p className="text-[13px] text-amber-400/80 mt-0.5">Under review by the client.</p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <CheckCircle2 className="w-[18px] h-[18px]" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white leading-tight">Task approved</h3>
+                <h3 className="text-sm font-medium text-white leading-tight">Task approved</h3>
                 <p className="text-[13px] text-emerald-400/80 mt-0.5">Payout released successfully.</p>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                    <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                      Active Quest
                    </span>
-                   <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                   <h1 className="text-xl md:text-2xl font-medium text-white leading-tight tracking-tight pt-2">
                      {task.title}
                    </h1>
                  </div>
@@ -165,7 +165,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 {/* Submit Work Form */}
                 <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
                    <div className="space-y-2.5">
-                     <h2 className="text-base font-semibold text-white">Submit your work</h2>
+                     <h2 className="text-base font-medium text-white">Submit your work</h2>
                      <ul className="space-y-1.5">
                         <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
                           <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
@@ -190,7 +190,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <span className="text-[11px] uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
                   Mission Briefing
                 </span>
-                <h1 className="text-xl md:text-2xl font-semibold text-white leading-tight tracking-tight pt-2">
+                <h1 className="text-xl md:text-2xl font-medium text-white leading-tight tracking-tight pt-2">
                   {task.title}
                 </h1>
               </div>

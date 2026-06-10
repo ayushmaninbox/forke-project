@@ -112,7 +112,7 @@ export default function LevelSystem() {
         <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
             <span className="ui-eyebrow block">{'//'} progression</span>
-            <h2 className="text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em]">
+            <h2 className="text-4xl md:text-6xl font-medium text-white tracking-[-0.03em]">
               Script kiddie to <span className="font-serif italic font-normal text-accent">legend.</span>
             </h2>
             <p className="text-white/60 text-base md:text-lg font-light leading-relaxed">

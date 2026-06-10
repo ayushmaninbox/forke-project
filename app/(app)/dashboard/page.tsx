@@ -238,7 +238,7 @@ export default async function DashboardPage() {
             <div className="lg:col-span-8 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-medium text-white">
                     {isOwner ? 'Pending reviews' : 'Active tasks'}
                   </h3>
                   <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white/[0.06] border border-[var(--color-border)] text-[11px] font-medium text-[var(--color-text-muted)] tabular-nums">
@@ -294,7 +294,7 @@ export default async function DashboardPage() {
             <div className="lg:col-span-4 space-y-4">
               <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018]">
                 <div className="px-4 py-3 border-b border-[var(--color-border)]">
-                  <h4 className="text-sm font-semibold text-white">
+                  <h4 className="text-sm font-medium text-white">
                     {isOwner ? 'Account' : 'Your progress'}
                   </h4>
                 </div>
@@ -328,7 +328,7 @@ export default async function DashboardPage() {
               </div>
 
               <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4">
-                <h4 className="text-sm font-semibold text-white">
+                <h4 className="text-sm font-medium text-white">
                   {isOwner ? 'Need work done?' : 'Earn your next payout'}
                 </h4>
                 <p className="text-[13px] text-[var(--color-text-muted)] mt-1.5 leading-relaxed">

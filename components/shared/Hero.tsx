@@ -170,7 +170,7 @@ export default function Hero() {
                 <span className="animate-caret text-accent -ml-1">▍</span>
               </div>
 
-              <h1 className="gsap-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-semibold text-white leading-[1.04] tracking-[-0.04em] opacity-0">
+              <h1 className="gsap-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-medium text-white leading-[1.04] tracking-[-0.04em] opacity-0">
                 Ship real work. <br />
                 Earn XP. <span className="font-serif italic font-normal text-accent">Get paid.</span>
               </h1>

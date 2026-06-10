@@ -110,7 +110,7 @@ export default function DatabaseOverviewPanel() {
         <div className="flex items-center gap-2">
           <button 
             onClick={loadData}
-            className="px-3 py-1.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] rounded-lg text-xs font-semibold text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-1.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.06] rounded-lg text-xs font-medium text-white/80 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh stats
@@ -123,7 +123,7 @@ export default function DatabaseOverviewPanel() {
         
         {/* Card 1 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
-          <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
+          <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider flex items-center justify-between">
             <span>Database Engine</span>
             <Cpu className="w-3.5 h-3.5 text-accent/60" />
           </div>
@@ -133,7 +133,7 @@ export default function DatabaseOverviewPanel() {
 
         {/* Card 2 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
-          <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
+          <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider flex items-center justify-between">
             <span>Storage size</span>
             <Database className="w-3.5 h-3.5 text-accent/60" />
           </div>
@@ -143,7 +143,7 @@ export default function DatabaseOverviewPanel() {
 
         {/* Card 3 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
-          <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
+          <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider flex items-center justify-between">
             <span>Active Conns</span>
             <Activity className="w-3.5 h-3.5 text-accent/60" />
           </div>
@@ -153,7 +153,7 @@ export default function DatabaseOverviewPanel() {
 
         {/* Card 4 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2">
-          <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
+          <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider flex items-center justify-between">
             <span>Cache Hit Ratio</span>
             <Layers className="w-3.5 h-3.5 text-accent/60" />
           </div>
@@ -163,7 +163,7 @@ export default function DatabaseOverviewPanel() {
 
         {/* Card 5 */}
         <div className="bg-[#0b0b0e] border border-white/[0.06] rounded-xl p-4 space-y-2 col-span-2 sm:col-span-1">
-          <div className="text-[10px] font-semibold text-white/40 uppercase tracking-wider flex items-center justify-between">
+          <div className="text-[10px] font-medium text-white/40 uppercase tracking-wider flex items-center justify-between">
             <span>Server Uptime</span>
             <Clock className="w-3.5 h-3.5 text-accent/60" />
           </div>
@@ -302,7 +302,7 @@ export default function DatabaseOverviewPanel() {
             
             {/* Roles list */}
             <div className="border border-white/[0.06] rounded-xl bg-[#0b0b0e] p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                 <Shield className="w-4 h-4 text-accent" />
                 <span>Database Roles ({data?.rolesList.length || 0})</span>
               </div>
@@ -320,7 +320,7 @@ export default function DatabaseOverviewPanel() {
 
             {/* Databases list */}
             <div className="border border-white/[0.06] rounded-xl bg-[#0b0b0e] p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/70">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/70">
                 <Database className="w-4 h-4 text-accent" />
                 <span>Databases list ({data?.dbList.length || 0})</span>
               </div>

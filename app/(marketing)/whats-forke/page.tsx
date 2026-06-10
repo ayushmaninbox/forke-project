@@ -150,7 +150,7 @@ export default function WhatsForkePage() {
                 </div>
 
                 {/* Headline (matches homepage hero typography) */}
-                <h1 className="gsap-wf-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-semibold text-white leading-[1.04] tracking-[-0.04em] opacity-0">
+                <h1 className="gsap-wf-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-medium text-white leading-[1.04] tracking-[-0.04em] opacity-0">
                   What is <span className="font-serif italic font-normal text-accent">Forke?</span>
                 </h1>
 
@@ -231,7 +231,7 @@ export default function WhatsForkePage() {
           <div className="gsap-wf-element ui-eyebrow opacity-0">
             {'//'} the concept
           </div>
-          <h2 className="gsap-wf-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-tight opacity-0">
+          <h2 className="gsap-wf-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-tight opacity-0">
             A developer playground built to <span className="font-serif italic font-normal text-accent">prove capability.</span>
           </h2>
           <p className="gsap-wf-element text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
@@ -298,7 +298,7 @@ export default function WhatsForkePage() {
           <div className="gsap-wf-element ui-eyebrow opacity-0 mb-4">
             {'//'} our values
           </div>
-          <h2 className="gsap-wf-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+          <h2 className="gsap-wf-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
             What drives <span className="font-serif italic font-normal text-accent">us.</span>
           </h2>
         </div>
@@ -344,7 +344,7 @@ export default function WhatsForkePage() {
         <div className="md:hidden p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           <div className="space-y-6 relative z-10">
-            <h2 className="gsap-wf-element text-3xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+            <h2 className="gsap-wf-element text-3xl font-medium text-white leading-tight tracking-[-0.03em] opacity-0">
               This is just the <span className="font-serif italic font-normal text-accent">beginning.</span>
             </h2>
             <p className="gsap-wf-element text-white/50 text-sm leading-relaxed font-light opacity-0">
@@ -371,7 +371,7 @@ export default function WhatsForkePage() {
           {/* Left Text / CTAs */}
           <div className="w-full lg:w-7/12 space-y-6 lg:space-y-8 relative z-10 text-left">
             <div className="space-y-4">
-              <h2 className="gsap-wf-element text-4xl lg:text-6xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0 max-w-xl">
+              <h2 className="gsap-wf-element text-4xl lg:text-6xl font-medium text-white leading-tight tracking-[-0.03em] opacity-0 max-w-xl">
                 This is just the <span className="font-serif italic font-normal text-accent">beginning.</span>
               </h2>
               <p className="gsap-wf-element text-white/50 text-base lg:text-lg leading-relaxed font-light opacity-0 max-w-xl">

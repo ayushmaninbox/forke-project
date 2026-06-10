@@ -269,7 +269,7 @@ function WaitlistPageContent() {
 
             {/* Main Heading */}
             <div className="space-y-2 sm:space-y-4">
-              <h1 className="gsap-wl-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.04] tracking-[-0.04em] opacity-0">
+              <h1 className="gsap-wl-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-medium text-white leading-[1.04] tracking-[-0.04em] opacity-0">
                 Join the waitlist. <br />
                 Build the <span className="font-serif italic font-normal text-accent">future.</span>
               </h1>

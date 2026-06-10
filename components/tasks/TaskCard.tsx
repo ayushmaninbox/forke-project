@@ -88,7 +88,7 @@ export default function TaskCard({
               )} />
               <span>
                 {currentUserId === task.claimantId ? (
-                  <span>Claimed by <span className="font-semibold text-white">you</span></span>
+                  <span>Claimed by <span className="font-medium text-white">you</span></span>
                 ) : (
                   <span>
                     Claimed by{' '}

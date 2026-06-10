@@ -220,7 +220,7 @@ function BlogList({ onOpen }: { onOpen: (id: string | null) => void }) {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-white">Blog</h2>
+          <h2 className="text-base font-medium text-white">Blog</h2>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
             Write and publish posts with the editor.
           </p>
@@ -741,7 +741,7 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
             <button
               onClick={status === 'published' ? handleSaveChanges : handlePublishToggle}
               disabled={saving}
-              className="inline-flex h-9 min-w-[120px] items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-semibold text-white shadow-lg shadow-accent/20 transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex h-9 min-w-[120px] items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-medium text-white shadow-lg shadow-accent/20 transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {status === 'published' ? (
                 <>

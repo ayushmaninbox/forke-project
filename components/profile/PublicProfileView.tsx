@@ -209,7 +209,7 @@ export default function PublicProfileView({
                 <div key={t.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0 group">
                   <div className="min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-white/95 truncate group-hover:text-accent transition-colors">{t.title}</h4>
+                      <h4 className="text-sm font-medium text-white/95 truncate group-hover:text-accent transition-colors">{t.title}</h4>
                       {t.rating != null && (
                         <span className="shrink-0 flex items-center gap-0.5 text-[11px] text-amber-400 font-bold"><Star className="w-3 h-3 fill-amber-400" />{t.rating}</span>
                       )}
@@ -546,7 +546,7 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
       {/* Calendar Card (Left) */}
       <div className="w-full max-w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/40 p-4 sm:p-5 flex flex-col gap-4">
         <div className="flex items-center">
-          <span className="text-[15px] font-semibold text-white/90 font-sans">{contributionHeader}</span>
+          <span className="text-[15px] font-medium text-white/90 font-sans">{contributionHeader}</span>
         </div>
 
         <div ref={scrollRef} className="w-full max-w-full overflow-x-auto scrollbar-none pt-8 pb-6">
@@ -576,14 +576,14 @@ function Heatmap({ data, username, joinedAt }: { data: { date: string; count: nu
                                     {/* Up arrow */}
                                     <div className="w-1.5 h-1.5 bg-[#0b0a0d] border-l border-t border-white/10 transform rotate-45 -mb-[4px] z-[121]" />
                                     <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
-                                      <span className="font-semibold text-white/90">{getTooltipTextOnly(d.count)}</span>
+                                      <span className="font-medium text-white/90">{getTooltipTextOnly(d.count)}</span>
                                       <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
                                     </div>
                                   </div>
                                 ) : (
                                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-[120]">
                                     <div className="bg-[#0b0a0d] border border-white/10 text-white text-[10px] font-medium py-1.5 px-2.5 rounded-lg whitespace-nowrap shadow-[0_4px_20px_rgba(0,0,0,0.8)] flex flex-col items-center gap-0.5">
-                                      <span className="font-semibold text-white/90">{getTooltipTextOnly(d.count)}</span>
+                                      <span className="font-medium text-white/90">{getTooltipTextOnly(d.count)}</span>
                                       <span className="text-[9px] text-white/40 font-mono">{d.date}</span>
                                     </div>
                                     {/* Down arrow */}

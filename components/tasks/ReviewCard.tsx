@@ -75,7 +75,7 @@ export default function ReviewCard({ task, submission, claimantName }: ReviewCar
                <GitPullRequest className="w-[18px] h-[18px]" />
              </div>
              <div className="min-w-0">
-               <h3 className="text-sm font-semibold text-white leading-tight truncate">
+               <h3 className="text-sm font-medium text-white leading-tight truncate">
                  {task.title}
                </h3>
                <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-muted)]">

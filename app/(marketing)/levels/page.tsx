@@ -368,7 +368,7 @@ export default function LevelsPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="gsap-lvl-hero-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold text-white leading-[1.02] tracking-[-0.04em] opacity-0">
+            <h1 className="gsap-lvl-hero-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium text-white leading-[1.02] tracking-[-0.04em] opacity-0">
               The level <span className="font-serif italic font-normal text-accent">system.</span>
             </h1>
 
@@ -389,7 +389,7 @@ export default function LevelsPage() {
             <div className="gsap-lvl-element ui-eyebrow opacity-0">
               {'//'} progression ladder
             </div>
-            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
               Choose your <span className="font-serif italic font-normal text-accent">level.</span>
             </h2>
           </div>
@@ -694,7 +694,7 @@ export default function LevelsPage() {
             <div className="gsap-lvl-element ui-eyebrow opacity-0">
               {'//'} the rules
             </div>
-            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
               How to earn <span className="font-serif italic font-normal text-accent">XP.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
@@ -813,7 +813,7 @@ export default function LevelsPage() {
             <div className="gsap-lvl-element ui-eyebrow opacity-0">
               {'//'} end game content
             </div>
-            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
               The prestige <span className="font-serif italic font-normal text-accent">ranks.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
@@ -846,7 +846,7 @@ export default function LevelsPage() {
                 />
 
                 {/* Giant Roman Numeral Watermark */}
-                <div className="font-serif text-6xl md:text-8xl font-semibold text-white/[0.015] group-hover:text-[#FF7A00]/[0.03] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 select-none absolute right-4 top-2 leading-none">
+                <div className="font-serif text-6xl md:text-8xl font-medium text-white/[0.015] group-hover:text-[#FF7A00]/[0.03] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 select-none absolute right-4 top-2 leading-none">
                   {pres.rank}
                 </div>
 
@@ -874,7 +874,7 @@ export default function LevelsPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           
           <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-medium text-white leading-tight tracking-[-0.03em] opacity-0">
               Earn your XP. Forge your <span className="font-serif italic font-normal text-accent">path.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0">

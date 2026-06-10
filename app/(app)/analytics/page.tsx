@@ -126,7 +126,7 @@ export default async function AnalyticsPage() {
        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header */}
         <div className="space-y-1 text-left">
-          <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight">
+          <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
             Analytics
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] max-w-xl leading-relaxed">
@@ -171,7 +171,7 @@ export default async function AnalyticsPage() {
             <div>
               <div className="flex justify-between items-center mb-5">
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Task activity</h4>
+                  <h4 className="text-sm font-medium text-white">Task activity</h4>
                   <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
                     {isOwner ? 'Tasks posted per month (last 6 months)' : 'Tasks claimed per month (last 6 months)'}
                   </p>
@@ -219,7 +219,7 @@ export default async function AnalyticsPage() {
           {/* Breakdown sidebar */}
           <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] md:col-span-4">
             <div className="px-4 py-3 border-b border-[var(--color-border)]">
-              <h4 className="text-sm font-semibold text-white">Breakdown</h4>
+              <h4 className="text-sm font-medium text-white">Breakdown</h4>
             </div>
             <div className="divide-y divide-[var(--color-border)] text-[13px]">
               <div className="px-4 py-3 flex items-center justify-between">

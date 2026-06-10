@@ -1195,7 +1195,7 @@ export default function AdminDashboard() {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="text-sm font-semibold text-white tracking-tight capitalize truncate">
+            <h1 className="text-sm font-medium text-white tracking-tight capitalize truncate">
               {activeTab === 'owner-approval'
                 ? 'Owners'
                 : activeTab === 'developer-ban'
@@ -1216,7 +1216,7 @@ export default function AdminDashboard() {
               <div className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)]">
                 <div className="flex flex-row items-center justify-between gap-4 border-b border-[var(--color-border)] pb-3">
                   <div className="min-w-0 pr-2">
-                    <h3 className="text-sm font-semibold text-white truncate">Waitlist Access Control</h3>
+                    <h3 className="text-sm font-medium text-white truncate">Waitlist Access Control</h3>
                     <p className="text-xs text-[var(--color-text-muted)] mt-0.5 truncate sm:not-truncate">Manage signup restrictions and bypass codes</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
@@ -1296,7 +1296,7 @@ export default function AdminDashboard() {
                     <Briefcase className="w-4 h-4 text-[var(--color-text-muted)]" />
                   </div>
                   <div className="text-left mt-3">
-                    <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
+                    <h3 className="text-2xl font-medium text-white tracking-tight font-mono leading-none">
                       {sidebarCounts.owners}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">
@@ -1314,7 +1314,7 @@ export default function AdminDashboard() {
                     <Users className="w-4 h-4 text-[var(--color-text-muted)]" />
                   </div>
                   <div className="text-left mt-3">
-                    <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
+                    <h3 className="text-2xl font-medium text-white tracking-tight font-mono leading-none">
                       {sidebarCounts.developers}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Registered builders</p>
@@ -1328,7 +1328,7 @@ export default function AdminDashboard() {
                     <MessageSquare className="w-4 h-4 text-[var(--color-text-muted)]" />
                   </div>
                   <div className="text-left mt-3">
-                    <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
+                    <h3 className="text-2xl font-medium text-white tracking-tight font-mono leading-none">
                       {sidebarCounts.enquiries}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Support & conflict tickets</p>
@@ -1342,7 +1342,7 @@ export default function AdminDashboard() {
                     <Mail className="w-4 h-4 text-[var(--color-text-muted)]" />
                   </div>
                   <div className="text-left mt-3">
-                    <h3 className="text-2xl font-semibold text-white tracking-tight font-mono leading-none">
+                    <h3 className="text-2xl font-medium text-white tracking-tight font-mono leading-none">
                       {sidebarCounts.subscribers}
                     </h3>
                     <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Waitlist signups</p>
@@ -1856,7 +1856,7 @@ export default function AdminDashboard() {
               <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] p-5 shrink-0">
                 <div className="flex items-center justify-between gap-4 mb-4">
                   <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-white">Signup Sources</h3>
+                    <h3 className="text-sm font-medium text-white">Signup Sources</h3>
                     <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                       Tag your shared links with <span className="font-mono text-white/70">?source=twitter</span> to see which channels convert.
                     </p>
@@ -2212,7 +2212,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-lg bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Invite Administrator</h3>
+                <h3 className="text-base font-medium text-white">Invite Administrator</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   An invitation email will request them to complete onboarding and select credentials.
                 </p>
@@ -2316,7 +2316,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Reset Password</h3>
+                <h3 className="text-base font-medium text-white">Reset Password</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Directly override the password for <strong>{resetTargetAdmin.name}</strong> (@{resetTargetAdmin.username || resetTargetAdmin.email}).
                 </p>
@@ -2384,7 +2384,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Edit Access Role</h3>
+                <h3 className="text-base font-medium text-white">Edit Access Role</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Change the access level for <strong>{editRoleTargetAdmin.name}</strong> (@{editRoleTargetAdmin.username || editRoleTargetAdmin.email}).
                 </p>
@@ -2451,7 +2451,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Decline Application</h3>
+                <h3 className="text-base font-medium text-white">Decline Application</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Reject <strong>{declineTargetOwner.owner.firstName} {declineTargetOwner.owner.lastName}</strong>. The reason below is emailed to them, and their account is removed so they can apply again.
                 </p>
@@ -2510,7 +2510,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-medium text-white">
                   {waitlistEnabled ? 'Change Waitlist Bypass Key' : 'Enable Waitlist Gate'}
                 </h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
@@ -2569,7 +2569,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-lg bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Edit Profile</h3>
+                <h3 className="text-base font-medium text-white">Edit Profile</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Update your admin account profile parameters.
                 </p>
@@ -2667,7 +2667,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-md bg-[#0c0c0e] border border-[var(--color-border)] rounded-xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
             <div className="space-y-4 text-left">
               <div className="border-b border-[var(--color-border)] pb-3">
-                <h3 className="text-base font-semibold text-white">Change Password</h3>
+                <h3 className="text-base font-medium text-white">Change Password</h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
                   Securely update your administrative password credentials.
                 </p>

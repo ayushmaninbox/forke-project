@@ -229,7 +229,7 @@ function EmbedView({ node, updateAttributes, selected, editor, getPos }: NodeVie
                 )}
                 <span className="truncate">{attrs.siteName || safeHost(src)}</span>
               </div>
-              <p className="line-clamp-2 text-sm font-semibold text-white">
+              <p className="line-clamp-2 text-sm font-medium text-white">
                 {attrs.title || src}
               </p>
               {attrs.description && (

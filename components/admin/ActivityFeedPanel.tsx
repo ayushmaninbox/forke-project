@@ -186,7 +186,7 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
       <div className="shrink-0 space-y-4 pb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-semibold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-xl font-medium text-white tracking-tight flex items-center gap-2">
               <Terminal className="w-5 h-5 text-accent" /> Activity
             </h1>
             <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">
