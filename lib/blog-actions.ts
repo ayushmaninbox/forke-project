@@ -76,17 +76,30 @@ function estimateReadingMinutes(content: unknown): number {
   return Math.max(1, Math.ceil(words / 200))
 }
 
-// ── uploaded-file cleanup ───────────────────────────────────────────────────
+// Helper to determine if an image URL was uploaded by Forke's system (local or R2)
+function isUploadedBlogUrl(url: unknown): boolean {
+  if (typeof url !== 'string') return false
+  
+  // Local storage upload prefix
+  if (url.startsWith('/uploads/blogs/')) return true
+  
+  // Cloudflare R2 public URL check
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || ''
+  if (publicUrl && url.startsWith(publicUrl) && url.includes('/blogs/')) {
+    return true
+  }
+  
+  // Direct Vercel / Cloudflare default dev domain check
+  if (url.includes('.r2.dev/blogs/')) return true
+  
+  return false
+}
 
-// Only files we wrote ourselves live under this prefix; we never delete
-// arbitrary URLs (e.g. pasted external links).
-const UPLOAD_PREFIX = '/uploads/blogs/'
-
-/** Collect every locally-uploaded image URL referenced by a post (cover + body). */
+/** Collect every locally/R2-uploaded image URL referenced by a post (cover + body). */
 function collectLocalImages(content: unknown, coverImage?: string | null): Set<string> {
   const urls = new Set<string>()
   const add = (u: unknown) => {
-    if (typeof u === 'string' && u.startsWith(UPLOAD_PREFIX)) urls.add(u)
+    if (isUploadedBlogUrl(u)) urls.add(u as string)
   }
   add(coverImage)
 
@@ -115,21 +128,23 @@ function collectLocalImages(content: unknown, coverImage?: string | null): Set<s
 }
 
 /**
- * Collect locally-uploaded image URLs from an HTML string.
+ * Collect locally/R2-uploaded image URLs from an HTML string.
  * This is safer than walking Tiptap JSON across server action boundaries where
  * complex objects can be mangled during serialization.
  */
 function collectLocalImagesFromHtml(html: string | null, coverImage?: string | null): Set<string> {
   const urls = new Set<string>()
-  if (typeof coverImage === 'string' && coverImage.startsWith(UPLOAD_PREFIX)) {
-    urls.add(coverImage)
+  if (isUploadedBlogUrl(coverImage)) {
+    urls.add(coverImage as string)
   }
   if (!html) return urls
-  // Match src attributes that point to our upload path.
-  const re = /src=["'](\/uploads\/blogs\/[^"']+)["']/g
+  // Match any src attribute in HTML and check if it matches our uploads
+  const re = /src=["']([^"']+)["']/g
   let m: RegExpExecArray | null
   while ((m = re.exec(html)) !== null) {
-    urls.add(m[1])
+    if (isUploadedBlogUrl(m[1])) {
+      urls.add(m[1])
+    }
   }
   return urls
 }

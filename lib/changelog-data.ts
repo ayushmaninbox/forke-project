@@ -3,6 +3,20 @@
 
 export const CHANGELOG_DATA = [
   {
+    "date": "2026-06-11",
+    "label": "jun 11, 2026",
+    "entries": [
+      {
+        "shortHash": "12a42d7",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-11T00:15:52+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add R2 storage management tools, automated changelog generation, and avatar cleanup functionality"
+      }
+    ]
+  },
+  {
     "date": "2026-06-10",
     "label": "jun 10, 2026",
     "entries": [
@@ -1320,4 +1334,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 153;
+export const COMMIT_COUNT = 154;

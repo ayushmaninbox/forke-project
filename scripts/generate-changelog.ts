@@ -113,6 +113,26 @@ function getCommitCount(): number | null {
 }
 
 function main() {
+  console.log('Checking repository clone depth...')
+  try {
+    const isShallow = execSync('git rev-parse --is-shallow-repository', { 
+      cwd: process.cwd(), 
+      encoding: 'utf8' 
+    }).trim() === 'true'
+    
+    if (isShallow) {
+      console.log('Shallow clone detected. Fetching full git history from remote...')
+      execSync('git fetch --unshallow', { 
+        cwd: process.cwd(), 
+        stdio: 'inherit' 
+      })
+    } else {
+      console.log('Full clone detected. Proceeding...')
+    }
+  } catch (e: any) {
+    console.warn('Could not determine shallow repository state or fetch history (skipping fetch):', e.message || e)
+  }
+
   console.log('Generating changelog from git history...')
   const days = getChangelog()
   const commitCount = getCommitCount()
