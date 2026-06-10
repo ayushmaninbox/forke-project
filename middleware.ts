@@ -97,7 +97,7 @@ function isPublicProfilePath(pathname: string): boolean {
     'waitlist', 'checkout', 'admin', 'api', 'signin', 'register', 'onboarding',
     'dashboard', 'profile', 'tasks', 'submissions', 'earnings', 'settings',
     'analytics', 'developers', 'escrow', 'messages', 'notifications', 'post-task',
-    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund', 'blogs'
+    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund', 'blogs', 'changelog'
   ]
   return !reservedNames.includes(segments[0])
 }
@@ -175,6 +175,8 @@ export default auth(async (req) => {
     // waitlist gate so posts can be shared and crawled.
     pathname === '/blogs' ||
     pathname.startsWith('/blogs/') ||
+    // The changelog is public for the same reason — proof of shipping velocity.
+    pathname === '/changelog' ||
     isPublicProfilePath(pathname)
 
   // If waitlist is active and the user doesn't have site_access

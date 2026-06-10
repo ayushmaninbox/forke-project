@@ -3,12 +3,11 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import crypto from 'crypto'
 import { isAdminAuthenticated } from '@/lib/admin-actions'
+import { isR2Configured, uploadToR2 } from '@/lib/r2'
 
 // Route handlers have no 1MB Server-Action body cap, so full-resolution images
-// upload fine here. Files land in /public/uploads/blogs and are served as
-// /uploads/blogs/*.
-// This is the local-disk bridge until R2 is connected — swap the write below
-// for an R2 PUT and keep the same response shape.
+// upload fine here. Files land in Cloudflare R2 if configured; otherwise they
+// fall back to local-disk /public/uploads/blogs/*.
 
 export const runtime = 'nodejs'
 
@@ -42,9 +41,22 @@ export async function POST(req: NextRequest) {
 
   const bytes = Buffer.from(await file.arrayBuffer())
   const name = `${crypto.randomUUID()}.${EXT[file.type] ?? 'jpg'}`
-  const dir = join(process.cwd(), 'public', 'uploads', 'blogs')
-  await mkdir(dir, { recursive: true })
-  await writeFile(join(dir, name), bytes)
 
-  return NextResponse.json({ url: `/uploads/blogs/${name}` })
+  try {
+    if (isR2Configured()) {
+      const r2Url = await uploadToR2(bytes, `blogs/${name}`, file.type)
+      return NextResponse.json({ url: r2Url })
+    }
+
+    // Fallback: local disk
+    const dir = join(process.cwd(), 'public', 'uploads', 'blogs')
+    await mkdir(dir, { recursive: true })
+    await writeFile(join(dir, name), bytes)
+
+    return NextResponse.json({ url: `/uploads/blogs/${name}` })
+  } catch (err) {
+    console.error('Upload handler error:', err)
+    return NextResponse.json({ error: 'Upload process failed' }, { status: 500 })
+  }
 }
+

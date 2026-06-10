@@ -26,8 +26,10 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
   // 9 on desktop, 5 on mobile — recomputed on resize.
   const [perPage, setPerPage] = useState(9)
   const [page, setPage] = useState(1)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const apply = () => setPerPage(window.matchMedia('(min-width: 1024px)').matches ? 9 : 5)
     apply()
     window.addEventListener('resize', apply)
@@ -37,8 +39,10 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
   const totalPages = Math.max(1, Math.ceil(posts.length / perPage))
   // Keep the current page valid when perPage changes.
   useEffect(() => {
-    setPage((p) => Math.min(p, totalPages))
-  }, [totalPages])
+    if (mounted) {
+      setPage((p) => Math.min(p, totalPages))
+    }
+  }, [totalPages, mounted])
 
   const start = (page - 1) * perPage
   const visible = posts.slice(start, start + perPage)
@@ -63,16 +67,16 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
             href={`/blogs/${post.slug}`}
             className="group flex flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/[0.018] transition-colors hover:border-white/20"
           >
-            <div className="aspect-[16/9] w-full overflow-hidden bg-white/[0.02]">
+            <div className="w-full overflow-hidden bg-white/[0.02]">
               {post.coverImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={post.coverImage}
                   alt={post.title}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  className="w-full h-auto block transition-transform duration-300 group-hover:scale-[1.03]"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center">
+                <div className="flex aspect-[16/9] w-full items-center justify-center">
                   <span className={`${instrumentSerif.className} text-4xl text-white/10`}>F</span>
                 </div>
               )}

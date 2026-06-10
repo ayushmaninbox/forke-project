@@ -67,7 +67,8 @@ import {
   Activity,
   Table,
   Pencil,
-  PenSquare
+  PenSquare,
+  Code
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import BlogPanel from '@/components/admin/BlogPanel'
@@ -93,6 +94,25 @@ export default function AdminDashboard() {
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [activityLive, setActivityLive] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // Sync collapsed state with localStorage to persist preferences across transitions
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('admin_sidebar_collapsed')
+      if (stored === 'true') {
+        setSidebarCollapsed(true)
+      }
+    }
+  }, [])
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('admin_sidebar_collapsed', String(next))
+      return next
+    })
+  }
 
   // Sidebar counts – fetched once on mount
   const [sidebarCounts, setSidebarCounts] = useState({
@@ -861,30 +881,53 @@ export default function AdminDashboard() {
 
       {/* --- SIDEBAR --- */}
       <aside className={cn(
-        "w-64 max-w-[80vw] border-r border-[var(--color-border)] bg-[#070709] shrink-0 flex flex-col justify-between h-screen fixed lg:sticky top-0 left-0 z-50 transition-transform duration-300 select-none",
-        mobileNavOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        "border-r border-[var(--color-border)] bg-[#070709] shrink-0 flex flex-col justify-between h-screen fixed lg:sticky top-0 left-0 z-50 transition-all duration-300 select-none",
+        sidebarCollapsed ? "lg:w-16" : "lg:w-64",
+        mobileNavOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex-grow flex flex-col overflow-y-auto pt-4 min-h-0">
           
           {/* Logo & Header */}
-          <div className="h-14 flex items-center gap-2.5 px-5 border-b border-[var(--color-border)] mb-4 shrink-0">
-            <div className="w-6 h-6 relative flex items-center shrink-0">
-              <img 
-                src="/forke-assets/forke_logo.png" 
-                alt="Forke Logo" 
-                className="absolute -left-3 -top-3 w-12 h-12 max-w-none object-contain"
-              />
-            </div>
-            <span className="font-bold text-xs uppercase tracking-[0.2em] text-white whitespace-nowrap">
-              ADMIN PANEL
-            </span>
-            <button
-              onClick={() => setMobileNavOpen(false)}
-              className="lg:hidden p-1.5 -mr-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer ml-auto"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div className={cn(
+            "h-14 flex items-center border-b border-[var(--color-border)] mb-4 shrink-0 px-5 gap-2.5 transition-all duration-300",
+            sidebarCollapsed && "lg:px-0 lg:justify-center"
+          )}>
+            {sidebarCollapsed ? (
+              <button
+                onClick={toggleSidebar}
+                className="p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer"
+                aria-label="Expand sidebar"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <>
+                <div className="w-6 h-6 relative flex items-center shrink-0">
+                  <img 
+                    src="/forke-assets/forke_logo.png" 
+                    alt="Forke Logo" 
+                    className="absolute -left-3 -top-3 w-12 h-12 max-w-none object-contain"
+                  />
+                </div>
+                <span className="font-bold text-xs uppercase tracking-[0.2em] text-white whitespace-nowrap animate-in fade-in duration-200">
+                  ADMIN PANEL
+                </span>
+                <button
+                  onClick={() => setMobileNavOpen(false)}
+                  className="lg:hidden p-1.5 -mr-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer ml-auto"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={toggleSidebar}
+                  className="hidden lg:flex p-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.05] transition-colors cursor-pointer ml-auto"
+                  aria-label="Collapse sidebar"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* Navigation Links */}
@@ -893,220 +936,341 @@ export default function AdminDashboard() {
             {/* Dashboard */}
             <button
               onClick={() => selectTab('dashboard')}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'dashboard'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Overview" : undefined}
             >
-              <LayoutDashboard className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'dashboard' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-              <span>Overview</span>
+              <LayoutDashboard className={cn(
+                `w-[18px] h-[18px] shrink-0 transition-colors`,
+                activeTab === 'dashboard' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+              )} />
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Overview</span>}
             </button>
 
-            {/* Users (Nested Sub-menu) */}
-            <div className="space-y-0.5">
-              <button
-                onClick={() => setUsersMenuOpen(!usersMenuOpen)}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
-                  activeTab === 'owner-approval' || activeTab === 'developer-ban'
-                    ? 'text-white'
-                    : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Users className="w-[18px] h-[18px] shrink-0 text-[var(--color-text-muted)]" />
-                  <span>Users</span>
-                </div>
-                {usersMenuOpen ? <ChevronDown className="w-4 h-4 text-white/20" /> : <ChevronRight className="w-4 h-4 text-white/20" />}
-              </button>
+            {/* Users */}
+            {!sidebarCollapsed ? (
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => setUsersMenuOpen(!usersMenuOpen)}
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                    activeTab === 'owner-approval' || activeTab === 'developer-ban'
+                      ? 'text-white'
+                      : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Users className="w-[18px] h-[18px] shrink-0 text-[var(--color-text-muted)]" />
+                    <span>Users</span>
+                  </div>
+                  {usersMenuOpen ? <ChevronDown className="w-4 h-4 text-white/20" /> : <ChevronRight className="w-4 h-4 text-white/20" />}
+                </button>
 
-              {usersMenuOpen && (
-                <div className="pl-6 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <button
-                    onClick={() => selectTab('owner-approval')}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
-                      activeTab === 'owner-approval'
-                        ? 'text-accent font-semibold bg-accent/[0.04]'
-                        : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    <span>Owners</span>
-                    {sidebarCounts.pendingOwners > 0 ? (
-                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
-                        {sidebarCounts.pendingOwners}
-                      </span>
-                    ) : (
+                {usersMenuOpen && (
+                  <div className="pl-6 space-y-0.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <button
+                      onClick={() => selectTab('owner-approval')}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                        activeTab === 'owner-approval'
+                          ? 'text-accent font-semibold bg-accent/[0.04]'
+                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      <span>Owners</span>
+                      {sidebarCounts.pendingOwners > 0 ? (
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
+                          {sidebarCounts.pendingOwners}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono text-white/25 leading-none">
+                          {sidebarCounts.owners}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => selectTab('developer-ban')}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
+                        activeTab === 'developer-ban'
+                          ? 'text-accent font-semibold bg-accent/[0.04]'
+                          : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
+                      }`}
+                    >
+                      <span>Developers</span>
                       <span className="text-[10px] font-mono text-white/25 leading-none">
-                        {sidebarCounts.owners}
+                        {sidebarCounts.developers}
                       </span>
-                    )}
-                  </button>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Owners (as standalone icon when collapsed) */}
+                <button
+                  onClick={() => selectTab('owner-approval')}
+                  className={cn(
+                    "w-full flex items-center justify-center py-2 rounded-lg transition-colors text-[13px] font-medium relative",
+                    activeTab === 'owner-approval'
+                      ? 'bg-white/[0.05] text-white'
+                      : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+                  )}
+                  title="Owners"
+                >
+                  <Briefcase className={cn(
+                    "w-[18px] h-[18px] shrink-0 transition-colors",
+                    activeTab === 'owner-approval' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                  )} />
+                  {sidebarCounts.pendingOwners > 0 && (
+                    <span className="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  )}
+                </button>
 
-                  <button
-                    onClick={() => selectTab('developer-ban')}
-                    className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors text-left ${
-                      activeTab === 'developer-ban'
-                        ? 'text-accent font-semibold bg-accent/[0.04]'
-                        : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    <span>Developers</span>
-                    <span className="text-[10px] font-mono text-white/25 leading-none">
-                      {sidebarCounts.developers}
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
+                {/* Developers (as standalone icon when collapsed) */}
+                <button
+                  onClick={() => selectTab('developer-ban')}
+                  className={cn(
+                    "w-full flex items-center justify-center py-2 rounded-lg transition-colors text-[13px] font-medium",
+                    activeTab === 'developer-ban'
+                      ? 'bg-white/[0.05] text-white'
+                      : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+                  )}
+                  title="Developers"
+                >
+                  <Code className={cn(
+                    "w-[18px] h-[18px] shrink-0 transition-colors",
+                    activeTab === 'developer-ban' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                  )} />
+                </button>
+              </>
+            )}
 
             {/* Enquiries */}
             <button
               onClick={() => selectTab('enquiries')}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'enquiries'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Enquiries" : undefined}
             >
               <div className="flex items-center gap-2.5">
-                <MessageSquare className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'enquiries' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>Enquiries</span>
+                <MessageSquare className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'enquiries' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Enquiries</span>}
               </div>
-              {sidebarCounts.enquiries > 0 ? (
-                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
-                  {sidebarCounts.enquiries}
-                </span>
-              ) : (
-                <span className="text-[10px] font-mono text-white/25 leading-none">0</span>
+              {!sidebarCollapsed && (
+                sidebarCounts.enquiries > 0 ? (
+                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
+                    {sidebarCounts.enquiries}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono text-white/25 leading-none">0</span>
+                )
+              )}
+              {sidebarCollapsed && sidebarCounts.enquiries > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
               )}
             </button>
 
             {/* Subscribers */}
             <button
               onClick={() => selectTab('subscribers')}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'subscribers'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Subscribers" : undefined}
             >
               <div className="flex items-center gap-2.5">
-                <Mail className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'subscribers' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>Subscribers</span>
+                <Mail className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'subscribers' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Subscribers</span>}
               </div>
-              <span className="text-[10px] font-mono text-white/25 leading-none">
-                {sidebarCounts.subscribers}
-              </span>
+              {!sidebarCollapsed && (
+                <span className="text-[10px] font-mono text-white/25 leading-none">
+                  {sidebarCounts.subscribers}
+                </span>
+              )}
             </button>
 
             {/* Blog */}
             <button
               onClick={() => selectTab('blogs')}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'blogs'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Blog" : undefined}
             >
               <div className="flex items-center gap-2.5">
-                <PenSquare className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'blogs' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>Blog</span>
+                <PenSquare className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'blogs' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Blog</span>}
               </div>
-              <span className="text-[10px] font-mono text-white/25 leading-none">
-                {sidebarCounts.blogs}
-              </span>
+              {!sidebarCollapsed && (
+                <span className="text-[10px] font-mono text-white/25 leading-none">
+                  {sidebarCounts.blogs}
+                </span>
+              )}
             </button>
 
             {/* Activity / audit log */}
             <button
               onClick={() => selectTab('activity')}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'activity'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Activity" : undefined}
             >
-              <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'activity' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-              <span>Activity</span>
-              <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded border leading-none ${
-                activityLive
-                  ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
-                  : 'bg-white/[0.04] border-white/15 text-white/40'
-              }`}>
-                {activityLive ? 'Live' : 'Paused'}
-              </span>
+              <Terminal className={cn(
+                `w-[18px] h-[18px] shrink-0 transition-colors`,
+                activeTab === 'activity' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+              )} />
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Activity</span>}
+              {!sidebarCollapsed && (
+                <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-mono rounded border leading-none ${
+                  activityLive
+                    ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
+                    : 'bg-white/[0.04] border-white/15 text-white/40'
+                }`}>
+                  {activityLive ? 'Live' : 'Paused'}
+                </span>
+              )}
+              {sidebarCollapsed && (
+                <span className={cn(
+                  "absolute top-1 right-1 w-1.5 h-1.5 rounded-full",
+                  activityLive ? "bg-emerald-400" : "bg-white/20"
+                )} />
+              )}
             </button>
 
             {/* Database Section */}
-            <div className="pt-3 pb-1.5 px-2.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
-                Database Console
-              </span>
-            </div>
+            {!sidebarCollapsed ? (
+              <div className="pt-3 pb-1.5 px-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/35">
+                  Database Console
+                </span>
+              </div>
+            ) : (
+              <div className="h-[1px] bg-[var(--color-border)] my-2" />
+            )}
 
             {/* Overview */}
             <button
               onClick={() => selectTab('db-overview')}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'db-overview'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "DB Overview" : undefined}
             >
-              <Globe className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'db-overview' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-              <span>Overview</span>
+              <Globe className={cn(
+                `w-[18px] h-[18px] shrink-0 transition-colors`,
+                activeTab === 'db-overview' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+              )} />
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Overview</span>}
             </button>
 
             {/* Monitoring */}
             <button
               onClick={() => selectTab('db-monitoring')}
-              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'db-monitoring'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "DB Monitoring" : undefined}
             >
-              <Activity className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'db-monitoring' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-              <span>Monitoring</span>
+              <Activity className={cn(
+                `w-[18px] h-[18px] shrink-0 transition-colors`,
+                activeTab === 'db-monitoring' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+              )} />
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Monitoring</span>}
             </button>
 
 
             {/* Tables */}
             <button
               onClick={() => selectTab('database')}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
                 activeTab === 'database'
                   ? 'bg-white/[0.05] text-white'
                   : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-              }`}
+              )}
+              title={sidebarCollapsed ? "Tables" : undefined}
             >
               <div className="flex items-center gap-2.5">
-                <Table className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'database' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                <span>Tables</span>
+                <Table className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'database' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Tables</span>}
               </div>
-              <span className="text-[10px] font-mono text-white/25 leading-none">
-                {sidebarCounts.tables}
-              </span>
+              {!sidebarCollapsed && (
+                <span className="text-[10px] font-mono text-white/25 leading-none">
+                  {sidebarCounts.tables}
+                </span>
+              )}
             </button>
 
             {/* SQL Editor */}
             {currentAdmin && (
               <button
                 onClick={() => selectTab('sql-editor')}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                className={cn(
+                  "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                  sidebarCollapsed && "lg:justify-center lg:px-0",
                   activeTab === 'sql-editor'
                     ? 'bg-white/[0.05] text-white'
                     : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-                }`}
+                )}
+                title={sidebarCollapsed ? "SQL Editor" : undefined}
               >
                 <div className="flex items-center gap-2.5">
-                  <Terminal className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                  <span>SQL Editor</span>
+                  <Terminal className={cn(
+                    `w-[18px] h-[18px] shrink-0 transition-colors`,
+                    activeTab === 'sql-editor' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                  )} />
+                  {!sidebarCollapsed && <span className="animate-in fade-in duration-200">SQL Editor</span>}
                 </div>
-                {currentAdmin?.role === 'super_admin' && sidebarCounts.pendingSqlRequests > 0 && (
+                {!sidebarCollapsed && currentAdmin?.role === 'super_admin' && sidebarCounts.pendingSqlRequests > 0 && (
                   <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-accent/15 border border-accent/25 text-accent leading-none">
                     {sidebarCounts.pendingSqlRequests}
                   </span>
+                )}
+                {sidebarCollapsed && currentAdmin?.role === 'super_admin' && sidebarCounts.pendingSqlRequests > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent animate-pulse" />
                 )}
               </button>
             )}
@@ -1115,19 +1279,27 @@ export default function AdminDashboard() {
             {currentAdmin?.role === 'super_admin' && (
               <button
                 onClick={() => selectTab('admins')}
-                className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left ${
+                className={cn(
+                  "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                  sidebarCollapsed && "lg:justify-center lg:px-0",
                   activeTab === 'admins'
                     ? 'bg-white/[0.05] text-white'
                     : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
-                }`}
+                )}
+                title={sidebarCollapsed ? "Admins" : undefined}
               >
                 <div className="flex items-center gap-2.5">
-                  <Shield className={`w-[18px] h-[18px] shrink-0 ${activeTab === 'admins' ? 'text-accent' : 'text-[var(--color-text-muted)]'}`} />
-                  <span>Admins</span>
+                  <Shield className={cn(
+                    `w-[18px] h-[18px] shrink-0 transition-colors`,
+                    activeTab === 'admins' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                  )} />
+                  {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Admins</span>}
                 </div>
-                <span className="text-[10px] font-mono text-white/25 leading-none">
-                  {sidebarCounts.admins}
-                </span>
+                {!sidebarCollapsed && (
+                  <span className="text-[10px] font-mono text-white/25 leading-none">
+                    {sidebarCounts.admins}
+                  </span>
+                )}
               </button>
             )}
 
@@ -1136,47 +1308,67 @@ export default function AdminDashboard() {
             {/* Profile */}
             <button
               onClick={() => setIsProfileModalOpen(true)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white transition-colors text-left cursor-pointer"
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white transition-colors text-left cursor-pointer",
+                sidebarCollapsed && "lg:justify-center lg:px-0"
+              )}
+              title={sidebarCollapsed ? "Profile" : undefined}
             >
               <User className="w-[18px] h-[18px] shrink-0" />
-              <span>Profile</span>
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Profile</span>}
             </button>
 
             {/* Change Password */}
             <button
               onClick={() => setIsChangePasswordModalOpen(true)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white transition-colors text-left cursor-pointer"
+              className={cn(
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white transition-colors text-left cursor-pointer",
+                sidebarCollapsed && "lg:justify-center lg:px-0"
+              )}
+              title={sidebarCollapsed ? "Change Password" : undefined}
             >
               <KeyRound className="w-[18px] h-[18px] shrink-0" />
-              <span>Change Password</span>
+              {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Change Password</span>}
             </button>
 
           </nav>
         </div>
 
         {/* User Card & Logout at bottom */}
-        <div className="p-3 border-t border-[var(--color-border)] flex flex-col gap-2 shrink-0">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-white/[0.02]">
+        <div className={cn(
+          "p-3 border-t border-[var(--color-border)] flex flex-col gap-2 shrink-0 transition-all duration-300",
+          sidebarCollapsed && "lg:items-center lg:px-0"
+        )}>
+          <div className={cn(
+            "flex items-center gap-3 p-2 rounded-lg bg-white/[0.02] w-full transition-all duration-300",
+            sidebarCollapsed && "lg:p-0 lg:bg-transparent lg:justify-center"
+          )}>
             <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-bold text-accent text-xs shrink-0">
               {currentAdmin?.name
                 ? currentAdmin.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
                 : 'SA'}
             </div>
-            <div className="flex-grow text-left truncate">
-              <h4 className="text-[13px] font-medium text-white truncate leading-none">
-                {currentAdmin?.name || 'Super Admin'}
-              </h4>
-              <p className="text-[11px] text-[var(--color-text-muted)] truncate mt-1">
-                {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-              </p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="flex-grow text-left truncate animate-in fade-in duration-200">
+                <h4 className="text-[13px] font-medium text-white truncate leading-none">
+                  {currentAdmin?.name || 'Super Admin'}
+                </h4>
+                <p className="text-[11px] text-[var(--color-text-muted)] truncate mt-1">
+                  {currentAdmin?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                </p>
+              </div>
+            )}
           </div>
           <button 
             onClick={handleLogout} 
-            className="flex items-center gap-2 px-2 py-2 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-red-400 transition-colors cursor-pointer w-full"
+            className={cn(
+              "flex items-center gap-2 px-2 py-2 text-[11px] font-medium text-[var(--color-text-muted)] hover:text-red-400 transition-colors cursor-pointer w-full",
+              sidebarCollapsed && "justify-center px-0"
+            )}
+            title={sidebarCollapsed ? "Sign Out" : undefined}
           >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Sign Out</span>}
           </button>
         </div>
 

@@ -53,6 +53,7 @@ export default function Footer() {
             {!showWaitlisterView && <li><a href="/tasks" className="font-mono text-[13px] text-muted hover:text-white transition-colors">bounties</a></li>}
             <li><a href="/levels" className="font-mono text-[13px] text-muted hover:text-white transition-colors">levels</a></li>
             <li><a href="/blogs" className="font-mono text-[13px] text-muted hover:text-white transition-colors">blogs</a></li>
+            <li><a href="/changelog" className="font-mono text-[13px] text-muted hover:text-white transition-colors">changelog</a></li>
             <li><a href="/contact" className="font-mono text-[13px] text-muted hover:text-white transition-colors">contact</a></li>
           </ul>
         </div>

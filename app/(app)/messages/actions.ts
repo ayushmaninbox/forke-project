@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { encryptUrl, decryptUrl } from '@/lib/utils/encrypt'
+import { isR2Configured, uploadToR2 } from '@/lib/r2'
 
 export async function ensureMessagesTable() {
   try {
@@ -38,17 +39,21 @@ export async function uploadChatFile(formData: FormData) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    await mkdir(uploadsDir, { recursive: true })
-
     const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const fileName = `${Date.now()}-${cleanName}`
-    const filePath = join(uploadsDir, fileName)
 
+    if (isR2Configured()) {
+      const url = await uploadToR2(buffer, `chats/${fileName}`, file.type)
+      const encryptedUrl = encryptUrl(url)
+      return { success: true, fileUrl: encryptedUrl, fileName: file.name }
+    }
+
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    await mkdir(uploadsDir, { recursive: true })
+    const filePath = join(uploadsDir, fileName)
     await writeFile(filePath, buffer)
 
     const fileUrl = `/uploads/${fileName}`
-    // Encrypt the URL before handing it back — it will be stored encrypted in the DB
     const encryptedUrl = encryptUrl(fileUrl)
     return { success: true, fileUrl: encryptedUrl, fileName: file.name }
   } catch (error) {
@@ -56,6 +61,8 @@ export async function uploadChatFile(formData: FormData) {
     return { success: false, error: 'File upload failed on server' }
   }
 }
+
+
 
 export async function getMessagesBetweenUsers(userId1: string, userId2: string) {
   await ensureMessagesTable()

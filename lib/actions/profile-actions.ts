@@ -9,6 +9,7 @@ import { join, extname } from 'path'
 import { createHash } from 'crypto'
 import { encryptUrl } from '@/lib/utils/encrypt'
 import { revalidatePath } from 'next/cache'
+import { isR2Configured, uploadToR2 } from '@/lib/r2'
 
 // Runtime migration for the profile fields (mirrors ensureTelemetrySettingsColumns).
 export async function ensureProfileColumns() {
@@ -51,6 +52,11 @@ export async function uploadAvatar(formData: FormData) {
     const hash = createHash('sha256').update(buffer).digest('hex')
     const ext = (extname(file.name) || '.png').toLowerCase().replace(/[^.a-z0-9]/g, '') || '.png'
     const fileName = `${hash}${ext}`
+
+    if (isR2Configured()) {
+      const url = await uploadToR2(buffer, `avatars/${fileName}`, file.type)
+      return { success: true, url }
+    }
 
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'avatars')
     await mkdir(uploadsDir, { recursive: true })
