@@ -480,3 +480,46 @@ html, body {
   color: var(--color-text-muted);
 }
 
+/* Custom themed checkboxes to prevent native OS and white background overrides */
+input[type="checkbox"]:not(.appearance-none) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #000000 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:not(.appearance-none)::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-accent, #FF7A00);
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  clip-path: polygon(14% 44%, 0 58%, 38% 96%, 100% 20%, 86% 6%, 38% 68%);
+}
+
+input[type="checkbox"]:not(.appearance-none):checked::after {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:not(.appearance-none):checked {
+  border-color: var(--color-accent, #FF7A00) !important;
+  background-color: #000000 !important;
+}
+
+input[type="checkbox"]:not(.appearance-none):focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 122, 0, 0.2);
+}
+
+

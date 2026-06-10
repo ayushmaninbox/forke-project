@@ -68,13 +68,15 @@ import {
   Table,
   Pencil,
   PenSquare,
-  Code
+  Code,
+  HardDrive
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import BlogPanel from '@/components/admin/BlogPanel'
 import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
 import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
 import ActivityFeedPanel from '@/components/admin/ActivityFeedPanel'
+import BucketsPanel from '@/components/admin/BucketsPanel'
 import { getActivityLogLiveStatusAction } from '@/lib/actions/audit-actions'
 
 
@@ -89,7 +91,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'blogs' | 'activity' | 'database' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'blogs' | 'activity' | 'database' | 'buckets' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
   >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -140,7 +142,7 @@ export default function AdminDashboard() {
       const tab = params.get('tab')
       const validTabs = [
         'dashboard', 'owner-approval', 'developer-ban', 'enquiries',
-        'admins', 'subscribers', 'blogs', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor'
+        'admins', 'subscribers', 'blogs', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor', 'buckets'
       ]
       if (tab && validTabs.includes(tab)) {
         setActiveTab(tab as any)
@@ -1242,6 +1244,27 @@ export default function AdminDashboard() {
                   {sidebarCounts.tables}
                 </span>
               )}
+            </button>
+
+            {/* Buckets */}
+            <button
+              onClick={() => selectTab('buckets')}
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
+                activeTab === 'buckets'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              )}
+              title={sidebarCollapsed ? "Buckets" : undefined}
+            >
+              <div className="flex items-center gap-2.5">
+                <HardDrive className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'buckets' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Buckets</span>}
+              </div>
             </button>
 
             {/* SQL Editor */}
@@ -2384,6 +2407,13 @@ export default function AdminDashboard() {
           {activeTab === 'database' && (
             <div className="flex-grow min-h-0 h-full flex flex-col">
               <DatabaseConsole currentAdmin={currentAdmin} />
+            </div>
+          )}
+
+          {/* ==================== BUCKETS PANEL ==================== */}
+          {activeTab === 'buckets' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <BucketsPanel currentAdmin={currentAdmin} />
             </div>
           )}
 

@@ -1,4 +1,6 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * Checks if the Cloudflare R2 environment variables are fully configured.
@@ -56,9 +58,93 @@ export async function uploadToR2(
       Key: cleanKey,
       Body: fileBuffer,
       ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
     })
   )
 
   const basePublicUrl = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl
   return `${basePublicUrl}/${cleanKey}`
+}
+
+/**
+ * Deletes a file, either from Cloudflare R2 if it is an R2 URL,
+ * or from the local public directory.
+ * 
+ * @param url The fully qualified URL or relative local path of the file.
+ */
+export async function deleteFileByUrl(url: string): Promise<boolean> {
+  if (!url) return false
+
+  // 1. Check if it's an R2 URL
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL || ''
+  const isR2Url = isR2Configured() && (
+    url.startsWith(publicUrl) || 
+    url.includes('.r2.dev/') || 
+    url.includes('.r2.cloudflarestorage.com/')
+  )
+
+  if (isR2Url) {
+    try {
+      const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
+      const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+      const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT
+      const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME
+
+      if (!accessKeyId || !secretAccessKey || !endpoint || !bucketName) {
+        throw new Error('R2 credentials not fully configured.')
+      }
+
+      // Extract key from the URL. The key is the path after the hostname/public URL
+      // e.g. https://pub-xxxx.r2.dev/blogs/file.png -> blogs/file.png
+      let key = ''
+      if (publicUrl && url.startsWith(publicUrl)) {
+        key = url.slice(publicUrl.length)
+      } else {
+        // Fallback generic parser: get path part from URL
+        const parsedUrl = new URL(url)
+        key = parsedUrl.pathname
+      }
+      
+      // Strip leading slash if any
+      if (key.startsWith('/')) {
+        key = key.slice(1)
+      }
+
+      const s3Client = new S3Client({
+        region: 'auto',
+        endpoint: endpoint,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      })
+
+      await s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: key,
+        })
+      )
+      return true
+    } catch (e: any) {
+      console.error('Failed to delete file from R2:', e.message || e)
+      return false
+    }
+  }
+
+  // 2. Otherwise delete from local filesystem
+  try {
+    // Local URL is e.g. /uploads/blogs/filename.png or /avatars/filename.png
+    // Strip leading slash to resolve from process.cwd() + "/public"
+    const cleanPath = url.startsWith('/') ? url.slice(1) : url
+    const localPath = path.resolve(process.cwd(), 'public', cleanPath)
+    if (fs.existsSync(localPath)) {
+      fs.unlinkSync(localPath)
+      return true
+    }
+  } catch (e: any) {
+    console.error('Failed to delete local file:', e.message || e)
+  }
+
+  return false
 }

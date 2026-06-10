@@ -9,7 +9,7 @@ import { join, extname } from 'path'
 import { createHash } from 'crypto'
 import { encryptUrl } from '@/lib/utils/encrypt'
 import { revalidatePath } from 'next/cache'
-import { isR2Configured, uploadToR2 } from '@/lib/r2'
+import { isR2Configured, uploadToR2, deleteFileByUrl } from '@/lib/r2'
 
 // Runtime migration for the profile fields (mirrors ensureTelemetrySettingsColumns).
 export async function ensureProfileColumns() {
@@ -106,12 +106,36 @@ export async function updateProfile(data: ProfileUpdateInput) {
   const name = data.name?.trim()
   if (name) set.name = name
 
+  let oldAvatarUrl: string | null = null
   if (data.avatarUrl !== undefined) {
     set.image = data.avatarUrl ? encryptUrl(data.avatarUrl) : null
+
+    // Get current profile image to delete from storage
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+        columns: { image: true }
+      })
+      if (user?.image) {
+        const { decryptUrl, isEncrypted } = await import('@/lib/utils/encrypt')
+        oldAvatarUrl = isEncrypted(user.image) ? decryptUrl(user.image) : user.image
+      }
+    } catch (e) {
+      console.error('Failed to query old avatar URL:', e)
+    }
   }
 
   try {
     await db.update(users).set(set).where(eq(users.id, session.user.id))
+
+    // If update succeeded and we have an old avatar to delete, delete it
+    if (oldAvatarUrl && oldAvatarUrl !== data.avatarUrl) {
+      const isUploadedAvatar = oldAvatarUrl.includes('/avatars/') || oldAvatarUrl.includes('/uploads/avatars/')
+      if (isUploadedAvatar) {
+        deleteFileByUrl(oldAvatarUrl).catch(err => console.error('Failed to cleanup old avatar file:', err))
+      }
+    }
+
     revalidatePath('/[username]', 'page')
     revalidatePath('/profile')
     revalidatePath('/dashboard')

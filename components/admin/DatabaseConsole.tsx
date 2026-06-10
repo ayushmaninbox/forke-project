@@ -2288,7 +2288,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                             type="checkbox"
                             checked={rows.length > 0 && selectedRowKeys.length === rows.length}
                             onChange={handleSelectAllRows}
-                            className="rounded accent-accent cursor-pointer"
+                            className="rounded !border-white/20 !bg-black checked:!bg-accent text-accent focus:ring-0 focus:ring-offset-0 cursor-pointer w-3.5 h-3.5 transition-colors"
                           />
                         </th>
                       )}
@@ -2362,7 +2362,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                                   type="checkbox"
                                   checked={isRowSelected}
                                   onChange={(e) => handleSelectRow(pkVal, e.target.checked)}
-                                  className="rounded accent-accent cursor-pointer"
+                                  className="rounded !border-white/20 !bg-black checked:!bg-accent text-accent focus:ring-0 focus:ring-offset-0 cursor-pointer w-3.5 h-3.5 transition-colors"
                                 />
                               </td>
                             )}

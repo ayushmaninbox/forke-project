@@ -8,6 +8,7 @@ import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'
 import { unlink, readdir, stat } from 'fs/promises'
 import { join, basename } from 'path'
+import { deleteFileByUrl } from './r2'
 
 async function ensureAdmin() {
   if (!(await isAdminAuthenticated())) {
@@ -151,7 +152,7 @@ export async function cleanupSessionUploads(sessionUrls: string[], contentHtml: 
         // If it's still in the current document, keep it
         if (currentImages.has(url)) return
         try {
-          await unlink(join(dir, basename(url)))
+          await deleteFileByUrl(url)
         } catch {
           // ignore if missing / deleted
         }
@@ -407,7 +408,7 @@ export async function deleteBlog(id: string) {
   const allImages = new Set([...fromJson, ...fromHtml])
   await Promise.all(
     [...allImages].map((u) =>
-      unlink(join(dir, basename(u))).catch(() => {})
+      deleteFileByUrl(u).catch(() => {})
     )
   )
   await sweepOrphanedImages()
@@ -437,7 +438,7 @@ export async function bulkDeleteBlogs(ids: string[]) {
     for (const u of collectLocalImages(r.content, r.coverImage)) owned.add(u)
     for (const u of collectLocalImagesFromHtml(r.contentHtml, r.coverImage)) owned.add(u)
   }
-  await Promise.all([...owned].map((u) => unlink(join(dir, basename(u))).catch(() => {})))
+  await Promise.all([...owned].map((u) => deleteFileByUrl(u).catch(() => {})))
   await sweepOrphanedImages()
 
   await logAudit({ category: 'admin', action: 'blog.bulk_deleted', target: `${ids.length} posts` })
