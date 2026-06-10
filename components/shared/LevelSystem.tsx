@@ -111,8 +111,9 @@ export default function LevelSystem() {
         {/* Left Column: Content */}
         <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
-            <h2 className="font-serif text-4xl md:text-6xl text-white tracking-tight">
-              The Level System <span className="text-accent">✦</span>
+            <span className="ui-eyebrow block">{'//'} progression</span>
+            <h2 className="text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em]">
+              Script kiddie to <span className="font-serif italic font-normal text-accent">legend.</span>
             </h2>
             <p className="text-white/60 text-base md:text-lg font-light leading-relaxed">
               Completing tasks earns XP. XP increases your level. Higher levels unlock larger bounties, better opportunities, and exclusive platform privileges. Consistency is rewarded—the more you ship, the faster you ascend.
@@ -123,9 +124,9 @@ export default function LevelSystem() {
             <Button
               size="lg"
               onClick={() => router.push('/levels')}
-              className="group gap-2 text-base px-8 py-6 rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg font-bold tracking-tight"
+              className="group gap-2 h-12 px-7 py-0 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors"
             >
-              Explore all 25 levels <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Explore all 25 levels <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Button>
           </div>
         </div>
@@ -140,7 +141,7 @@ export default function LevelSystem() {
             delay={3500}
             pauseOnHover={false}
             skewAmount={6}
-            easing="elastic"
+            easing="linear"
             activeIndex={activeIndex}
             onActiveIndexChange={setActiveIndex}
           >
@@ -171,7 +172,7 @@ export default function LevelSystem() {
                           {item.xpMultiplier}
                         </span>
                       </div>
-                      <h4 className="font-serif text-3xl text-white tracking-tight mt-3 font-semibold">{item.label}</h4>
+                      <h4 className="text-3xl text-white tracking-[-0.02em] mt-3 font-semibold">{item.label}</h4>
                       <p className="text-xs font-mono text-white/40 mt-1">{item.title}</p>
                     </div>
 

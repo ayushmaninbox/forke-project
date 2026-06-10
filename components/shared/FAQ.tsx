@@ -143,8 +143,9 @@ export default function FAQ() {
     <section ref={containerRef} className="py-32 bg-bg relative overflow-hidden">
       <div className="max-w-4xl mx-auto px-4 relative z-10">
         <div className="text-center mb-16 space-y-4">
-          <h2 className="gsap-faq-title font-serif text-4xl md:text-6xl text-white opacity-0">
-            Common Questions
+          <span className="gsap-faq-title ui-eyebrow block opacity-0">{'//'} faq</span>
+          <h2 className="gsap-faq-title text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] opacity-0">
+            Common <span className="font-serif italic font-normal text-accent">questions.</span>
           </h2>
           <p className="gsap-faq-desc text-muted text-base md:text-lg font-light opacity-0">
             Everything you need to know about shipping and earning on Forke.
@@ -169,11 +170,19 @@ export default function FAQ() {
                   onClick={() => setOpenIndex(isActive ? null : index)}
                   className="w-full flex items-center justify-between p-6 md:p-8 text-left cursor-pointer"
                 >
-                  <span className={cn(
-                    "text-xl md:text-2xl font-semibold transition-colors",
-                    isActive ? "text-white" : "text-white/70 group-hover:text-white"
-                  )}>
-                    {faq.question}
+                  <span className="flex items-baseline gap-4 min-w-0">
+                    <span className={cn(
+                      "font-mono text-xs shrink-0 transition-colors",
+                      isActive ? "text-accent" : "text-white/30 group-hover:text-accent/70"
+                    )}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className={cn(
+                      "text-lg md:text-xl font-medium tracking-[-0.01em] transition-colors",
+                      isActive ? "text-white" : "text-white/70 group-hover:text-white"
+                    )}>
+                      {faq.question}
+                    </span>
                   </span>
                   
                   <div 
@@ -197,8 +206,8 @@ export default function FAQ() {
                     willChange: 'height, opacity'
                   }}
                 >
-                  <div className="gsap-faq-content-inner px-6 pb-8 md:px-8 md:pb-10">
-                    <p className="text-lg text-white/50 font-light leading-relaxed max-w-3xl">
+                  <div className="gsap-faq-content-inner px-6 pb-8 md:px-8 md:pb-10 pl-[58px] md:pl-[66px]">
+                    <p className="text-base md:text-lg text-white/50 font-light leading-relaxed max-w-3xl">
                       {faq.answer}
                     </p>
                   </div>

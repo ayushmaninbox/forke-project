@@ -49,9 +49,9 @@ export default function TechStackTicker({ isHeroEmbedded = false }: { isHeroEmbe
       isHeroEmbedded ? "absolute bottom-0" : "fixed bottom-0"
     )}>
       <div className="absolute left-0 top-0 h-full bg-black z-10 px-8 flex items-center gap-3 border-r border-white/10 select-none hidden sm:flex">
-        <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-        <span className="text-[10px] font-bold tracking-[0.2em] text-white uppercase whitespace-nowrap font-mono">
-          Supported Tech Stacks
+        <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+        <span className="text-[11px] tracking-wide text-white/70 whitespace-nowrap font-mono">
+          {'//'} supported stacks
         </span>
       </div>
 
@@ -96,7 +96,7 @@ export default function TechStackTicker({ isHeroEmbedded = false }: { isHeroEmbe
               </div>
               <span 
                 style={{ color: isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)' }}
-                className="text-sm font-semibold font-mono transition-colors duration-300"
+                className="text-[13px] font-medium font-mono transition-colors duration-300"
               >
                 {item.name}
               </span>

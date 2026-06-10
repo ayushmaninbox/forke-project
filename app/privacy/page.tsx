@@ -21,14 +21,14 @@ export default function PrivacyPage() {
 
       {/* Header */}
       <header className="pt-32 md:pt-40 pb-16 px-6 max-w-3xl mx-auto">
-        <p className="text-[11px] text-white/30 font-mono uppercase tracking-widest mb-4">
+        <p className="ui-eyebrow lowercase mb-4">
           Privacy & Data Protection
         </p>
-        <h1 className="text-3xl md:text-5xl font-serif text-white mb-4">
-          Privacy <span className="text-accent italic">Policy</span>
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-white mb-4">
+          Privacy <span className="font-serif italic font-normal text-accent">Policy</span>
         </h1>
         <p className="text-sm text-white/30 font-mono">
-          Effective June 2026 · v1.1.0
+          Last Updated: June 2026 · Effective Globally
         </p>
       </header>
 
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
 
         {/* 01. Introduction */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">01</span>
             Introduction & Consent
           </h2>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
 
         {/* 02. Information We Collect */}
         <section className="space-y-6">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">02</span>
             Information We Collect
           </h2>
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
 
         {/* 03. Third-Party Integrations */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">03</span>
             Third-Party Sub-Processors
           </h2>
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
 
         {/* 04. Data Storage, Transfers & Security */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">04</span>
             Storage, Security & Location
           </h2>
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
 
         {/* 05. Data Retention */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">05</span>
             Data Retention
           </h2>
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
 
         {/* 06. Cookies & Tracking */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">06</span>
             Cookies & Tracking
           </h2>
@@ -162,7 +162,7 @@ export default function PrivacyPage() {
 
         {/* 07. User Rights (DPDP 2023 & GDPR) */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">07</span>
             Your Privacy Rights
           </h2>

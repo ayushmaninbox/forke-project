@@ -363,13 +363,13 @@ export default function LevelsPage() {
           <div className="max-w-4xl mx-auto space-y-8 relative z-30">
             {/* Small badge */}
             <div className="gsap-lvl-hero-badge flex items-center justify-center gap-2 opacity-0">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">Game Progression</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <span className="ui-eyebrow">{'//'} game progression</span>
             </div>
 
             {/* Headline */}
-            <h1 className="gsap-lvl-hero-title font-serif text-5xl sm:text-6xl md:text-8xl text-white leading-none tracking-tight opacity-0">
-              The Level <span className="text-accent italic font-normal text-glow">System</span>
+            <h1 className="gsap-lvl-hero-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold text-white leading-[1.02] tracking-[-0.04em] opacity-0">
+              The level <span className="font-serif italic font-normal text-accent">system.</span>
             </h1>
 
             {/* Description */}
@@ -386,11 +386,11 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
-              Progression Ladder
+            <div className="gsap-lvl-element ui-eyebrow opacity-0">
+              {'//'} progression ladder
             </div>
-            <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-              Choose your <span className="text-accent italic font-normal">level</span>
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+              Choose your <span className="font-serif italic font-normal text-accent">level.</span>
             </h2>
           </div>
 
@@ -691,11 +691,11 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
-              The Rules
+            <div className="gsap-lvl-element ui-eyebrow opacity-0">
+              {'//'} the rules
             </div>
-            <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-              How to earn <span className="text-accent italic font-normal">XP</span>
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+              How to earn <span className="font-serif italic font-normal text-accent">XP.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
               XP rewards consistency, high execution speed, and immaculate client review scores.
@@ -810,11 +810,11 @@ export default function LevelsPage() {
           
           {/* Section Header */}
           <div className="text-center space-y-4">
-            <div className="gsap-lvl-element inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] bg-accent/10 text-accent opacity-0">
-              End Game Content
+            <div className="gsap-lvl-element ui-eyebrow opacity-0">
+              {'//'} end game content
             </div>
-            <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-              The Prestige <span className="text-accent italic font-normal">ranks</span>
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+              The prestige <span className="font-serif italic font-normal text-accent">ranks.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg max-w-xl mx-auto font-light leading-relaxed opacity-0">
               Reaching Level 25 unlocks the option to Prestige. Reset your level progression to claim permanent cosmetic titles and high-value platform perks.
@@ -874,22 +874,19 @@ export default function LevelsPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           
           <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-            <h2 className="gsap-lvl-element font-serif text-4xl md:text-6xl text-white leading-tight tracking-tight opacity-0">
-              Earn your XP. Forge your path.
+            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+              Earn your XP. Forge your <span className="font-serif italic font-normal text-accent">path.</span>
             </h2>
             <p className="gsap-lvl-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0">
               Claim real tasks, ship verified code, level up, and cash out instantly. Ready to start grinding?
             </p>
             <div className="gsap-lvl-element flex flex-col sm:flex-row justify-center items-center gap-4 opacity-0">
-              <Button 
-                size="lg" 
-                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
+              <Button
+                size="lg"
+                className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
                 onClick={() => window.location.href = '/register'}
               >
-                Join the movement 
-                <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-500 group-hover/btn:translate-x-0.5 shrink-0">
-                  <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
-                </span>
+                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </div>
           </div>

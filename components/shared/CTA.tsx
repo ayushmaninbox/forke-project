@@ -4,7 +4,7 @@ import React, { useRef } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import { Zap, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -60,8 +60,8 @@ export default function CTA() {
       '-=0.6'
     )
     .fromTo(buttonRef.current,
-      { scale: 0.9, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.7)' },
+      { y: 10, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' },
       '-=0.4'
     )
     .fromTo('.gsap-cta-mascot',
@@ -131,8 +131,8 @@ export default function CTA() {
         <div className="gsap-cta-card p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center opacity-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           <div className="space-y-6 relative z-10">
-            <h2 className="gsap-cta-title font-serif text-3xl text-white leading-tight tracking-tight opacity-0">
-              Ready to ship?
+            <h2 className="gsap-cta-title text-3xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+              Ready to <span className="font-serif italic font-normal text-accent">ship?</span>
             </h2>
             <p className="gsap-cta-text text-white/50 text-sm leading-relaxed font-light opacity-0">
               Join Forke and start earning while you code.
@@ -176,8 +176,9 @@ export default function CTA() {
           <div className="relative z-10 flex items-center min-h-[460px] md:min-h-[320px]">
             {/* Left side — Text + CTA */}
             <div className="flex-1 p-8 sm:p-12 md:p-10 lg:p-16 space-y-6 text-center md:text-left">
-              <h2 className="gsap-cta-title font-serif text-4xl md:text-5xl lg:text-6xl text-white tracking-tight leading-[1.1] opacity-0">
-                Ready to ship?
+              <span className="gsap-cta-text ui-eyebrow block opacity-0">{'//'} your first merge is waiting</span>
+              <h2 className="gsap-cta-title text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-[-0.03em] leading-[1.05] opacity-0">
+                Ready to <span className="font-serif italic font-normal text-accent">ship?</span>
               </h2>
               <p className="gsap-cta-text text-base md:text-base lg:text-lg text-white/50 font-light max-w-md mx-auto md:mx-0 opacity-0">
                 Join Forke and start earning while you code.
@@ -186,7 +187,7 @@ export default function CTA() {
                 ref={buttonRef}
                 size="lg"
                 variant="primary"
-                className="text-lg px-10 py-5 gap-2 rounded-xl opacity-0 active:scale-[0.98] transition-transform mx-auto md:mx-0"
+                className="h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none opacity-0 active:scale-[0.98] transition-transform mx-auto md:mx-0"
                 onClick={() => {
                   if (showWaitlisterView) {
                     router.push('/')
@@ -195,7 +196,7 @@ export default function CTA() {
                   }
                 }}
               >
-                {showWaitlisterView ? 'Coming Soon' : <>Get Started Free <Zap className="w-5 h-5 fill-current" /></>}
+                {showWaitlisterView ? 'Coming soon' : <>Start earning <ArrowRight className="w-4 h-4" /></>}
               </Button>
             </div>
 

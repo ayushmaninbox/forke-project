@@ -145,13 +145,13 @@ export default function WhatsForkePage() {
                 
                 {/* Small badge */}
                 <div className="gsap-wf-hero-badge flex items-center justify-center lg:justify-start gap-2 opacity-0">
-                  <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                  <span className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">About Us</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                  <span className="ui-eyebrow">{'//'} about us</span>
                 </div>
 
-                {/* Headline (Upscaled to text-6xl md:text-8xl to match homepage title exactly) */}
-                <h1 className="gsap-wf-hero-title font-serif text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-8xl text-white leading-[1.05] tracking-tight opacity-0">
-                  What is <span className="text-accent italic font-normal text-glow">Forke?</span>
+                {/* Headline (matches homepage hero typography) */}
+                <h1 className="gsap-wf-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-semibold text-white leading-[1.04] tracking-[-0.04em] opacity-0">
+                  What is <span className="font-serif italic font-normal text-accent">Forke?</span>
                 </h1>
 
                 {/* Description (Upscaled to text-lg md:text-xl to match homepage description) */}
@@ -228,11 +228,11 @@ export default function WhatsForkePage() {
       {/* --- CONTEXT STORY SECTION --- */}
       <section className="gsap-wf-section relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-white/[0.03]">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="gsap-wf-element inline-flex items-center gap-2 text-accent font-black tracking-widest text-xs uppercase opacity-0">
-            The Concept
+          <div className="gsap-wf-element ui-eyebrow opacity-0">
+            {'//'} the concept
           </div>
-          <h2 className="gsap-wf-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-tight opacity-0">
-            A developer playground built to <span className="text-accent italic font-normal">prove capability</span>
+          <h2 className="gsap-wf-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-tight opacity-0">
+            A developer playground built to <span className="font-serif italic font-normal text-accent">prove capability.</span>
           </h2>
           <p className="gsap-wf-element text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
             Forke was born from a simple realization: the traditional path for software engineers is broken. Building fake portfolio projects teaches you syntax, but it doesn't teach you how to ship. Bidding for freelance contracts is an endless waiting game, and early internships are heavily gatekept.
@@ -295,11 +295,11 @@ export default function WhatsForkePage() {
         
         {/* Header */}
         <div className="text-left mb-16 max-w-xl">
-          <div className="gsap-wf-element inline-flex items-center gap-2 text-accent font-black tracking-widest text-xs uppercase opacity-0 mb-4">
-            Our Values
+          <div className="gsap-wf-element ui-eyebrow opacity-0 mb-4">
+            {'//'} our values
           </div>
-          <h2 className="gsap-wf-element font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-            What drives <span className="text-accent italic font-normal">us</span>
+          <h2 className="gsap-wf-element text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+            What drives <span className="font-serif italic font-normal text-accent">us.</span>
           </h2>
         </div>
 
@@ -344,8 +344,8 @@ export default function WhatsForkePage() {
         <div className="md:hidden p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           <div className="space-y-6 relative z-10">
-            <h2 className="gsap-wf-element font-serif text-3xl text-white leading-tight tracking-tight opacity-0">
-              This is just the beginning.
+            <h2 className="gsap-wf-element text-3xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0">
+              This is just the <span className="font-serif italic font-normal text-accent">beginning.</span>
             </h2>
             <p className="gsap-wf-element text-white/50 text-sm leading-relaxed font-light opacity-0">
               Join the movement and help us build the future of developer work.
@@ -353,13 +353,10 @@ export default function WhatsForkePage() {
             <div className="gsap-wf-element flex justify-center opacity-0">
               <Button
                 size="lg"
-                className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
+                className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
                 onClick={() => router.push('/register')}
               >
-                Join the movement
-                <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
-                  <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
-                </span>
+                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </div>
           </div>
@@ -374,20 +371,20 @@ export default function WhatsForkePage() {
           {/* Left Text / CTAs */}
           <div className="w-full lg:w-7/12 space-y-6 lg:space-y-8 relative z-10 text-left">
             <div className="space-y-4">
-              <h2 className="gsap-wf-element font-serif text-4xl lg:text-6xl text-white leading-tight tracking-tight opacity-0 max-w-xl">
-                This is just the beginning.
+              <h2 className="gsap-wf-element text-4xl lg:text-6xl font-semibold text-white leading-tight tracking-[-0.03em] opacity-0 max-w-xl">
+                This is just the <span className="font-serif italic font-normal text-accent">beginning.</span>
               </h2>
               <p className="gsap-wf-element text-white/50 text-base lg:text-lg leading-relaxed font-light opacity-0 max-w-xl">
                 Join the movement and help us build the future of developer work.
               </p>
             </div>
             <div className="gsap-wf-element flex flex-col sm:flex-row gap-4 opacity-0">
-              <Button 
-                size="lg" 
-                className="rounded-xl px-8 py-3.5 h-auto text-xs font-bold uppercase tracking-wider bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[4px] active:shadow-none transition-all duration-75 text-bg flex items-center justify-center gap-2"
+              <Button
+                size="lg"
+                className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
                 onClick={() => router.push('/register')}
               >
-                Join the movement <ArrowRight className="w-4 h-4" />
+                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </div>
           </div>

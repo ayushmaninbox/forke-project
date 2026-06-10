@@ -123,8 +123,8 @@ function SignInContentInner() {
                 </Link>
              </div>
              <div className="text-center space-y-2">
-                <h1 className="text-3xl md:text-4xl font-serif text-white tracking-tight">Welcome back to <span className="text-accent italic">Forke</span></h1>
-                <p className="text-[11px] md:text-[13px] text-white/40 font-medium tracking-wide uppercase">THE DEVELOPER MARKETPLACE REIMAGINED.</p>
+                <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-[-0.03em]">Welcome back to <span className="font-serif italic font-normal text-accent">Forke.</span></h1>
+                <p className="ui-eyebrow">{'//'} the developer marketplace, reimagined</p>
              </div>
           </div>
 

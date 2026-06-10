@@ -174,7 +174,7 @@ function RegisterContentInner() {
       </div>
       
       <div className="space-y-4">
-        <h2 className="text-4xl font-serif text-white tracking-tight">Application <span className="text-accent italic">Received</span></h2>
+        <h2 className="text-4xl font-semibold text-white tracking-[-0.03em]">Application <span className="font-serif italic font-normal text-accent">Received</span></h2>
         <div className="space-y-6 text-white/50 leading-relaxed max-w-[400px] mx-auto text-sm">
           <p>
             Thank you for your interest in Forke. Our team will review your application to ensure the highest quality of projects on the platform.
@@ -247,7 +247,7 @@ function RegisterContentInner() {
         ) : !role ? (
           <div className="w-full max-w-[500px] space-y-8 relative z-10 my-auto animate-in fade-in zoom-in duration-500">
             <div className="text-center space-y-2">
-              <h1 className="text-4xl md:text-5xl font-serif text-white tracking-tight">Choose your <span className="text-accent italic">Path</span></h1>
+              <h1 className="text-4xl md:text-5xl font-semibold text-white tracking-[-0.03em]">Choose your <span className="font-serif italic font-normal text-accent">Path</span></h1>
               <p className="text-[11px] md:text-[13px] text-white/40 font-medium tracking-wide uppercase">How would you like to join Forke?</p>
             </div>
 
@@ -277,7 +277,7 @@ function RegisterContentInner() {
 
                 {/* Right Side: Content */}
                 <div className="relative z-10 flex-1 flex justify-center md:justify-start md:pl-12 mt-12 md:mt-0 order-2 md:order-none">
-                  <h3 className="text-4xl md:text-5xl font-serif text-white group-hover:text-accent transition-colors duration-500">Post Tasks?</h3>
+                  <h3 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em] text-white group-hover:text-accent transition-colors duration-500">Post Tasks?</h3>
                 </div>
               </button>
 
@@ -306,7 +306,7 @@ function RegisterContentInner() {
 
                 {/* Right Side: Content */}
                 <div className="relative z-10 flex-1 flex justify-center md:justify-start md:pl-12 mt-12 md:mt-0 order-2 md:order-none">
-                  <h3 className="text-4xl md:text-5xl font-serif text-white group-hover:text-accent transition-colors duration-500">Do Tasks?</h3>
+                  <h3 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em] text-white group-hover:text-accent transition-colors duration-500">Do Tasks?</h3>
                 </div>
               </button>
             </div>
@@ -327,7 +327,7 @@ function RegisterContentInner() {
               >
                 <ArrowLeft className="w-3 h-3" /> Change Path
               </button>
-              <h1 className="text-4xl font-serif text-white tracking-tight">Post Tasks <span className="text-accent italic">Application</span></h1>
+              <h1 className="text-4xl font-semibold text-white tracking-[-0.03em]">Post Tasks <span className="font-serif italic font-normal text-accent">Application</span></h1>
               <p className="text-xs text-white/40 font-medium tracking-wide uppercase">Tell us about yourself and your company</p>
             </div>
 
@@ -563,7 +563,7 @@ function RegisterContentInner() {
                   </Link>
                </div>
                <div className="text-center space-y-2">
-                  <h1 className="text-3xl md:text-4xl font-serif text-white tracking-tight">Join the <span className="text-accent italic">Movement</span></h1>
+                  <h1 className="text-3xl md:text-4xl font-semibold text-white tracking-[-0.03em]">Join the <span className="font-serif italic font-normal text-accent">Movement</span></h1>
                   <p className="text-[11px] md:text-[13px] text-white/40 font-medium tracking-wide uppercase">
                     Registering as a <span className="text-accent font-black">{role}</span>. 
                     <button onClick={() => setRole(null)} className="ml-2 text-white/20 hover:text-white underline underline-offset-2">Change</button>

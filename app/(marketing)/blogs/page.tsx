@@ -52,13 +52,11 @@ export default async function BlogsIndexPage() {
         <section className="relative z-10 px-6 pb-16 pt-40 text-center md:pb-20 md:pt-48">
           <div className="relative z-30 mx-auto max-w-4xl space-y-6">
             <div className="flex items-center justify-center gap-2">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
-              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">
-                From the team
-              </span>
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+              <span className="ui-eyebrow">{'//'} from the team</span>
             </div>
-            <h1 className="font-serif text-5xl leading-none tracking-tight text-white sm:text-6xl md:text-8xl">
-              The Forke <span className="text-accent italic font-normal text-glow">Blogs</span>
+            <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-white sm:text-6xl md:text-7xl lg:text-8xl">
+              The Forke <span className="font-serif italic font-normal text-accent">blogs.</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg font-light leading-relaxed text-white/50 md:text-xl">
               Stories, updates, and ideas from the Forke team — product deep-dives, engineering

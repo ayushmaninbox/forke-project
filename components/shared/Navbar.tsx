@@ -63,36 +63,36 @@ export default function Navbar() {
     <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
       <div className="w-full max-w-7xl mx-auto">
         <div className={cn(
-          "flex justify-between items-center h-20 px-4 sm:px-8 rounded-full border transition-all duration-300",
-          isScrolled 
-             ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]" 
+          "flex justify-between items-center h-16 sm:h-[4.25rem] px-4 sm:px-7 rounded-full border transition-all duration-300",
+          isScrolled
+             ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
              : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         )}>
-          
+
           <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
-            <div className="absolute -top-[22px] sm:-top-[30px] -left-3 sm:-left-4 w-[140px] sm:w-[180px] h-[85px] sm:h-[110px] z-20 pointer-events-none">
-              <Image 
-                src="/forke-assets/nav_peeking_forky.png" 
-                alt="Forke Logo" 
+            <div className="absolute -top-[20px] sm:-top-[26px] -left-3 sm:-left-4 w-[120px] sm:w-[150px] h-[72px] sm:h-[92px] z-20 pointer-events-none">
+              <Image
+                src="/forke-assets/nav_peeking_forky.png"
+                alt="Forke Logo"
                 fill
                 className="object-contain"
               />
             </div>
-            <div className="w-[120px] sm:w-[160px] h-[40px] " /> {/* Spacer for the absolute mascot */}
-            <span className="font-serif text-3xl sm:text-5xl text-white font -ml-4 sm:-ml-6 relative z-10">
-              Forke
+            <div className="w-[100px] sm:w-[130px] h-[40px] " /> {/* Spacer for the absolute mascot */}
+            <span className="text-2xl sm:text-[1.75rem] font-semibold tracking-[-0.04em] text-white -ml-4 sm:-ml-6 relative z-10">
+              forke<span className="text-accent">*</span>
             </span>
           </Link>
-          
+
           {/* Center: Navigation Links */}
-          <div className="hidden lg:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+          <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => (
-              <Link 
-                key={link.name} 
+              <Link
+                key={link.name}
                 href={link.href}
-                className="text-[11px] font-black text-muted hover:text-white transition-colors tracking-[0.15em] uppercase"
+                className="group/link font-mono text-[12.5px] lowercase text-white/55 hover:text-white transition-colors"
               >
-                {link.name}
+                <span className="text-accent/0 group-hover/link:text-accent/80 transition-colors">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
               </Link>
             ))}
           </div>
@@ -102,7 +102,7 @@ export default function Navbar() {
             {showWaitlisterView ? (
               <Button 
                 variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
                 onClick={() => router.push('/')}
               >
                 Coming Soon
@@ -110,7 +110,7 @@ export default function Navbar() {
             ) : isLoggedIn ? (
               <Button 
                 variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
                 onClick={() => router.push('/dashboard')}
               >
                 Dashboard
@@ -118,7 +118,7 @@ export default function Navbar() {
             ) : (
               <Button 
                 variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-4 sm:px-8 py-2.5 h-auto text-[11px] font-black tracking-widest uppercase shadow-glow-sm bg-accent text-bg" 
+                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
                 onClick={() => router.push('/register')}
               >
                 Get Started
@@ -154,13 +154,13 @@ export default function Navbar() {
         <div className="lg:hidden absolute top-full left-0 w-full bg-bg border-b border-border px-4 py-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300 mt-2 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
-              <Link 
-                key={link.name} 
+              <Link
+                key={link.name}
                 href={link.href}
-                className="text-lg font-medium text-muted hover:text-white"
+                className="font-mono text-base lowercase text-muted hover:text-white transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {link.name}
+                <span className="text-accent/70">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
               </Link>
             ))}
           </div>

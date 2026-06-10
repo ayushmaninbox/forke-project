@@ -23,48 +23,50 @@ export default function Footer() {
   const showWaitlisterView = waitlistActive && !hasSiteAccess
 
   return (
-    <footer className="relative z-10 py-24 border-t border-border bg-[#050505] px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
+    <footer className="relative z-10 border-t border-border overflow-hidden px-4" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="max-w-7xl mx-auto pt-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
         {/* Brand */}
         <div className="space-y-6">
           <div className="flex items-center">
-            <img 
-              src="/forke-assets/forke_logo.png" 
-              alt="Forke Logo" 
-              className="w-23 h-23 object-contain"
+            <img
+              src="/forke-assets/forke_logo.png"
+              alt="Forke Logo"
+              className="w-16 h-16 object-contain"
             />
-            <div className="font-serif text-5xl text-white">
-              Forke
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-white">
+              forke<span className="text-accent">*</span>
             </div>
           </div>
           <p className="text-muted text-sm font-light leading-relaxed max-w-xs">
-            Built for India&apos;s developers. <br />
-            The micro-task marketplace to ship real work and get paid instantly.
+            Built for India&apos;s developers. The micro-task marketplace to ship real work and get paid <span className="font-serif italic text-accent">instantly.</span>
+          </p>
+          <p className="font-mono text-[11px] text-white/25">
+            {'//'} no resumes. no interviews. just merged PRs.
           </p>
         </div>
 
         {/* Navigation */}
         <div>
-          <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Navigate</h4>
+          <h4 className="ui-eyebrow mb-6">{'//'} navigate</h4>
           <ul className="space-y-4 columns-2 gap-x-12">
-            <li><a href="/whats-forke" className="text-muted hover:text-white transition-colors text-sm font-light">What&apos;s Forke?</a></li>
-            {!showWaitlisterView && <li><a href="/tasks" className="text-muted hover:text-white transition-colors text-sm font-light">Bounties</a></li>}
-            <li><a href="/levels" className="text-muted hover:text-white transition-colors text-sm font-light">Levels</a></li>
-            <li><a href="/blogs" className="text-muted hover:text-white transition-colors text-sm font-light">Blogs</a></li>
-            <li><a href="/contact" className="text-muted hover:text-white transition-colors text-sm font-light">Contact Us</a></li>
+            <li><a href="/whats-forke" className="font-mono text-[13px] text-muted hover:text-white transition-colors">whats-forke</a></li>
+            {!showWaitlisterView && <li><a href="/tasks" className="font-mono text-[13px] text-muted hover:text-white transition-colors">bounties</a></li>}
+            <li><a href="/levels" className="font-mono text-[13px] text-muted hover:text-white transition-colors">levels</a></li>
+            <li><a href="/blogs" className="font-mono text-[13px] text-muted hover:text-white transition-colors">blogs</a></li>
+            <li><a href="/contact" className="font-mono text-[13px] text-muted hover:text-white transition-colors">contact</a></li>
           </ul>
         </div>
 
         {/* Connect */}
         <div>
-          <h4 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Connect</h4>
+          <h4 className="ui-eyebrow mb-6">{'//'} connect</h4>
           <div className="flex items-center gap-4 flex-wrap">
             {/* LinkedIn */}
-            <a 
-              href="https://www.linkedin.com/company/forke/?viewAsMember=true" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-accent/30 flex items-center justify-center"
+            <a
+              href="https://www.linkedin.com/company/forke/?viewAsMember=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/[0.03] rounded-lg border border-white/10 hover:border-accent/30 flex items-center justify-center"
               aria-label="LinkedIn"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -72,11 +74,11 @@ export default function Footer() {
               </svg>
             </a>
             {/* GitHub */}
-            <a 
-              href="https://github.com/forke-org" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-accent/30 flex items-center justify-center"
+            <a
+              href="https://github.com/forke-org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/[0.03] rounded-lg border border-white/10 hover:border-accent/30 flex items-center justify-center"
               aria-label="GitHub"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -84,9 +86,9 @@ export default function Footer() {
               </svg>
             </a>
             {/* Email */}
-            <a 
-              href="mailto:support@forke.space" 
-              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/5 rounded-xl border border-white/10 hover:border-accent/30 flex items-center justify-center"
+            <a
+              href="mailto:support@forke.space"
+              className="text-muted hover:text-accent transition-colors p-2.5 bg-white/[0.03] rounded-lg border border-white/10 hover:border-accent/30 flex items-center justify-center"
               aria-label="Email support"
             >
               <Mail className="w-5 h-5" />
@@ -96,12 +98,21 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-        <p className="text-muted text-xs uppercase tracking-widest font-bold">© 2026 Forke. All rights reserved.</p>
-        <div className="flex gap-6 text-muted text-xs font-light flex-wrap justify-center md:justify-end">
-          <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-          <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
-          <a href="/refund" className="hover:text-white transition-colors">Refund Policy</a>
+        <div className="flex items-center gap-2.5 font-mono text-[11px] text-white/35">
+          <span>© 2026 forke — all rights reserved</span>
         </div>
+        <div className="flex gap-6 font-mono text-[11px] text-white/35 flex-wrap justify-center md:justify-end">
+          <a href="/privacy" className="hover:text-white transition-colors">privacy</a>
+          <a href="/terms" className="hover:text-white transition-colors">terms</a>
+          <a href="/refund" className="hover:text-white transition-colors">refunds</a>
+        </div>
+      </div>
+
+      {/* Giant outlined wordmark — clipped at the bottom edge */}
+      <div aria-hidden="true" className="relative max-w-7xl mx-auto h-[17vw] md:h-[14vw] mt-10 select-none pointer-events-none overflow-hidden">
+        <span className="absolute left-1/2 -translate-x-1/2 top-0 text-[21vw] md:text-[17.5vw] leading-[0.78] font-semibold tracking-[-0.05em] text-outline whitespace-nowrap">
+          forke<span className="[-webkit-text-stroke:1px_rgba(255,122,0,0.4)]">*</span>
+        </span>
       </div>
     </footer>
   )

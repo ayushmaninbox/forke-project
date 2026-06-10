@@ -112,8 +112,8 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
         {/* Top: Logo & Mobile Close */}
         <div className="h-14 flex items-center justify-between px-5 border-b border-[var(--color-border)]">
           <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-            <span className="font-serif text-xl text-white tracking-wide">
-              F<span className={cn("transition-all duration-300", isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]")}>ork<span className="text-accent italic pr-1">e</span></span>
+            <span className="text-xl font-semibold tracking-[-0.04em] text-white inline-flex items-baseline">
+              f<span className={cn("inline-block transition-all duration-300", isCollapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-[200px]")}>orke</span><span className="text-accent">*</span>
             </span>
           </Link>
           <button

@@ -21,11 +21,11 @@ export default function RefundPage() {
 
       {/* Header */}
       <header className="pt-32 md:pt-40 pb-16 px-6 max-w-3xl mx-auto">
-        <p className="text-[11px] text-white/30 font-mono uppercase tracking-widest mb-4">
+        <p className="ui-eyebrow lowercase mb-4">
           Financial & Compliance Policies
         </p>
-        <h1 className="text-3xl md:text-5xl font-serif text-white mb-4">
-          Cancellation & <span className="text-accent italic">Refunds</span>
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-white mb-4">
+          Cancellation & <span className="font-serif italic font-normal text-accent">Refunds</span>
         </h1>
         <p className="text-sm text-white/30 font-mono">
           Last Updated: June 2026 · Effective Globally
@@ -44,7 +44,7 @@ export default function RefundPage() {
 
         {/* 01. Cancellation of Tasks */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">01</span>
             Task Cancellation Rules
           </h2>
@@ -63,7 +63,7 @@ export default function RefundPage() {
 
         {/* 02. Refund Eligibility */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">02</span>
             Refund Eligibility & Dispatched Payouts
           </h2>
@@ -85,7 +85,7 @@ export default function RefundPage() {
 
         {/* 03. Disputes & Escrow Arbitration */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">03</span>
             Disputes & Admin Arbitration
           </h2>
@@ -96,7 +96,7 @@ export default function RefundPage() {
 
         {/* 04. Refund Processing Timelines */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">04</span>
             Processing & Credit Windows
           </h2>
@@ -121,7 +121,7 @@ export default function RefundPage() {
 
         {/* 05. Gateway Fees & Charges */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">05</span>
             Transaction Gateway Fees
           </h2>

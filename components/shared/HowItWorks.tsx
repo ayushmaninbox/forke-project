@@ -116,15 +116,22 @@ export default function HowItWorks() {
         
         {/* Header section designed exactly like the 3rd image */}
         <div className="gsap-how-header flex flex-col lg:flex-row justify-between items-start gap-6 mb-16 sm:mb-24">
-          <h2 className="gsap-how-title font-serif text-4xl md:text-6xl text-white tracking-tight leading-none opacity-0">
-            How it <span className="text-accent italic font-normal text-glow">works.</span>
-          </h2>
+          <div className="space-y-4">
+            <span className="gsap-how-title ui-eyebrow block opacity-0">{'//'} the pipeline</span>
+            <h2 className="gsap-how-title text-4xl md:text-6xl font-semibold text-white tracking-[-0.03em] leading-none opacity-0">
+              How it <span className="font-serif italic font-normal text-accent">works.</span>
+            </h2>
+          </div>
           <p className="gsap-how-desc max-w-lg text-white/50 text-base md:text-lg font-light leading-relaxed lg:text-right opacity-0">
             Forke bridges engineering demand with verified developer skill. Two workflows, one unified pipeline. Clear task scopes, zero-latency code reviews, and instant automated payouts.
           </p>
         </div>
 
-        {/* 2x2 Grid Container with rounded-3xl corners (rectangular squircle) */}
+        {/* 2x2 Grid Container with crosshair marks at the intersections */}
+        <div className="relative">
+          <span className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 font-mono text-white/25 text-lg leading-none select-none pointer-events-none" aria-hidden="true">+</span>
+          <span className="hidden md:block absolute left-1/2 -top-2.5 -translate-x-1/2 z-20 font-mono text-white/20 text-base leading-none select-none pointer-events-none" aria-hidden="true">+</span>
+          <span className="hidden md:block absolute left-1/2 -bottom-2.5 -translate-x-1/2 z-20 font-mono text-white/20 text-base leading-none select-none pointer-events-none" aria-hidden="true">+</span>
         <div className="gsap-how-grid grid grid-cols-1 md:grid-cols-2 border border-white/[0.08] rounded-3xl bg-[#0A0A0A] overflow-hidden">
           
           {/* STEP 1: OWNER SIDE - POST TASK */}
@@ -280,10 +287,10 @@ export default function HowItWorks() {
             {/* Description Text Area */}
             <div className="p-8 md:p-12 border-t border-white/[0.08] flex-grow flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-mono tracking-widest font-black uppercase text-accent/50 block mb-2">
+                <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   01 / FOR OWNERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Scoped tasks, zero overhead.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -438,10 +445,10 @@ export default function HowItWorks() {
             {/* Description Text Area */}
             <div className="p-8 md:p-12 border-t border-white/[0.08] flex-grow flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-mono tracking-widest font-black uppercase text-accent/50 block mb-2">
+                <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   02 / FOR OWNERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Approve PRs, release funds.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -606,10 +613,10 @@ export default function HowItWorks() {
             {/* Description Text Area */}
             <div className="p-8 md:p-12 border-t border-white/[0.08] flex-grow flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-mono tracking-widest font-black uppercase text-accent/50 block mb-2">
+                <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   03 / FOR DEVELOPERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Claim matching tasks instantly.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -766,10 +773,10 @@ export default function HowItWorks() {
             {/* Description Text Area */}
             <div className="p-8 md:p-12 border-t border-white/[0.08] flex-grow flex flex-col justify-between">
               <div>
-                <span className="text-[10px] font-mono tracking-widest font-black uppercase text-accent/50 block mb-2">
+                <span className="text-[11px] font-mono tracking-wider lowercase text-accent/60 block mb-2">
                   04 / FOR DEVELOPERS
                 </span>
-                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white tracking-[-0.02em] leading-snug mb-3 group-hover:text-accent transition-colors duration-300">
                   Build reputation, cash out.
                 </h3>
                 <p className="text-sm text-white/50 font-light leading-relaxed">
@@ -779,6 +786,7 @@ export default function HowItWorks() {
             </div>
           </div>
 
+        </div>
         </div>
 
       </div>

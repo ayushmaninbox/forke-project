@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Zap, Flame, Star, Mail, Check, AlertCircle } from 'lucide-react'
+import { Zap, Flame, Mail, Check, AlertCircle, GitMerge } from 'lucide-react'
 import DotField from '@/components/shared/DotField'
 import { Loader } from '@/components/ui/Loader'
 import { gsap } from 'gsap'
@@ -262,16 +262,16 @@ function WaitlistPageContent() {
           <div className="lg:col-span-7 flex flex-col justify-center space-y-4 sm:space-y-6 text-left relative z-20">
             {/* Tagline */}
             <div className="gsap-wl-tagline opacity-0 whitespace-nowrap">
-              <p className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] sm:tracking-[0.35em] text-accent/70 whitespace-nowrap">
-                Real code · Real impact · Real rewards
+              <p className="ui-eyebrow whitespace-nowrap">
+                {'//'} real code · real impact · real rewards
               </p>
             </div>
 
             {/* Main Heading */}
             <div className="space-y-2 sm:space-y-4">
-              <h1 className="gsap-wl-title font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight opacity-0">
+              <h1 className="gsap-wl-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.04] tracking-[-0.04em] opacity-0">
                 Join the waitlist. <br />
-                <span className="text-accent text-glow">Build the future.</span>
+                Build the <span className="font-serif italic font-normal text-accent">future.</span>
               </h1>
 
               <p className="gsap-wl-subtitle text-sm md:text-base text-white/50 max-w-xl leading-relaxed font-light opacity-0">
@@ -296,14 +296,14 @@ function WaitlistPageContent() {
                       <Check className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="text-base font-serif text-white">{message || "You're on the list!"}</h3>
+                      <h3 className="text-base font-semibold tracking-tight text-white">{message || "You're on the list!"}</h3>
                       <p className="text-xs text-white/40">We&apos;ll notify you the moment Forke goes live.</p>
                     </div>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                     <div className="flex flex-col gap-1">
-                      <h2 className="text-base font-serif text-white tracking-wide">Be the first to know</h2>
+                      <h2 className="text-base font-semibold tracking-tight text-white">Be the first to <span className="font-serif italic font-normal text-accent">know.</span></h2>
                       <p className="text-xs text-white/40">Drop your email to join early access and product updates.</p>
                       {subscriberCount !== null && (
                         <div className="flex items-center gap-2 mt-1 animate-in fade-in slide-in-from-top-1 duration-500">
@@ -335,7 +335,7 @@ function WaitlistPageContent() {
                       <button
                         type="submit"
                         disabled={status === 'loading'}
-                        className="h-12 px-6 text-xs font-black uppercase tracking-[0.15em] rounded-xl bg-gradient-to-b from-accent to-[#d97706] border-b-2 border-black/30 shadow-[0_4px_0_rgb(180,83,9)] hover:translate-y-[1px] hover:shadow-[0_3px_0_rgb(180,83,9)] active:translate-y-[3px] active:shadow-none transition-all duration-75 text-[#050505] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 font-bold"
+                        className="h-12 px-6 text-sm font-semibold tracking-tight rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                       >
                         {status === 'loading' ? (
                           <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
@@ -404,64 +404,48 @@ function WaitlistPageContent() {
                 />
               </div>
 
-              {/* Floating Rupees */}
+              {/* Floating task card — claim side */}
               <div
-                className="gsap-hero-badge absolute top-[45%] left-[25%] w-14 h-14 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-xl font-bold z-0 rotate-[-5deg] opacity-0"
-                data-speed="0.07"
+                className="gsap-hero-badge absolute top-[28%] left-[24%] rounded-lg border border-white/10 bg-[#0c0c0f]/90 backdrop-blur-sm p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] z-20 pointer-events-auto opacity-0"
+                data-speed="0.045"
               >
-                ₹
-              </div>
-              <div
-                className="gsap-hero-badge absolute top-[58%] right-[25%] w-12 h-12 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center text-accent text-lg font-bold z-0 rotate-[9deg] opacity-0"
-                data-speed="0.06"
-              >
-                ₹
-              </div>
-
-              {/* Floating Task Cards */}
-              <div
-                className="gsap-hero-badge absolute top-[28%] left-[26%] glass p-3 rounded-xl shadow-glow z-0 pointer-events-auto transition-transform opacity-0 border border-white/10"
-                data-speed="0.04"
-              >
-                <div className="flex items-center justify-between gap-6 mb-1">
-                  <span className="text-xs font-medium text-white">Fix navbar overflow</span>
-                  <span className="text-accent font-bold text-xs">₹300</span>
+                <div className="flex items-center justify-between gap-6">
+                  <span className="font-mono text-xs text-white/80">fix-navbar-overflow</span>
+                  <span className="font-mono text-xs text-accent">₹300</span>
                 </div>
-                <span className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold tracking-wider uppercase">Bug Fix</span>
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] text-white/45">bug fix</span>
+                  <span className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[9px] text-white/45">~1h</span>
+                </div>
               </div>
 
+              {/* Floating merged card — payout side */}
               <div
-                className="gsap-hero-badge absolute top-[42%] right-[19.5%] glass p-3 rounded-xl shadow-glow z-20 pointer-events-none transition-transform opacity-0 border border-white/10"
+                className="gsap-hero-badge absolute top-[42%] right-[19%] rounded-lg border border-emerald-500/20 bg-[#0c0c0f]/90 backdrop-blur-sm p-3 shadow-[0_16px_40px_rgba(0,0,0,0.55)] z-20 pointer-events-none opacity-0"
                 data-speed="0.05"
               >
-                <div className="flex items-center justify-between gap-6 mb-1">
-                  <span className="text-xs font-medium text-white">Add dark mode</span>
-                  <span className="text-accent font-bold text-xs">₹600</span>
+                <div className="flex items-center gap-1.5">
+                  <GitMerge className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-mono text-xs text-white/80">pr #42 merged</span>
                 </div>
-                <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold tracking-wider uppercase">React</span>
+                <p className="mt-1.5 font-mono text-[11px] text-emerald-400">payout sent → ₹800</p>
               </div>
 
-              {/* Streak Badge */}
+              {/* Streak pill */}
               <div
-                className="gsap-hero-badge absolute top-[24%] right-[42%] glass-orange px-4 py-2 rounded-full flex items-center gap-3 shadow-[0_0_30px_rgba(255,122,0,0.2)] z-20 border border-white/20 pointer-events-none hover:scale-105 transition-transform opacity-0"
+                className="gsap-hero-badge absolute top-[24%] right-[42%] rounded-full border border-white/10 bg-[#0c0c0f]/90 backdrop-blur-sm px-3.5 py-2 flex items-center gap-2 shadow-[0_16px_40px_rgba(0,0,0,0.55)] z-20 pointer-events-none opacity-0"
                 data-speed="0.03"
               >
-                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-accent fill-accent" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-white font-black text-lg leading-none">7</span>
-                  <span className="text-[8px] text-accent uppercase font-bold tracking-widest leading-none">Day Streak</span>
-                </div>
+                <Flame className="w-4 h-4 text-accent fill-accent" />
+                <span className="font-mono text-xs text-white/80">7-day streak</span>
               </div>
 
-              {/* XP Badge */}
+              {/* XP pill */}
               <div
-                className="gsap-hero-badge absolute top-[27%] right-[30%] glass px-3 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-2xl z-10 pointer-events-none rotate-[7deg] opacity-0"
-                data-speed="0.02"
+                className="gsap-hero-badge absolute top-[58%] left-[28%] rounded-full border border-accent/25 bg-[#0c0c0f]/90 backdrop-blur-sm px-3 py-1.5 flex items-center z-10 pointer-events-none opacity-0 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+                data-speed="0.06"
               >
-                <Star className="w-4 h-4 text-accent fill-accent" />
-                <span className="text-accent font-bold text-sm">+250 XP</span>
+                <span className="font-mono text-xs text-accent">+250 xp</span>
               </div>
             </div>
           </div>
@@ -483,12 +467,12 @@ function WaitlistPageContent() {
         </div>
 
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="flex items-center gap-4 text-[10px] text-white/15 font-bold uppercase tracking-wider">
-            <span>© 2026 FORKE</span>
+          <div className="flex items-center gap-4 font-mono text-[10px] text-white/20">
+            <span>© 2026 forke</span>
           </div>
 
-          <p className="font-serif text-xs text-white/20">
-            See you on the other side! ♥
+          <p className="font-mono text-[10px] text-white/20">
+            {'//'} see you on the other side ♥
           </p>
         </div>
       </footer>

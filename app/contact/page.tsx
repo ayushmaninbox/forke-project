@@ -71,11 +71,11 @@ export default function ContactPage() {
       {/* Header */}
       <header className="relative z-10 pt-36 md:pt-44 pb-16 px-6 max-w-4xl mx-auto text-center space-y-4">
         <div className="gsap-contact-badge flex items-center justify-center gap-2 opacity-0">
-          <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-          <span className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">Support Portal</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          <span className="ui-eyebrow">{'//'} support portal</span>
         </div>
-        <h1 className="gsap-contact-title font-serif text-5xl md:text-7xl text-white tracking-tight leading-none opacity-0">
-          Contact <span className="text-accent italic font-normal text-glow">Forke</span>
+        <h1 className="gsap-contact-title text-5xl md:text-7xl font-semibold text-white tracking-[-0.04em] leading-[1.02] opacity-0">
+          Contact <span className="font-serif italic font-normal text-accent">Forke.</span>
         </h1>
         <p className="gsap-contact-desc text-muted text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto opacity-0">
           Have a question about a bounty? Need help with account recovery, payouts, or want to dispute a submission? We are here to help.
@@ -155,7 +155,7 @@ export default function ContactPage() {
         <section className="gsap-contact-scope relative p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/15 transition-colors duration-300 opacity-0 overflow-hidden text-left space-y-4">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.01)_0%,_transparent_65%)] opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
-          <h2 className="text-xl font-serif text-white">How to expedite your support request:</h2>
+          <h2 className="text-xl font-semibold tracking-[-0.02em] text-white">How to <span className="font-serif italic font-normal text-accent">expedite</span> your support request:</h2>
           <p className="text-sm text-white/45 leading-relaxed font-light">
             When emailing our team, please include the following details so we can resolve your query faster:
           </p>

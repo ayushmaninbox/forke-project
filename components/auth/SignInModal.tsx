@@ -72,7 +72,7 @@ export default function SignInModal() {
                 <path d="M2 17L12 22L22 17M2 12L12 17L22 12" />
                </svg>
             </div>
-            <span className="text-2xl font-black tracking-tighter text-white uppercase">Forke</span>
+            <span className="text-2xl font-semibold tracking-[-0.04em] text-white">forke<span className="text-accent">*</span></span>
           </div>
 
           <div className="text-center space-y-2">

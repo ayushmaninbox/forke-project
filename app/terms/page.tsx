@@ -21,11 +21,11 @@ export default function TermsPage() {
 
       {/* Header */}
       <header className="pt-32 md:pt-40 pb-16 px-6 max-w-3xl mx-auto">
-        <p className="text-[11px] text-white/30 font-mono uppercase tracking-widest mb-4">
+        <p className="ui-eyebrow lowercase mb-4">
           Legal Documentation
         </p>
-        <h1 className="text-3xl md:text-5xl font-serif text-white mb-4">
-          Terms of <span className="text-accent italic">Service</span>
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-white mb-4">
+          Terms of <span className="font-serif italic font-normal text-accent">Service</span>
         </h1>
         <p className="text-sm text-white/30 font-mono">
           Last Updated: June 2026 · Effective Globally
@@ -47,7 +47,7 @@ export default function TermsPage() {
 
         {/* 01. Acceptance of Terms */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">01</span>
             Acceptance of Terms
           </h2>
@@ -73,7 +73,7 @@ export default function TermsPage() {
 
         {/* 02. What Forke Is */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">02</span>
             What Forke Is & Platform Role
           </h2>
@@ -101,7 +101,7 @@ export default function TermsPage() {
 
         {/* 03. Eligibility & Minor Representation */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">03</span>
             Eligibility & Minors
           </h2>
@@ -127,7 +127,7 @@ export default function TermsPage() {
 
         {/* 04. User Accounts */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">04</span>
             User Accounts & Security
           </h2>
@@ -144,7 +144,7 @@ export default function TermsPage() {
 
         {/* 05. Bounties, Tasks & Payments */}
         <section className="space-y-6">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">05</span>
             Bounties, Tasks & Payments
           </h2>
@@ -175,7 +175,7 @@ export default function TermsPage() {
 
         {/* 06. Task Completion & AI Disclosure */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">06</span>
             Task Completion & AI Code Usage
           </h2>
@@ -192,7 +192,7 @@ export default function TermsPage() {
 
         {/* 07. Intellectual Property & Code Ownership */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">07</span>
             Intellectual Property & Code Ownership
           </h2>
@@ -219,7 +219,7 @@ export default function TermsPage() {
 
         {/* 08. Confidentiality & Non-Disclosure */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">08</span>
             Confidentiality
           </h2>
@@ -236,7 +236,7 @@ export default function TermsPage() {
 
         {/* 09. Dispute Resolution & Platform Arbitration */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">09</span>
             Dispute Resolution & Platform Arbitration
           </h2>
@@ -258,7 +258,7 @@ export default function TermsPage() {
 
         {/* 10. XP, Reputation & Gamification */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">10</span>
             XP, Reputation & Gamification
           </h2>
@@ -272,7 +272,7 @@ export default function TermsPage() {
 
         {/* 11. Prohibited Conduct */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">11</span>
             Prohibited Activities
           </h2>
@@ -283,7 +283,7 @@ export default function TermsPage() {
 
         {/* 12. Limitation of Liability */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">12</span>
             Disclaimers & Limitation of Liability
           </h2>
@@ -297,7 +297,7 @@ export default function TermsPage() {
 
         {/* 13. Governing Law & Jurisdiction */}
         <section className="space-y-4">
-          <h2 className="text-lg font-serif text-white flex items-baseline gap-3">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-white flex items-baseline gap-3">
             <span className="text-accent/40 text-sm font-mono">13</span>
             Governing Law & Jurisdiction
           </h2>
