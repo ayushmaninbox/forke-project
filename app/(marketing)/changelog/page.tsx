@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
+import { Crosses, Rails } from '@/components/landing/primitives'
 import { getChangelog, getCommitCount, type ChangeKind } from '@/lib/changelog'
 import ChangelogList from './ChangelogList'
 
@@ -28,6 +29,8 @@ export default function ChangelogPage() {
     <div className="min-h-screen bg-[#050505] text-white">
       <Navbar />
 
+      <Rails fadeBottom>
+
       {/* Header */}
       <header className="pt-36 md:pt-44 pb-16 px-6 max-w-4xl mx-auto">
         <p className="ui-eyebrow mb-5">{'//'} changelog</p>
@@ -43,7 +46,9 @@ export default function ChangelogPage() {
       </header>
 
       {/* Entries */}
-      <main className="px-6 max-w-4xl mx-auto pb-10">
+      <main className="relative border-t border-white/[0.06] px-6 pt-4 pb-10">
+        <Crosses />
+        <div className="max-w-4xl mx-auto">
         {days.length === 0 ? (
           <div className="border-t border-white/[0.06] py-16">
             <p className="font-mono text-sm text-white/35">
@@ -63,6 +68,7 @@ export default function ChangelogPage() {
             </p>
           </div>
         )}
+        </div>
       </main>
 
       {/* Pre-footer CTA strip */}
@@ -84,6 +90,8 @@ export default function ChangelogPage() {
           </Link>
         </div>
       </section>
+
+      </Rails>
 
       <Footer />
     </div>

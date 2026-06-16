@@ -42,7 +42,7 @@ export default function ChangelogList({ days }: { days: ChangelogDay[] }) {
       {visibleDays.map((day, dayIndex) => (
         <section
           key={day.date}
-          className="border-t border-white/[0.06] py-10 animate-in fade-in slide-in-from-bottom-2 duration-500"
+          className="border-t border-white/[0.12] py-10 animate-in fade-in slide-in-from-bottom-2 duration-500"
         >
           <div className="flex items-baseline justify-between mb-5 font-mono text-[11px] tracking-wide">
             <span className="text-white/45">

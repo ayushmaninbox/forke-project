@@ -44,6 +44,7 @@ interface LanyardProps {
   transparent?: boolean
   className?: string
   card?: LanyardCard
+  qrUrl?: string
 }
 
 export default function Lanyard({
@@ -53,6 +54,7 @@ export default function Lanyard({
   transparent = true,
   className = '',
   card,
+  qrUrl,
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(
     () => typeof window !== 'undefined' && window.innerWidth < 768
@@ -86,7 +88,7 @@ export default function Lanyard({
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} card={card} flipRef={flipRef} />
+          <Band isMobile={isMobile} card={card} flipRef={flipRef} qrUrl={qrUrl} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
@@ -113,6 +115,7 @@ interface BandProps {
   isMobile?: boolean
   card?: LanyardCard
   flipRef?: React.MutableRefObject<boolean>
+  qrUrl?: string
 }
 
 // ---- HTML face sizing ----
@@ -124,7 +127,7 @@ const FACE_H = 536 // px
 const FACE_FUDGE = 48
 const FACE_OFFSET = 0.04 // how far each DOM face sits off the body (avoids occlusion clipping)
 
-function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: BandProps) {
+function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qrUrl }: BandProps) {
   const band = useRef<any>(null)
   const fixed = useRef<any>(null)
   const j1 = useRef<any>(null)
@@ -244,16 +247,16 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
     <>
       <group position={[0, 4, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -0.8, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -1.6, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -2.4, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[2, 0, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={[0, -3.85, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={'dynamic' as RigidBodyProps['type']}>
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
 
           {/* Physical card body + metal clip from the model (gives depth + the clasp) */}
@@ -288,7 +291,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef }: 
                 style={{ width: FACE_W, height: FACE_H }}
               >
                 <div ref={backHtmlRef} style={{ width: FACE_W, height: FACE_H, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                  <CardBack card={card} />
+                  <CardBack card={card} qrUrl={qrUrl} />
                 </div>
               </Html>
             </>
@@ -402,10 +405,10 @@ function CardFront({ card }: { card: LanyardCard }) {
 
 // Back face: same black card + dots/URL header, then just the white Forky mark,
 // the @handle and the "Developer Network" tagline centered — no oval, no footer.
-function CardBack({ card }: { card: LanyardCard }) {
-  const profileUrl = typeof window !== 'undefined'
+function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
+  const profileUrl = qrUrl || (typeof window !== 'undefined'
     ? `${window.location.origin}/${card.username || 'forke'}`
-    : `https://forke.space/${card.username || 'forke'}`
+    : `https://forke.space/${card.username || 'forke'}`)
 
   return (
     <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">

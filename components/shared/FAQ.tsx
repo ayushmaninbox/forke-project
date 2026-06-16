@@ -1,222 +1,103 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Plus, Minus } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useGSAP } from '@gsap/react'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
+import React, { useState } from 'react'
+import { Plus } from 'lucide-react'
+import { Section, Eyebrow, H2 } from '@/components/landing/primitives'
+import Reveal from '@/components/landing/Reveal'
 
 const FAQS = [
   {
-    question: "How do I get paid for completing bounties?",
-    answer: "Startups deposit the full bounty amount into escrow before posting a task. Once you claim a task, build the solution in your branch, and submit a pull request, your code undergoes review. As soon as the client approves and merges your PR, the funds are immediately released directly to your registered UPI address."
+    q: 'How do I get paid?',
+    a: 'Every task is escrowed up front — the client deposits the full bounty before you ever see it. Ship your PR, pass review, and the moment it merges the escrow releases straight to your UPI. No invoices, no net-30, no chasing.',
   },
   {
-    question: "What happens if I claim a task but cannot finish it?",
-    answer: "To keep project repositories active and unblocked, tasks have completion deadlines (and a 20-minute reservation window to start work). If you run into issues, you can forfeit the task from your dashboard, which releases it back to the standby queue for other builders. While forfeiting is allowed, maintaining a high completion rate protects your Trust Score and unlocks higher bounty limits."
+    q: "What if I claim a task and can't finish it?",
+    a: 'Claiming gives you a 20-minute window to activate. If life happens after that, forfeit from your dashboard and the task returns to the standby queue for someone else. Forfeiting is allowed — but your completion rate feeds your trust score, which gates the bigger bounties.',
   },
   {
-    question: "Are there any prerequisites or resume screenings to claim tasks?",
-    answer: "No resume screenings, portfolio reviews, or interview rounds are required! Anyone can start claiming basic tasks. However, some advanced and higher-paying tasks are gated by your Platform Level and Skill Tier. You unlock access to these higher-tier tasks organically as you complete bounties, earn XP, and level up."
+    q: 'Do I need a resume or an interview?',
+    a: 'No. Anyone can claim entry-level tasks on day one. Higher-paying work is gated by your level, skill tier, and trust score — all of which are earned by shipping, not by talking about shipping.',
   },
   {
-    question: "How does the level progression work, and what are the benefits?",
-    answer: "Every completed task earns you Experience Points (XP). As your XP builds, you level up through 25 developmental milestones across 5 prestige tiers. Higher levels grant you access to larger bounty pools, priority reservation queues, private invite-only enterprise tasks, and eligibility to become a platform reviewer."
+    q: 'Who reviews my code?',
+    a: 'Four layers. Automated checks first: build, tests, lint, scope and security scan. Then an AI review scores the diff against the task spec. A risk score routes the submission, and finally the owner approves a plain-English verdict — they never wade through your raw diff.',
   },
   {
-    question: "How is code review handled on Forke?",
-    answer: "Every pull request passes through an automated validation check that compiles the build, runs unit tests, lints, and checks for vulnerabilities. This is followed by an AI analysis to check logic. Finally, the startup's repository maintainers review and merge the PR. Once merged, your payout is automatically processed."
-  }
+    q: 'What does Forke cost?',
+    a: 'Developers keep 100% of the listed bounty. Clients pay a 10% platform fee on top — a ₹500 task costs them ₹550, and you receive the full ₹500.',
+  },
 ]
 
-export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const contentRefs = useRef<(HTMLDivElement | null)[]>([])
-  const iconRefs = useRef<(HTMLDivElement | null)[]>([])
-
-  useGSAP(() => {
-    // 1. Scroll triggered stagger reveal
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: 'top 80%',
-        toggleActions: 'play none none none'
-      }
-    })
-
-    tl.fromTo('.gsap-faq-title',
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: 'power2.out' }
-    )
-    .fromTo('.gsap-faq-desc',
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8 },
-      '-=0.6'
-    )
-    .fromTo('.gsap-faq-card',
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, stagger: 0.12, ease: 'power3.out' },
-      '-=0.4'
-    )
-  }, { scope: containerRef })
-
-  // 2. Dynamic height accordion animation
-  useEffect(() => {
-    contentRefs.current.forEach((el, index) => {
-      if (!el) return
-      
-      const icon = iconRefs.current[index]
-      const inner = el.querySelector('.gsap-faq-content-inner')
-      
-      if (openIndex === index) {
-        // Expand content
-        gsap.to(el, {
-          height: 'auto',
-          opacity: 1,
-          duration: 0.4,
-          ease: 'power2.out',
-          overwrite: 'auto'
-        })
-        
-        // Slide up/fade in inner content
-        if (inner) {
-          gsap.fromTo(inner, 
-            { y: -8, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' }
-          )
-        }
-        
-        // Rotate and style active icon (turns Plus into 'X' close icon)
-        if (icon) {
-          gsap.to(icon, {
-            rotation: 135,
-            backgroundColor: '#FF7A00',
-            borderColor: '#FF7A00',
-            color: '#050505',
-            duration: 0.4,
-            ease: 'power2.out'
-          })
-        }
-      } else {
-        // Collapse content
-        gsap.to(el, {
-          height: 0,
-          opacity: 0,
-          duration: 0.4,
-          ease: 'power2.out',
-          overwrite: 'auto'
-        })
-        
-        // Fade out inner content immediately to avoid clipping
-        if (inner) {
-          gsap.to(inner, {
-            opacity: 0,
-            y: -8,
-            duration: 0.3,
-            ease: 'power2.out',
-            overwrite: 'auto'
-          })
-        }
-        
-        // Reset icon
-        if (icon) {
-          gsap.to(icon, {
-            rotation: 0,
-            backgroundColor: 'transparent',
-            borderColor: 'rgba(255, 255, 255, 0.1)',
-            color: 'rgba(255, 255, 255, 0.4)',
-            duration: 0.4,
-            ease: 'power2.out'
-          })
-        }
-      }
-    })
-  }, [openIndex])
+export default function FAQ({ n = '007' }: { n?: string }) {
+  const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <section ref={containerRef} className="py-32 bg-bg relative overflow-hidden">
-      <div className="max-w-4xl mx-auto px-4 relative z-10">
-        <div className="text-center mb-16 space-y-4">
-          <span className="gsap-faq-title ui-eyebrow block opacity-0">{'//'} faq</span>
-          <h2 className="gsap-faq-title text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] opacity-0">
-            Common <span className="font-serif italic font-normal text-accent">questions.</span>
-          </h2>
-          <p className="gsap-faq-desc text-muted text-base md:text-lg font-light opacity-0">
+    <Section id="faq" className="px-5 py-24 md:px-10 md:py-32">
+      <div className="grid gap-12 lg:grid-cols-[1fr_1.7fr] lg:gap-20">
+        {/* Left: header column */}
+        <Reveal>
+          <Eyebrow n={n} label="faq" />
+          <H2 accent="answered.">Questions,</H2>
+          <p className="mt-5 max-w-sm text-[15px] font-light leading-relaxed text-white/45">
             Everything you need to know about shipping and earning on Forke.
+            Something else on your mind?
           </p>
-        </div>
+          <a
+            href="mailto:support@forke.space"
+            className="mt-4 inline-block font-mono text-[12.5px] text-accent transition-colors hover:text-accent-hover"
+          >
+            support@forke.space →
+          </a>
+        </Reveal>
 
-        <div className="space-y-4">
-          {FAQS.map((faq, index) => {
-            const isActive = openIndex === index
-            
-            return (
-              <div 
-                key={index}
-                className={cn(
-                  "gsap-faq-card group rounded-2xl border transition-all duration-300 opacity-0",
-                  isActive 
-                    ? "bg-accent/[0.03] border-accent/30 shadow-[0_0_30px_rgba(255,122,0,0.05)]" 
-                    : "bg-white/[0.02] border-white/[0.05] hover:border-white/10"
-                )}
-              >
-                <button
-                  onClick={() => setOpenIndex(isActive ? null : index)}
-                  className="w-full flex items-center justify-between p-6 md:p-8 text-left cursor-pointer"
-                >
-                  <span className="flex items-baseline gap-4 min-w-0">
-                    <span className={cn(
-                      "font-mono text-xs shrink-0 transition-colors",
-                      isActive ? "text-accent" : "text-white/30 group-hover:text-accent/70"
-                    )}>
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <span className={cn(
-                      "text-lg md:text-xl font-medium tracking-[-0.01em] transition-colors",
-                      isActive ? "text-white" : "text-white/70 group-hover:text-white"
-                    )}>
-                      {faq.question}
-                    </span>
-                  </span>
-                  
-                  <div 
-                    ref={(el) => { iconRefs.current[index] = el }}
-                    className="flex-shrink-0 ml-4 w-8 h-8 rounded-full border flex items-center justify-center transition-colors duration-300"
-                    style={{
-                      transformOrigin: 'center',
-                    }}
+        {/* Right: accordion fills the remaining width */}
+        <Reveal delay={120}>
+          <div className="border-t border-white/[0.07]">
+            {FAQS.map((faq, i) => {
+              const isOpen = open === i
+              return (
+                <div key={faq.q} className="border-b border-white/[0.07]">
+                  <button
+                    onClick={() => setOpen(isOpen ? null : i)}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center gap-5 py-6 text-left"
                   >
-                    <Plus className="w-5 h-5" />
-                  </div>
-                </button>
-                
-                {/* Accordion content container */}
-                <div 
-                  ref={(el) => { contentRefs.current[index] = el }}
-                  style={{
-                    height: isActive ? 'auto' : 0,
-                    opacity: isActive ? 1 : 0,
-                    overflow: 'hidden',
-                    willChange: 'height, opacity'
-                  }}
-                >
-                  <div className="gsap-faq-content-inner px-6 pb-8 md:px-8 md:pb-10 pl-[58px] md:pl-[66px]">
-                    <p className="text-base md:text-lg text-white/50 font-light leading-relaxed max-w-3xl">
-                      {faq.answer}
-                    </p>
+                    <span
+                      className={`font-mono text-xs transition-colors ${
+                        isOpen ? 'text-accent' : 'text-white/30'
+                      }`}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span
+                      className={`flex-1 text-base font-medium tracking-[-0.01em] transition-colors md:text-lg ${
+                        isOpen ? 'text-white' : 'text-white/65'
+                      }`}
+                    >
+                      {faq.q}
+                    </span>
+                    <Plus
+                      className={`h-4.5 w-4.5 shrink-0 transition-transform duration-300 ${
+                        isOpen ? 'rotate-45 text-accent' : 'text-white/35'
+                      }`}
+                    />
+                  </button>
+                  <div
+                    className="grid transition-[grid-template-rows] duration-300 ease-out"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="max-w-2xl pb-7 pl-[34px] text-[15px] font-light leading-relaxed text-white/50 md:pl-[42px]">
+                        {faq.a}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </Reveal>
       </div>
-    </section>
+    </Section>
   )
 }

@@ -7,6 +7,14 @@ export const CHANGELOG_DATA = [
     "label": "jun 11, 2026",
     "entries": [
       {
+        "shortHash": "2ac81cb",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-11T00:59:29+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add R2 storage support, implement incremental changelog generation, and improve shallow clone handling"
+      },
+      {
         "shortHash": "d4ab858",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-11T00:53:16+05:30",
@@ -1342,4 +1350,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 150;
+export const COMMIT_COUNT = 151;

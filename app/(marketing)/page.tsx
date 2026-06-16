@@ -1,12 +1,18 @@
 import { Metadata } from 'next'
 import Navbar from '@/components/shared/Navbar'
 import Hero from '@/components/shared/Hero'
-import HowItWorks from '@/components/shared/HowItWorks'
 import FirstMerge from '@/components/shared/FirstMerge'
 import LevelSystem from '@/components/shared/LevelSystem'
 import FAQ from '@/components/shared/FAQ'
 import CTA from '@/components/shared/CTA'
 import Footer from '@/components/shared/Footer'
+import Stats from '@/components/landing/Stats'
+import Pipeline from '@/components/landing/Pipeline'
+import Session from '@/components/landing/Session'
+import Verdict from '@/components/landing/Verdict'
+import Proof from '@/components/landing/Proof'
+import ReviewSystem from '@/components/landing/ReviewSystem'
+import { Rails, Section } from '@/components/landing/primitives'
 
 export const metadata: Metadata = {
   title: { absolute: 'Forke — Ship Real Work, Get Paid' },
@@ -19,11 +25,30 @@ export default function MarketingPage() {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
+        {/* Full-bleed cover — hero with Forky + ticker */}
         <Hero />
-        <HowItWorks />
+
+        {/* Ledger block one — rails dissolve before the video */}
+        <Rails fadeBottom>
+          <Stats />
+          <Pipeline />
+          <Session n="002" />
+        </Rails>
+
+        {/* Full-bleed brand moment — the video carries its own edge fades */}
         <FirstMerge />
-        <LevelSystem />
-        <FAQ />
+
+        {/* Ledger block two — rails fade back in, then dissolve before the CTA */}
+        <Rails fadeTop fadeBottom>
+          <Verdict n="003" flush />
+          <Proof n="004" />
+          <Section>
+            <LevelSystem />
+          </Section>
+          <ReviewSystem n="006" />
+          <FAQ n="007" />
+        </Rails>
+
         <CTA />
       </main>
       <Footer />

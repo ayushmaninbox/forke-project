@@ -20,6 +20,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
       return
     }
 
+    // Ensure the page starts at the top on every transition
+    window.scrollTo(0, 0)
+
     const tl = gsap.timeline({
       onComplete: () => {
         setShowLoader(false)
@@ -29,23 +32,23 @@ export default function Template({ children }: { children: React.ReactNode }) {
     })
 
     // 1. Initial State: Page content is hidden, Loader is fully opaque
-    tl.set(containerRef.current, { opacity: 0, y: 12 })
+    tl.set(containerRef.current, { opacity: 0, y: 60 })
     
     // 2. Play the Loader slide up and fade out after a brief premium delay
     tl.to(loaderRef.current, {
       opacity: 0,
-      y: -40,
-      duration: 0.55,
+      y: -60,
+      duration: 0.4,
       ease: 'power3.inOut',
-      delay: 0.35 // Delicate delay so the user can enjoy the floating mascot loader
+      delay: 0.2 // Delicate delay so the user can enjoy the floating mascot loader
     })
 
     // 3. Simultaneously reveal page content with a premium fade and slide
     .to(containerRef.current, {
       opacity: 1,
       y: 0,
-      duration: 0.45,
-      ease: 'power2.out'
+      duration: 0.5,
+      ease: 'power3.out'
     }, '-=0.25') // Overlap slightly with loader exit for a seamless reveal
   }, { scope: containerRef, dependencies: [isBypassed] })
 

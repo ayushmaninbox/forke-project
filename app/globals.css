@@ -186,6 +186,122 @@ img {
   }
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Ledger layout system — hairline rails, crosshair joints, scroll reveals.
+   Used across the marketing pages.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Scroll reveal — toggled by <Reveal/> via IntersectionObserver */
+.ui-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ui-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Crosshair joint where a section hairline meets the page rails */
+.ui-cross {
+  position: absolute;
+  z-index: 10;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Blueprint flow line — marching dashes + a pulse traveling along it */
+.ui-flow-line {
+  background-image: linear-gradient(90deg, rgba(255, 122, 0, 0.45) 50%, transparent 50%);
+  background-size: 12px 1px;
+  animation: ui-flow-march 1.2s linear infinite;
+}
+
+.ui-flow-line-v {
+  background-image: linear-gradient(180deg, rgba(255, 122, 0, 0.4) 50%, transparent 50%);
+  background-size: 1px 12px;
+  animation: ui-flow-march-v 1.2s linear infinite;
+}
+
+.ui-flow-dot {
+  animation: ui-flow-travel 7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes ui-flow-march {
+  to { background-position: 12px 0; }
+}
+
+@keyframes ui-flow-march-v {
+  to { background-position: 0 12px; }
+}
+
+@keyframes ui-flow-travel {
+  0% { left: 0%; opacity: 0; }
+  6% { opacity: 1; }
+  94% { opacity: 1; }
+  100% { left: calc(100% - 7px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-flow-line, .ui-flow-line-v, .ui-flow-dot { animation: none; }
+}
+
+/* Isometric blueprint scene (review system) */
+.ui-iso-grid {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 68px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 68px);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 35%, transparent 78%);
+  mask-image: radial-gradient(circle at 50% 50%, black 35%, transparent 78%);
+}
+
+@keyframes ui-iso-float {
+  0%, 100% { transform: translateZ(0); }
+  50% { transform: translateZ(18px); }
+}
+
+.ui-iso-float {
+  animation: ui-iso-float 5s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes ui-iso-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ui-iso-spin {
+  animation: ui-iso-spin 2.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-iso-float, .ui-iso-spin { animation: none; }
+}
+
+/* Fine blueprint grid, masked to the center — for feature sections */
+.ui-grid-soft {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 25%, transparent 72%);
+  mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 25%, transparent 72%);
+}
+
 @keyframes ticker {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }

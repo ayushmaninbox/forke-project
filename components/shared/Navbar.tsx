@@ -147,41 +147,75 @@ export default function Navbar() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Menu */}
+      </div>      {/* Mobile Menu — full-screen overlay with centered navigation */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-full left-0 w-full bg-bg border-b border-border px-4 py-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300 mt-2 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/10">
-          <div className="flex flex-col gap-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="font-mono text-base lowercase text-muted hover:text-white transition-colors"
+        <div className="fixed inset-0 z-[200] lg:hidden">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-2xl" />
+          
+          {/* Content */}
+          <div className="relative z-10 flex flex-col h-full px-6 py-8 animate-in fade-in duration-300">
+            {/* Header — logo + close */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/forke-assets/nav_peeking_forky.png"
+                  alt="Forke"
+                  width={60}
+                  height={36}
+                  className="object-contain"
+                />
+                <span className="text-xl font-semibold tracking-[-0.04em] text-white">
+                  forke<span className="text-accent">*</span>
+                </span>
+              </div>
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors border border-white/10"
               >
-                <span className="text-accent/70">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
-              </Link>
-            ))}
-          </div>
-          <div className="flex flex-col gap-3 pt-4 border-t border-white/10">
-            {showWaitlisterView ? (
-              <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}>
-                Coming Soon
-              </Button>
-            ) : (
-              <>
-                {isLoggedIn ? (
-                  <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
-                    Dashboard
-                  </Button>
-                ) : (
-                  <Button variant="primary" className="w-full rounded-full" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
-                    Get Started
-                  </Button>
-                )}
-              </>
-            )}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Navigation links — centered vertically */}
+            <div className="flex-1 flex flex-col items-start justify-center gap-2 -mt-8">
+              {navLinks.map((link, i) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="group flex items-center gap-4 py-3 transition-colors active:bg-white/[0.04] w-full rounded-xl px-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <span className="font-mono text-[11px] text-accent/50 tabular-nums w-5">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="text-[22px] font-light tracking-[-0.02em] text-white/80 transition-colors group-hover:text-white group-active:text-accent">
+                    {link.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Bottom CTA */}
+            <div className="pt-4 border-t border-white/[0.06] space-y-3">
+              {showWaitlisterView ? (
+                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}>
+                  Coming Soon
+                </Button>
+              ) : isLoggedIn ? (
+                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
+                  Dashboard
+                </Button>
+              ) : (
+                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
+                  Get Started
+                </Button>
+              )}
+              <p className="text-center font-mono text-[10px] tracking-wide text-white/20">
+                {'//'} prove skill by shipping
+              </p>
+            </div>
           </div>
         </div>
       )}

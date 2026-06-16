@@ -7,7 +7,8 @@ import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
 import { Button } from '@/components/ui/Button'
 import DotField from '@/components/shared/DotField'
-import { 
+import { Eyebrow } from '@/components/landing/primitives'
+import {
   Code,
   Shield,
   IndianRupee,
@@ -17,7 +18,8 @@ import {
   Users,
   Rocket,
   ShieldCheck,
-  ArrowRight
+  ArrowRight,
+  Check,
 } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -31,23 +33,30 @@ const VALUES = [
   {
     title: 'Impact First',
     desc: 'We focus on meaningful contributions that create real impact.',
-    icon: Zap
+    icon: Zap,
   },
   {
     title: 'Trust & Transparency',
     desc: 'Clear processes, open communication, and fair rewards.',
-    icon: ShieldCheck
+    icon: ShieldCheck,
   },
   {
     title: 'Community',
     desc: 'We grow together. Builders, maintainers, and learners — all in one place.',
-    icon: Users
+    icon: Users,
   },
   {
     title: 'Keep Building',
     desc: "We're always iterating, improving, and pushing things forward.",
-    icon: Rocket
-  }
+    icon: Rocket,
+  },
+]
+
+const STORY_POINTS = [
+  'No resumes — your merged PRs speak',
+  'No interviews — levels are earned, not claimed',
+  'No proposals — claim a task and start',
+  'No waiting — UPI payout the moment it merges',
 ]
 
 export default function WhatsForkePage() {
@@ -57,13 +66,13 @@ export default function WhatsForkePage() {
   useGSAP(() => {
     // 1. Entrance timeline
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-    
-    tl.fromTo('.gsap-wf-hero-badge', 
+
+    tl.fromTo('.gsap-wf-hero-badge',
       { y: -20, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8 }
     )
-    .fromTo('.gsap-wf-hero-title', 
-      { y: 40, opacity: 0 }, 
+    .fromTo('.gsap-wf-hero-title',
+      { y: 40, opacity: 0 },
       { y: 0, opacity: 1, duration: 1 },
       '-=0.6'
     )
@@ -83,8 +92,7 @@ export default function WhatsForkePage() {
       '-=1'
     )
 
-
-    // 3. Scroll reveals for elements
+    // 2. Scroll reveals for elements
     const sections = gsap.utils.toArray<HTMLElement>('.gsap-wf-section')
     sections.forEach((section) => {
       gsap.fromTo(section.querySelectorAll('.gsap-wf-element'),
@@ -139,10 +147,10 @@ export default function WhatsForkePage() {
         <section className="relative z-10 w-full pt-28 pb-6 sm:pt-32 sm:pb-16 px-6 max-w-7xl mx-auto">
           <div className="max-w-7xl mx-auto w-full relative">
             <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
-              
+
               {/* Hero Left Content */}
               <div className="space-y-10 text-center lg:text-left relative z-30 pt-8 lg:pt-0">
-                
+
                 {/* Small badge */}
                 <div className="gsap-wf-hero-badge flex items-center justify-center lg:justify-start gap-2 opacity-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -225,121 +233,104 @@ export default function WhatsForkePage() {
         </div>
       </div>
 
-      {/* --- CONTEXT STORY SECTION --- */}
-      <section className="gsap-wf-section relative z-10 py-20 px-6 max-w-7xl mx-auto border-t border-white/[0.03]">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="gsap-wf-element ui-eyebrow opacity-0">
-            {'//'} the concept
+      {/* --- THE STORY — editorial split: statement left, narrative right --- */}
+      <section className="gsap-wf-section relative z-10 py-24 md:py-32 px-6 max-w-7xl mx-auto">
+        <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
+          <div>
+            <div className="gsap-wf-element opacity-0">
+              <Eyebrow n="001" label="the concept" />
+            </div>
+            <h2 className="gsap-wf-element mt-5 text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06] opacity-0">
+              Fake projects don&apos;t teach you to{' '}
+              <span className="font-serif italic font-normal text-accent">ship.</span>
+            </h2>
+            <p className="gsap-wf-element mt-6 font-mono text-[11px] tracking-wide text-white/30 opacity-0">
+              {'//'} prove skill by shipping
+            </p>
           </div>
-          <h2 className="gsap-wf-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-tight opacity-0">
-            A developer playground built to <span className="font-serif italic font-normal text-accent">prove capability.</span>
-          </h2>
-          <p className="gsap-wf-element text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
-            Forke was born from a simple realization: the traditional path for software engineers is broken. Building fake portfolio projects teaches you syntax, but it doesn't teach you how to ship. Bidding for freelance contracts is an endless waiting game, and early internships are heavily gatekept.
-          </p>
-          <p className="gsap-wf-element text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
-            We built Forke to change this. We've turned real-world software contributions into a gamified, reward-driven experience. Startups post scoped, bite-sized coding tasks with fixed budgets. You claim a task, write code in an isolated GitHub branch, submit a pull request, and get paid instantly via UPI upon approval. No resumes, no interviews, no noise — just code, growth, and cash.
-          </p>
+
+          <div className="space-y-6">
+            <p className="gsap-wf-element text-white/55 text-base md:text-lg font-light leading-relaxed opacity-0">
+              Forke was born from a simple realization: the traditional path for software
+              engineers is broken. Building fake portfolio projects teaches you syntax, but it
+              doesn&apos;t teach you how to ship. Bidding for freelance contracts is an endless
+              waiting game, and early internships are heavily gatekept.
+            </p>
+            <p className="gsap-wf-element text-white/55 text-base md:text-lg font-light leading-relaxed opacity-0">
+              We built Forke to change this. Startups post scoped, bite-sized coding tasks with
+              fixed budgets. You claim a task, write code in an isolated GitHub branch, submit a
+              pull request, and get paid instantly via UPI upon approval. Just code, growth, and
+              cash.
+            </p>
+            <ul className="gsap-wf-element space-y-3 pt-2 opacity-0">
+              {STORY_POINTS.map((point) => (
+                <li key={point} className="flex items-start gap-3 text-[14.5px] text-white/65">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={2.5} />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
-      {/* --- MISSION & VISION SECTION --- */}
-      <section className="gsap-wf-section relative z-10 py-16 px-6 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          
-          {/* Mission Card */}
-          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col lg:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
-            
-            {/* Ambient Card Radial Spotlight */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
-            
-            {/* Left double-ringed premium Icon Circle */}
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
-              <Target className="w-7 h-7" strokeWidth={1.2} />
-            </div>
-            
-            <div className="space-y-4 relative z-10 text-left mt-1">
-              <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">Our Mission</h3>
-              <p className="text-sm md:text-base text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
-                To make real-world experience accessible to every developer through meaningful work and fair opportunities.
+      {/* --- MISSION & VISION — one ledger bento --- */}
+      <section className="gsap-wf-section relative z-10 px-6 max-w-7xl mx-auto">
+        <div className="gsap-wf-element grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] md:grid-cols-2 opacity-0">
+          {[
+            {
+              icon: Target,
+              title: 'Our Mission',
+              copy: 'To make real-world experience accessible to every developer through meaningful work and fair opportunities.',
+            },
+            {
+              icon: Eye,
+              title: 'Our Vision',
+              copy: 'A world where developers grow by building, not just by learning — and where contribution is recognized and rewarded.',
+            },
+          ].map((item) => (
+            <div key={item.title} className="group bg-[#070708] p-8 transition-colors hover:bg-[#0b0b0d] md:p-12">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/25 bg-accent/[0.06] text-accent transition-all duration-500 group-hover:bg-accent group-hover:text-black">
+                <item.icon className="h-6 w-6" strokeWidth={1.4} />
+              </div>
+              <h3 className="mt-6 text-xl font-medium tracking-[-0.02em] text-white md:text-2xl">{item.title}</h3>
+              <p className="mt-3 max-w-md text-sm font-light leading-relaxed text-white/45 md:text-[15px]">
+                {item.copy}
               </p>
             </div>
-          </div>
-
-          {/* Vision Card */}
-          <div className="gsap-wf-element relative rounded-3xl border border-white/[0.04] bg-[#0A0A0A] p-8 md:p-12 hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] group flex flex-col lg:flex-row gap-6 opacity-0 overflow-hidden text-left transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
-            
-            {/* Ambient Card Radial Spotlight */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
-            
-            {/* Left double-ringed premium Icon Circle */}
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 relative z-10">
-              <Eye className="w-7 h-7" strokeWidth={1.2} />
-            </div>
-            
-            <div className="space-y-4 relative z-10 text-left mt-1">
-              <h3 className="text-white font-bold text-xl md:text-2xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">Our Vision</h3>
-              <p className="text-sm md:text-base text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
-                A world where developers grow by building, not just by learning — and where contribution is recognized and rewarded.
-              </p>
-            </div>
-          </div>
-
+          ))}
         </div>
       </section>
 
-      {/* --- VALUES SECTION --- */}
-      <section className="gsap-wf-section relative z-10 py-20 px-6 max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <div className="text-left mb-16 max-w-xl">
-          <div className="gsap-wf-element ui-eyebrow opacity-0 mb-4">
-            {'//'} our values
+      {/* --- VALUES — four-cell ledger bento --- */}
+      <section className="gsap-wf-section relative z-10 py-24 md:py-32 px-6 max-w-7xl mx-auto">
+        <div className="text-left mb-14 max-w-xl">
+          <div className="gsap-wf-element opacity-0">
+            <Eyebrow n="002" label="our values" />
           </div>
-          <h2 className="gsap-wf-element text-4xl md:text-6xl font-medium text-white tracking-[-0.03em] leading-none opacity-0">
+          <h2 className="gsap-wf-element mt-5 text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06] opacity-0">
             What drives <span className="font-serif italic font-normal text-accent">us.</span>
           </h2>
         </div>
 
-        {/* 4 Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {VALUES.map((val, idx) => {
+        <div className="gsap-wf-element grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4 opacity-0">
+          {VALUES.map((val) => {
             const Icon = val.icon
             return (
-              <div 
-                key={idx} 
-                className="gsap-wf-element relative p-6 sm:p-8 rounded-3xl border border-white/[0.04] bg-[#0A0A0A] hover:border-[#FF7A00]/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col justify-start group opacity-0 overflow-hidden text-left"
-              >
-                {/* Spotlight Background Effect */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.02)_0%,_transparent_65%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.05] to-transparent pointer-events-none" />
-                
-                {/* Premium Icon Badge */}
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center text-[#FF7A00] group-hover:bg-[#FF7A00] group-hover:text-black group-hover:shadow-[0_0_20px_rgba(255,122,0,0.3)] transition-all duration-500 shrink-0 mb-5 sm:mb-6 relative z-10">
-                  <Icon className="w-5 h-5" />
+              <div key={val.title} className="group bg-[#070708] p-7 transition-colors hover:bg-[#0b0b0d] sm:p-8">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/25 bg-accent/[0.06] text-accent transition-all duration-500 group-hover:bg-accent group-hover:text-black">
+                  <Icon className="h-5 w-5" strokeWidth={1.5} />
                 </div>
-                
-                <div className="space-y-2.5 relative z-10 text-left">
-                  <h3 className="text-white font-bold text-lg md:text-xl tracking-tight group-hover:text-[#FF7A00] transition-colors duration-300">
-                    {val.title}
-                  </h3>
-                  <p className="text-xs text-white/40 leading-relaxed font-light group-hover:text-white/60 transition-colors duration-300">
-                    {val.desc}
-                  </p>
-                </div>
+                <h3 className="mt-5 text-lg font-medium tracking-[-0.01em] text-white">{val.title}</h3>
+                <p className="mt-2 text-[13px] font-light leading-relaxed text-white/45">{val.desc}</p>
               </div>
             )
           })}
         </div>
-
       </section>
 
-
-
       {/* --- BOTTOM CTA VISUAL SECTION --- */}
-      <section className="gsap-wf-section relative z-10 py-16 sm:py-20 px-6 max-w-7xl mx-auto mb-16">
+      <section className="gsap-wf-section relative z-10 pb-24 px-6 max-w-7xl mx-auto">
         {/* PHONE-ONLY clean centered card (matches /levels styling) */}
         <div className="md:hidden p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
@@ -398,9 +389,9 @@ export default function WhatsForkePage() {
                 WebkitMaskImage: 'radial-gradient(circle at center, black 45%, transparent 85%)',
               }}
             >
-              <Image 
-                src="/forke-assets/about-assets/bottom-hero.png" 
-                alt="Focused Rabbit Mascot Over Screen" 
+              <Image
+                src="/forke-assets/about-assets/bottom-hero.png"
+                alt="Focused Rabbit Mascot Over Screen"
                 fill
                 className="object-contain lg:object-bottom"
               />

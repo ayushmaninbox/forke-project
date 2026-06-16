@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/shared/Navbar'
+import CTA from '@/components/shared/CTA'
 import Footer from '@/components/shared/Footer'
 import { Button } from '@/components/ui/Button'
 import DotField from '@/components/shared/DotField'
@@ -623,7 +624,7 @@ export default function LevelsPage() {
                               }`}>
                                 {statusTag}
                               </span>
-                              <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.15em] font-semibold">STAGE</span>
+                              <span className="text-[7px] font-mono text-white/20 uppercase tracking-[0.15em] font-medium">STAGE</span>
                             </div>
                           </div>
                         </div>
@@ -869,29 +870,7 @@ export default function LevelsPage() {
       </section>
 
       {/* --- CALL TO ACTION --- */}
-      <section className="gsap-lvl-section relative z-10 py-16 px-6 max-w-7xl mx-auto">
-        <div className="p-8 md:p-14 rounded-[3.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center max-w-4xl mx-auto group">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
-          
-          <div className="max-w-2xl mx-auto space-y-8 relative z-10">
-            <h2 className="gsap-lvl-element text-4xl md:text-6xl font-medium text-white leading-tight tracking-[-0.03em] opacity-0">
-              Earn your XP. Forge your <span className="font-serif italic font-normal text-accent">path.</span>
-            </h2>
-            <p className="gsap-lvl-element text-white/50 text-base md:text-lg leading-relaxed font-light opacity-0">
-              Claim real tasks, ship verified code, level up, and cash out instantly. Ready to start grinding?
-            </p>
-            <div className="gsap-lvl-element flex flex-col sm:flex-row justify-center items-center gap-4 opacity-0">
-              <Button
-                size="lg"
-                className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
-                onClick={() => window.location.href = '/register'}
-              >
-                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <CTA />
 
       <Footer />
     </div>

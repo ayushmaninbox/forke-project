@@ -24,9 +24,9 @@ export default function PrivacyPage() {
         <p className="ui-eyebrow lowercase mb-4">
           Privacy & Data Protection
         </p>
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-white mb-4">
-          Privacy <span className="font-serif italic font-normal text-accent">Policy</span>
-        </h1>
+          <h1 className="text-3xl md:text-5xl font-semibold tracking-[-0.03em] text-white mb-4">
+            Privacy <span className="font-serif italic font-normal text-accent">Policy</span>
+          </h1>
         <p className="text-sm text-white/30 font-mono">
           Last Updated: June 2026 · Effective Globally
         </p>

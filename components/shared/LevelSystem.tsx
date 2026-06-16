@@ -10,6 +10,7 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
 import CardSwap, { Card } from './CardSwap'
+import { Eyebrow } from '@/components/landing/primitives'
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger)
@@ -102,17 +103,17 @@ export default function LevelSystem() {
 
 
   return (
-    <section ref={containerRef} id="levels" className="py-24 md:py-32 px-4 bg-bg relative overflow-hidden">
+    <section ref={containerRef} id="levels" className="py-24 md:py-32 px-5 md:px-10 bg-bg relative overflow-hidden">
       {/* Background Gradients */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
-        
+
         {/* Left Column: Content */}
         <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">
           <div className="space-y-4">
-            <span className="ui-eyebrow block">{'//'} progression</span>
-            <h2 className="text-4xl md:text-6xl font-medium text-white tracking-[-0.03em]">
+            <Eyebrow n="005" label="progression" />
+            <h2 className="text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06]">
               Script kiddie to <span className="font-serif italic font-normal text-accent">legend.</span>
             </h2>
             <p className="text-white/60 text-base md:text-lg font-light leading-relaxed">
@@ -132,7 +133,7 @@ export default function LevelSystem() {
         </div>
 
         {/* Right Column: Stacked Cards */}
-        <div className="gsap-lvl-stack relative h-[360px] sm:h-[460px] lg:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-16">
+        <div className="gsap-lvl-stack relative h-[360px] sm:h-[460px] lg:h-[580px] w-full flex items-center justify-center lg:justify-end pr-0 lg:pr-32">
           <CardSwap
             width={780}
             height={420}
