@@ -286,7 +286,7 @@ export default async function SubmissionsPage() {
     <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Submissions" />
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 w-full select-none">
 
         <div className="space-y-1 text-left">
           <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
@@ -323,7 +323,7 @@ export default async function SubmissionsPage() {
             badgeColor="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
           />
         </div>
-       </div>
+        </div>
       </div>
     </div>
   )

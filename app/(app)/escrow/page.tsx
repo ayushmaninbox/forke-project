@@ -68,7 +68,7 @@ export default async function EscrowPage() {
       <TopBar title="Escrow" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header */}
         <div className="space-y-1 text-left">
           <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
@@ -172,7 +172,7 @@ export default async function EscrowPage() {
           )}
         </div>
 
-       </div>
+        </div>
       </div>
     </div>
   )

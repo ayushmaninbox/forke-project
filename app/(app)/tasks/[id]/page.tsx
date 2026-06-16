@@ -52,7 +52,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
       <TopBar title="Task" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Back Link */}
         <div className="text-left">
           <Link href="/tasks" className="inline-flex items-center gap-1.5 text-[var(--color-text-muted)] hover:text-white transition-colors text-[13px] group">
@@ -329,7 +329,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             </aside>
           </div>
         )}
-       </div>
+        </div>
       </div>
     </div>
   )

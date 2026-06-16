@@ -7,6 +7,14 @@ export const CHANGELOG_DATA = [
     "label": "jun 16, 2026",
     "entries": [
       {
+        "shortHash": "789d362",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-16T23:09:24+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Update UI layout, scale, and footer structure for improved responsiveness and add new links"
+      },
+      {
         "shortHash": "a5a7ebb",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-16T22:17:24+05:30",
@@ -1372,4 +1380,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 153;
+export const COMMIT_COUNT = 154;

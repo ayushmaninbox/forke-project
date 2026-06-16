@@ -68,7 +68,7 @@ export default async function MessagesPage({
     <div className="flex flex-col h-full bg-transparent text-white font-sans">
       <TopBar title="Messages" />
 
-      <div className="flex-grow p-5 md:p-8 select-none max-w-5xl mx-auto w-full min-h-0">
+      <div className="flex-grow px-5 md:px-8 py-6 md:py-8 select-none max-w-5xl mx-auto w-full min-h-0">
         <ChatConsole
           contacts={contacts} 
           currentUserId={sessionUser.id}

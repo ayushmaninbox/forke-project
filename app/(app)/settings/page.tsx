@@ -82,7 +82,7 @@ export default async function SettingsPage() {
       <TopBar title="Settings" />
 
       <div className="flex-grow overflow-y-auto">
-       <div className="mx-auto max-w-4xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
+        <div className="mx-auto max-w-4xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
         {/* Header Title */}
         <div className="space-y-1 text-left">
           <h2 className="text-xl md:text-2xl font-medium text-white tracking-tight">
@@ -113,7 +113,7 @@ export default async function SettingsPage() {
           hasPassword={!!dbUser.passwordHash}
           initialSubscribedToPromotions={subscribedToPromotions}
         />
-       </div>
+        </div>
       </div>
     </div>
   )
