@@ -9,7 +9,7 @@ import Reveal from './Reveal'
  */
 export default function Session({ n = '002' }: { n?: string }) {
   return (
-    <Section className="relative overflow-hidden px-5 py-24 md:px-10 md:py-32">
+    <Section className="relative overflow-hidden px-5 py-16 md:px-10 md:py-24">
       <div aria-hidden className="ui-grid-soft absolute inset-0" />
 
       <div className="relative mx-auto w-full flex flex-col items-center">
@@ -46,7 +46,7 @@ export default function Session({ n = '002' }: { n?: string }) {
         </Reveal>
 
         <Reveal delay={220}>
-          <p className="mt-7 text-center font-mono text-[11px] tracking-wide text-white/30">
+          <p className="mt-7 text-center font-mono text-[9.5px] sm:text-[11px] tracking-wide text-white/30 px-4">
             one task, end to end — claim → checks → ai review → merge → upi
           </p>
         </Reveal>

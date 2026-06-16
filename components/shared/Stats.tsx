@@ -10,7 +10,7 @@ const STATS = [
 
 export default function Stats() {
   return (
-    <section className="py-32 bg-bg border-y border-border">
+    <section className="py-20 md:py-24 bg-bg border-y border-border">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
           {STATS.map((stat, index) => (

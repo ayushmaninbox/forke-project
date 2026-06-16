@@ -70,7 +70,7 @@ export default function Verdict({ n = '003', flush = false }: { n?: string; flus
   }, [])
 
   return (
-    <Section id="owners" flush={flush} className="px-5 py-24 md:px-10 md:py-32">
+    <Section id="owners" flush={flush} className="px-5 py-16 md:px-10 md:py-24">
       <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
         {/* Copy */}
         <Reveal>

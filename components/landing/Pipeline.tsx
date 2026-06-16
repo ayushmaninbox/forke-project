@@ -222,7 +222,7 @@ export default function Pipeline() {
   ]
 
   return (
-    <Section id="pipeline" className="px-5 py-24 md:px-10 md:py-32">
+    <Section id="pipeline" className="px-5 py-16 md:px-10 md:py-24">
       <Reveal>
         <Eyebrow n="001" label="the pipeline" />
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">

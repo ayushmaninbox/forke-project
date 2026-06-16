@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowRight,
@@ -159,6 +159,14 @@ export default function Proof({ n = '004' }: { n?: string }) {
   const showWaitlisterView = useWaitlisterView()
   const wrapRef = useRef<HTMLDivElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState<boolean>(false)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Same Linear-style flatten-on-scroll as the terminal
   useGSAP(() => {
@@ -183,7 +191,7 @@ export default function Proof({ n = '004' }: { n?: string }) {
   }, { scope: wrapRef })
 
   return (
-    <Section id="proof" className="overflow-hidden px-5 pb-14 pt-24 md:px-10 md:pb-20 md:pt-32">
+    <Section id="proof" className="overflow-hidden px-5 pb-10 pt-16 md:px-10 md:pb-16 md:pt-24">
       <div ref={wrapRef}>
         <Reveal>
           <Eyebrow n={n} label="proof of work" />
@@ -212,8 +220,8 @@ export default function Proof({ n = '004' }: { n?: string }) {
           {/* Proportional Scaling Bounding Box */}
           <div
             style={{
-              width: 'var(--lanyard-wrapper-width, calc(800px * var(--lanyard-scale)))',
-              height: 'var(--lanyard-wrapper-height, calc(550px * var(--lanyard-scale)))'
+              width: 'var(--lanyard-wrapper-width, calc(1200px * var(--lanyard-scale)))',
+              height: 'var(--lanyard-wrapper-height, calc(540px * var(--lanyard-scale)))'
             }}
             className="relative overflow-hidden shrink-0 lg:[--lanyard-wrapper-width:100%] lg:[--lanyard-wrapper-height:auto] lg:overflow-visible lg:shrink-0"
           >
@@ -222,8 +230,8 @@ export default function Proof({ n = '004' }: { n?: string }) {
               style={{
                 transform: 'var(--lanyard-transform, scale(var(--lanyard-scale)))',
                 transformOrigin: 'top left',
-                width: 'var(--lanyard-width, 800px)',
-                height: 'var(--lanyard-height, 550px)'
+                width: 'var(--lanyard-width, 1200px)',
+                height: 'var(--lanyard-height, 540px)'
               }}
               className="absolute left-0 top-0 lg:relative lg:[--lanyard-transform:none] lg:[--lanyard-width:100%] lg:[--lanyard-height:540px]"
             >
@@ -257,6 +265,8 @@ export default function Proof({ n = '004' }: { n?: string }) {
                           avatarUrl: "/forke-assets/landing-assets/elon-musk.jpg"
                         }}
                         qrUrl="https://forke.space"
+                        isHome={true}
+                        position={[0, -2, 12.8]}
                       />
                     </div>
                     <div>

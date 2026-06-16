@@ -49,7 +49,7 @@ interface LanyardProps {
 }
 
 export default function Lanyard({
-  position = [0, -2, 20],
+  position,
   gravity = [0, -40, 0],
   fov = 20,
   transparent = true,
@@ -75,10 +75,12 @@ export default function Lanyard({
     setFlipped(flipRef.current)
   }
 
+  const finalPosition = position || (isMobile ? [0, -2, 14.5] : [0, -2, 20])
+
   return (
     <div className={`relative z-0 w-full h-full flex justify-center items-center ${className}`}>
       <Canvas
-        camera={{ position, fov }}
+        camera={{ position: finalPosition, fov }}
         dpr={[1, isMobile ? 2 : 3]}
         gl={{ alpha: true, antialias: true, premultipliedAlpha: false }}
         style={{ background: 'transparent' }}

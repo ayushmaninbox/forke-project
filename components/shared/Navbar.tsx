@@ -50,6 +50,7 @@ export default function Navbar() {
   const navLinks = showWaitlisterView ? [
     { name: "What's Forke?", href: '/whats-forke' },
     { name: 'Levels', href: '/levels' },
+    { name: 'Blogs', href: '/blogs' },
     { name: 'Contact Us', href: '/contact' },
   ] : [
     { name: "What's Forke?", href: '/whats-forke' },

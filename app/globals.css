@@ -41,14 +41,14 @@
 
 @media (max-width: 1023px) {
   :root {
-    --lanyard-scale: calc((100vw - 80px) / 800px);
+    --lanyard-scale: calc((100vw - 80px) / 1200px);
     --term-scale: calc((100vw - 80px) / 672px);
   }
 }
 
 @media (max-width: 767px) {
   :root {
-    --lanyard-scale: calc((100vw - 40px) / 800px);
+    --lanyard-scale: calc((100vw - 40px) / 1200px);
     --term-scale: calc((100vw - 40px) / 672px);
   }
 }
@@ -393,6 +393,7 @@ img {
 /* Ensure scrollbar is at extreme right */
 html, body {
   overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 /* Firefox scrollbar */
@@ -655,7 +656,7 @@ input[type="checkbox"]:not(.appearance-none):focus {
 }
 
 @media (min-width: 1920px) {
-  .max-w-5xl, .max-w-6xl, .max-w-7xl {
+  .max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl {
     max-width: 1920px !important;
   }
 }

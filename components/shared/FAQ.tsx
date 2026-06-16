@@ -32,7 +32,7 @@ export default function FAQ({ n = '007' }: { n?: string }) {
   const [open, setOpen] = useState<number | null>(0)
 
   return (
-    <Section id="faq" className="px-5 py-24 md:px-10 md:py-32">
+    <Section id="faq" className="px-5 py-16 md:px-10 md:py-24">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.7fr] lg:gap-20">
         {/* Left: header column */}
         <Reveal>

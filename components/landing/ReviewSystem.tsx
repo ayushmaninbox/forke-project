@@ -108,14 +108,14 @@ function SpinnerRing({ className = '' }: { className?: string }) {
 
 function BlueprintScene() {
   return (
-    <div aria-hidden className="pointer-events-none relative mx-auto h-[240px] w-full max-w-[860px] select-none sm:h-[380px] md:h-[440px]">
+    <div aria-hidden className="pointer-events-none relative mx-auto h-[290px] w-full max-w-[860px] select-none sm:h-[380px] md:h-[440px]">
       {/* Perspective camera */}
       <div className="absolute inset-0" style={{ perspective: '1400px', perspectiveOrigin: '50% 30%' }}>
         {/* The isometric drawing plane */}
         <div
-          className="absolute left-1/2 top-1/2 h-[680px] w-[680px] origin-center scale-[0.42] sm:scale-75 md:scale-100"
+          className="absolute left-1/2 top-1/2 h-[680px] w-[680px] origin-center [--blueprint-scale:scale(0.52)] sm:[--blueprint-scale:scale(0.75)] md:[--blueprint-scale:scale(1)]"
           style={{
-            transform: 'translate(-50%, -54%) rotateX(57deg) rotateZ(-45deg)',
+            transform: 'translate(-50%, -54%) rotateX(57deg) rotateZ(-45deg) var(--blueprint-scale)',
             transformStyle: 'preserve-3d',
           }}
         >
@@ -188,7 +188,7 @@ function BlueprintScene() {
 
 export default function ReviewSystem({ n = '006' }: { n?: string }) {
   return (
-    <Section id="review" className="relative overflow-hidden px-5 py-24 md:px-10 md:py-32">
+    <Section id="review" className="relative overflow-hidden px-5 py-16 md:px-10 md:py-24">
       <div className="relative">
         <Reveal>
           <Eyebrow n={n} label="the review system" />
@@ -227,7 +227,7 @@ export default function ReviewSystem({ n = '006' }: { n?: string }) {
         </div>
 
         <Reveal delay={200}>
-          <p className="mt-14 text-center font-mono text-[11px] tracking-wide text-white/30">
+          <p className="mt-14 text-center font-mono text-[9.5px] sm:text-[11px] tracking-wide text-white/30 px-4">
             fail any gate → it never reaches the owner&nbsp;&nbsp;·&nbsp;&nbsp;pass all
             four → merge and payout are automatic
           </p>

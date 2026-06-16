@@ -7,6 +7,14 @@ export const CHANGELOG_DATA = [
     "label": "jun 16, 2026",
     "entries": [
       {
+        "shortHash": "a5a7ebb",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-16T22:17:24+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement responsive scaling for landing page artifacts and increase maximum container width to 1920px across UI components"
+      },
+      {
         "shortHash": "709b812",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-16T20:39:25+05:30",
@@ -1364,4 +1372,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 152;
+export const COMMIT_COUNT = 153;
