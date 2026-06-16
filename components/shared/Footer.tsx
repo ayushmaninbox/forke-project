@@ -53,7 +53,7 @@ export default function Footer() {
 
   return (
     <footer className="relative z-10 overflow-hidden border-t border-white/[0.07]" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="mx-auto max-w-7xl px-5 pt-16 md:px-10 md:pt-20">
+      <div className="mx-auto max-w-7xl px-5 pt-16 md:px-10 md:pt-20 min-[1920px]:max-w-[1920px]">
         <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div>
@@ -109,7 +109,7 @@ export default function Footer() {
       {/* Giant outlined wordmark, clipped at the page edge */}
       <div
         aria-hidden="true"
-        className="pointer-events-none relative mx-auto h-[16vw] max-w-7xl select-none overflow-hidden md:h-[13vw]"
+        className="pointer-events-none relative mx-auto h-[16vw] max-w-7xl select-none overflow-hidden md:h-[13vw] min-[1920px]:max-w-[1920px]"
       >
         <span className="text-outline absolute left-1/2 top-0 -translate-x-1/2 whitespace-nowrap text-[20vw] font-medium leading-[0.78] tracking-[-0.05em] md:text-[16vw]">
           forke<span className="[-webkit-text-stroke:1px_rgba(255,122,0,0.55)]">*</span>

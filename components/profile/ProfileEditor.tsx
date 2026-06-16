@@ -98,7 +98,7 @@ export default function ProfileEditor({ data }: { data: ProfileData }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:h-full lg:min-h-0 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-4 lg:h-full lg:min-h-0 max-w-7xl mx-auto w-full min-[1920px]:max-w-[1920px]">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap shrink-0">
         <div>

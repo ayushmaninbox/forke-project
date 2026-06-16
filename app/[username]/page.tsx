@@ -260,7 +260,7 @@ export default async function PublicProfilePage({
     <div className="min-h-screen bg-[#060608] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900 via-[#060608] to-[#060608] text-white font-sans flex flex-col antialiased">
       <Navbar />
 
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12 min-[1920px]:max-w-[1920px]">
         <PublicProfileView data={data} isOwnProfile={isOwnProfile} contained={false} />
       </main>
 

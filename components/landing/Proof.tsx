@@ -206,47 +206,69 @@ export default function Proof({ n = '004' }: { n?: string }) {
 
         {/* The artifact: the live profile page — DEV ID card and all — framed
             like a screenshot and dissolving at the fold */}
-        <div className="relative mt-14" style={{ perspective: '1200px' }}>
+        <div className="relative mt-14 flex justify-center w-full" style={{ perspective: '1200px' }}>
           <div aria-hidden className="absolute -inset-x-12 top-10 h-56 rounded-full bg-accent/[0.05] blur-[110px]" />
+          
+          {/* Proportional Scaling Bounding Box */}
           <div
-            ref={frameRef}
-            className="relative h-[560px] overflow-hidden rounded-t-2xl border border-b-0 border-white/[0.09] bg-[#060608] shadow-[0_40px_120px_rgba(0,0,0,0.7)] sm:h-[540px]"
+            style={{
+              width: 'var(--lanyard-wrapper-width, calc(800px * var(--lanyard-scale)))',
+              height: 'var(--lanyard-wrapper-height, calc(550px * var(--lanyard-scale)))'
+            }}
+            className="relative overflow-hidden shrink-0 lg:[--lanyard-wrapper-width:100%] lg:[--lanyard-wrapper-height:auto] lg:overflow-visible lg:shrink-0"
           >
-            {/* Browser chrome */}
-            <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#09090b] px-4 py-3">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <span className="ml-4 flex items-center gap-2 rounded-md border border-white/[0.07] bg-white/[0.03] px-3 py-1 font-mono text-[11px] text-white/45">
-                <Lock className="h-3 w-3 text-emerald-400/70" />
-                forke.space/<span className="text-white/80">elonmusk</span>
-              </span>
-            </div>
+            {/* Scaled element container */}
+            <div
+              style={{
+                transform: 'var(--lanyard-transform, scale(var(--lanyard-scale)))',
+                transformOrigin: 'top left',
+                width: 'var(--lanyard-width, 800px)',
+                height: 'var(--lanyard-height, 550px)'
+              }}
+              className="absolute left-0 top-0 lg:relative lg:[--lanyard-transform:none] lg:[--lanyard-width:100%] lg:[--lanyard-height:540px]"
+            >
+              <div
+                ref={frameRef}
+                className="w-full h-full overflow-hidden rounded-t-2xl border border-b-0 border-white/[0.09] bg-[#060608] shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
+                style={{ transformStyle: 'preserve-3d' }}
+              >
+                {/* Browser chrome */}
+                <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#09090b] px-4 py-3">
+                  <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                  <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                  <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+                  <span className="ml-4 flex items-center gap-2 rounded-md border border-white/[0.07] bg-white/[0.03] px-3 py-1 font-mono text-[11px] text-white/45">
+                    <Lock className="h-3 w-3 text-emerald-400/70" />
+                    forke.space/<span className="text-white/80">elonmusk</span>
+                  </span>
+                </div>
 
-            {/* Page body — the real lanyard ID card next to the shipped-work ledger */}
-            <div className="bg-[#060608] px-4 pt-5 sm:px-6">
-              <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-                <div className="h-[470px]">
-                  <Lanyard
-                    card={{
-                      name: "Elon Musk",
-                      username: "elonmusk",
-                      level: 25,
-                      title: "Forke Legend",
-                      headline: "Ships rockets by day, merges PRs by night.",
-                      avatarUrl: "/forke-assets/landing-assets/elon-musk.jpg"
-                    }}
-                    qrUrl="https://forke.space"
-                  />
+                {/* Page body — the real lanyard ID card next to the shipped-work ledger */}
+                <div className="bg-[#060608] px-6 pt-5">
+                  <div className="grid gap-6 grid-cols-[360px_1fr]">
+                    <div className="h-[470px]">
+                      <Lanyard
+                        card={{
+                          name: "Elon Musk",
+                          username: "elonmusk",
+                          level: 25,
+                          title: "Forke Legend",
+                          headline: "Ships rockets by day, merges PRs by night.",
+                          avatarUrl: "/forke-assets/landing-assets/elon-musk.jpg"
+                        }}
+                        qrUrl="https://forke.space"
+                      />
+                    </div>
+                    <div>
+                      <ShippedPanel />
+                    </div>
+                  </div>
                 </div>
-                <div className="hidden lg:block">
-                  <ShippedPanel />
-                </div>
+                
+                {/* Bottom gradient dissolve overlay */}
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#060608] to-transparent pointer-events-none z-[150]" />
               </div>
             </div>
-            
-            {/* Bottom gradient dissolve overlay */}
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#060608] to-transparent pointer-events-none z-[150]" />
           </div>
         </div>
       </div>

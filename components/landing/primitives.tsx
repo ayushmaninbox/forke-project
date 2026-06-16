@@ -22,7 +22,7 @@ export function Rails({
 }) {
   const railGradient = `linear-gradient(to bottom, ${fadeTop ? 'transparent' : RAIL}, ${RAIL} 160px, ${RAIL} calc(100% - 160px), ${fadeBottom ? 'transparent' : RAIL})`
   return (
-    <div className={`relative mx-auto max-w-7xl ${className}`}>
+    <div className={`relative mx-auto max-w-7xl min-[1920px]:max-w-[1920px] ${className}`}>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-y-0 left-0 hidden w-px lg:block z-10"

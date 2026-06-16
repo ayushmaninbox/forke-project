@@ -271,7 +271,7 @@ export default function PublicProfileView({
   if (contained) {
     // Dashboard: card pinned full-height on the left, only the bento scrolls.
     return (
-      <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full min-[1920px]:max-w-[1920px]">
         <div className="w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
         {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}

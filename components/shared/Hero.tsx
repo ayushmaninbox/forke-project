@@ -160,7 +160,7 @@ export default function Hero() {
       </div>
 
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full min-[1920px]:max-w-[1920px]">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-10 relative z-30">
             <div className="space-y-6 text-center lg:text-left">

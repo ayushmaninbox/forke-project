@@ -127,7 +127,7 @@ export default function CTA() {
   return (
     <section ref={containerRef} className="py-16 sm:py-24 bg-bg relative overflow-hidden">
       {/* ===== PHONE-ONLY CTA — clean centered card (matches /levels styling) ===== */}
-      <div className="md:hidden max-w-7xl mx-auto px-4 relative z-10">
+      <div className="md:hidden max-w-7xl mx-auto px-4 relative z-10 min-[1920px]:max-w-[1920px]">
         <div className="gsap-cta-card p-8 rounded-[2.5rem] bg-[#0a0a0a] border border-white/[0.04] shadow-2xl relative overflow-hidden text-center opacity-0">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_rgba(255,122,0,0.06)_0%,_transparent_55%)] pointer-events-none" />
           <div className="space-y-6 relative z-10">
@@ -156,7 +156,7 @@ export default function CTA() {
       </div>
 
       {/* ===== TABLET + DESKTOP CTA — original "Ready to ship?" + Forky layout ===== */}
-      <div className="hidden md:block max-w-7xl mx-auto px-4 relative z-10">
+      <div className="hidden md:block max-w-7xl mx-auto px-4 relative z-10 min-[1920px]:max-w-[1920px]">
         {/* CTA Card */}
         <div
           className="gsap-cta-card relative rounded-[1.5rem] sm:rounded-[2.5rem] overflow-x-clip overflow-y-visible border border-white/[0.06] min-h-[200px] md:min-h-[320px] opacity-0"

@@ -61,7 +61,7 @@ export default function Navbar() {
 
   return (
     <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="w-full max-w-7xl mx-auto min-[1920px]:max-w-[1920px]">
         <div className={cn(
           "flex justify-between items-center h-16 sm:h-[4.25rem] px-4 sm:px-7 rounded-full border transition-all duration-300",
           isScrolled

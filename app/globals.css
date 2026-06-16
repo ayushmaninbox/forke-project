@@ -35,6 +35,22 @@
   --color-surface: #121212;
   --color-surface-hover: #1A1A1A;
   --color-muted: #888888;
+  --lanyard-scale: 1;
+  --term-scale: calc((min(1920px, 100vw) - 80px) * 0.5526 / 672px);
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --lanyard-scale: calc((100vw - 80px) / 800px);
+    --term-scale: calc((100vw - 80px) / 672px);
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --lanyard-scale: calc((100vw - 40px) / 800px);
+    --term-scale: calc((100vw - 40px) / 672px);
+  }
 }
 
 /* Premium Dark Notion/Stripe Brand Design System (Ember - Redesigned) */
@@ -637,5 +653,12 @@ input[type="checkbox"]:not(.appearance-none):focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(255, 122, 0, 0.2);
 }
+
+@media (min-width: 1920px) {
+  .max-w-5xl, .max-w-6xl, .max-w-7xl {
+    max-width: 1920px !important;
+  }
+}
+
 
 

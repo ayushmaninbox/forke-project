@@ -107,7 +107,7 @@ export default function LevelSystem() {
       {/* Background Gradients */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--color-accent-muted)_0%,_transparent_70%)] opacity-10 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
+      <div className="max-w-7xl mx-auto relative z-10 grid lg:grid-cols-2 gap-16 lg:gap-12 items-center min-[1920px]:max-w-[1920px]">
 
         {/* Left Column: Content */}
         <div className="gsap-lvl-content space-y-8 max-w-xl mx-auto lg:mx-0">

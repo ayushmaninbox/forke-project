@@ -45,6 +45,7 @@ interface LanyardProps {
   className?: string
   card?: LanyardCard
   qrUrl?: string
+  isHome?: boolean
 }
 
 export default function Lanyard({
@@ -55,6 +56,7 @@ export default function Lanyard({
   className = '',
   card,
   qrUrl,
+  isHome = false,
 }: LanyardProps) {
   const [isMobile, setIsMobile] = useState<boolean>(
     () => typeof window !== 'undefined' && window.innerWidth < 768
@@ -88,7 +90,7 @@ export default function Lanyard({
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={isMobile ? 1 / 30 : 1 / 60}>
-          <Band isMobile={isMobile} card={card} flipRef={flipRef} qrUrl={qrUrl} />
+          <Band isMobile={isMobile} card={card} qrUrl={qrUrl} isHome={isHome} flipRef={flipRef} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer intensity={2} color="white" position={[0, -1, 5]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
@@ -98,13 +100,15 @@ export default function Lanyard({
         </Environment>
       </Canvas>
 
-      <button
-        onClick={toggleFlip}
-        className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-9 px-4 rounded-full bg-white/[0.06] border border-white/15 hover:bg-white/[0.12] hover:border-white/25 backdrop-blur text-xs font-bold text-white/85 hover:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
-        {flipped ? 'Show front' : 'Flip card'}
-      </button>
+      {!isHome && (
+        <button
+          onClick={toggleFlip}
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 h-9 px-4 rounded-full bg-white/[0.06] border border-white/15 hover:bg-white/[0.12] hover:border-white/25 backdrop-blur text-xs font-bold text-white/85 hover:text-white transition-colors flex items-center gap-2 cursor-pointer shadow-lg"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          {flipped ? 'Show front' : 'Flip card'}
+        </button>
+      )}
     </div>
   )
 }
@@ -116,6 +120,7 @@ interface BandProps {
   card?: LanyardCard
   flipRef?: React.MutableRefObject<boolean>
   qrUrl?: string
+  isHome?: boolean
 }
 
 // ---- HTML face sizing ----
@@ -127,7 +132,7 @@ const FACE_H = 536 // px
 const FACE_FUDGE = 48
 const FACE_OFFSET = 0.04 // how far each DOM face sits off the body (avoids occlusion clipping)
 
-function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qrUrl }: BandProps) {
+function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qrUrl, isHome = false }: BandProps) {
   const band = useRef<any>(null)
   const fixed = useRef<any>(null)
   const j1 = useRef<any>(null)
@@ -191,12 +196,14 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
   useFrame((state, delta) => {
     if (!fixed.current || !cardRef.current) return
 
-      // Relax band joints toward rest, then redraw the woven strap.
-      ;[j1, j2].forEach((ref) => {
-        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
+    // Relax band joints toward rest, then redraw the woven strap.
+    ;[j1, j2].forEach((ref) => {
+      if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
+      if (!isHome) {
         const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
         ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
-      })
+      }
+    })
     curve.points[0].copy(j3.current.translation())
     curve.points[1].copy(j2.current.lerped)
     curve.points[2].copy(j1.current.lerped)
@@ -210,11 +217,14 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
     const r = cardRef.current.rotation()
     quat.set(r.x, r.y, r.z, r.w)
     euler.setFromQuaternion(quat, 'YXZ')
-    const targetY = flipRef?.current ? Math.PI : 0
-    let err = targetY - euler.y
-    err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
-    ang.copy(cardRef.current.angvel())
-    cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
+    
+    if (!isHome) {
+      const targetY = flipRef?.current ? Math.PI : 0
+      let err = targetY - euler.y
+      err = Math.atan2(Math.sin(err), Math.cos(err)) // shortest path
+      ang.copy(cardRef.current.angvel())
+      cardRef.current.setAngvel({ x: ang.x, y: err * 4, z: ang.z })
+    }
 
     // Mathematical camera dot-product normal-check for high-performance visibility toggling
     if (frontHtmlRef.current && backHtmlRef.current) {
@@ -246,17 +256,17 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
   return (
     <>
       <group position={[0, 4, 0]}>
-        <RigidBody ref={fixed} {...segmentProps} type={'fixed' as RigidBodyProps['type']} />
-        <RigidBody position={[0, -0.8, 0]} ref={j1} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody ref={fixed} {...segmentProps} type="fixed" />
+        <RigidBody position={isHome ? [0, -0.8, 0] : [0.5, 0, 0]} ref={j1} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[0, -1.6, 0]} ref={j2} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={isHome ? [0, -1.6, 0] : [1, 0, 0]} ref={j2} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[0, -2.4, 0]} ref={j3} {...segmentProps} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={isHome ? [0, -2.4, 0] : [1.5, 0, 0]} ref={j3} {...segmentProps} type={isHome ? 'fixed' : 'dynamic'}>
           <BallCollider args={[0.1]} />
         </RigidBody>
-        <RigidBody position={[0, -3.85, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={'dynamic' as RigidBodyProps['type']}>
+        <RigidBody position={isHome ? [0, -3.85, 0] : [2, 0, 0]} ref={cardRef} {...segmentProps} canSleep={false} type={isHome ? 'fixed' : 'dynamic'}>
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
 
           {/* Physical card body + metal clip from the model (gives depth + the clasp) */}

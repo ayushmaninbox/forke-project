@@ -3,6 +3,20 @@
 
 export const CHANGELOG_DATA = [
   {
+    "date": "2026-06-16",
+    "label": "jun 16, 2026",
+    "entries": [
+      {
+        "shortHash": "709b812",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-16T20:39:25+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement landing page redesign with animated terminal, metrics, and updated marketing components"
+      }
+    ]
+  },
+  {
     "date": "2026-06-11",
     "label": "jun 11, 2026",
     "entries": [
@@ -1350,4 +1364,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 151;
+export const COMMIT_COUNT = 152;
