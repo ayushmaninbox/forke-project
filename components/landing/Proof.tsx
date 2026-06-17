@@ -36,7 +36,10 @@ function LaptopMockup({
   screenRef: React.RefObject<HTMLImageElement | null>
 }) {
   return (
-    <div className="w-full" style={{ perspective: '2200px' }}>
+    // A long perspective keeps the hinge looking like a real laptop opening
+    // rather than a keystoned/stretched plane — short perspectives exaggerate
+    // the trapezoid as the lid tilts back.
+    <div className="w-full" style={{ perspective: '4500px' }}>
       {/* Screen / lid — hinged at the bottom edge, rotates open on scroll.
           backfaceVisibility:hidden keeps the screen content from bleeding
           through when the lid is tilted near-closed (it must read as a solid
@@ -118,92 +121,76 @@ export default function Proof({ n = '004' }: { n?: string }) {
   const lidRef = useRef<HTMLDivElement>(null)
   const screenRef = useRef<HTMLImageElement>(null)
   const pinRef = useRef<HTMLDivElement>(null)
-  const scaleRef = useRef<HTMLDivElement>(null)
 
-  // Apple-style product reveal: the laptop pins centered in the viewport for a
-  // long scroll, then the lid opens with weight (eased, not linear) while the
-  // whole unit scales up slightly and the screen brightens from dim to full —
-  // the way Apple unveils a MacBook. Releases once fully open. Skipped under
-  // reduced motion (renders open and bright).
+  // Apple-style product reveal. The laptop enters already mostly-open and, as
+  // you scroll, pins and eases the lid through its final hinge to upright —
+  // just the screen rotating on the hinge, viewed head-on through a single
+  // perspective so there's no keystone/stretch. Slow, weighty, organic. No
+  // scale-pop or brightness flash (those read as "animated"). Skipped under
+  // reduced motion (renders settled open).
   useGSAP(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       gsap.set(lidRef.current, { rotateX: 0 })
-      gsap.set(screenRef.current, { filter: 'brightness(1)' })
       return
     }
 
-    const tl = gsap.timeline({
-      defaults: { ease: 'power2.inOut' },
-      scrollTrigger: {
-        trigger: pinRef.current,
-        start: 'center center',
-        // Longer pinned scroll (Apple lets the reveal breathe).
-        end: '+=140%',
-        pin: pinRef.current,
-        pinSpacing: true,
-        // The section uses overflow-hidden, which breaks position:fixed pinning;
-        // pin via transforms so it sticks inside the clipped ancestor.
-        pinType: 'transform',
-        scrub: 1,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-      },
-    })
-
-    // The lid weightily swings open; the device scales up and the screen
-    // brightens in alongside it — all on one scrubbed timeline.
-    tl.fromTo(
+    gsap.fromTo(
       lidRef.current,
-      { rotateX: -88, transformPerspective: 2400, transformOrigin: 'bottom center' },
-      { rotateX: 0, duration: 1 },
-      0
+      { rotateX: -30, transformOrigin: 'bottom center', force3D: true },
+      {
+        rotateX: 0,
+        ease: 'none',
+        force3D: true,
+        scrollTrigger: {
+          trigger: pinRef.current,
+          start: 'center center',
+          // Shorter pinned scroll so the open doesn't drag on.
+          end: '+=80%',
+          pin: pinRef.current,
+          pinSpacing: true,
+          // The section uses overflow-hidden, which breaks position:fixed pinning;
+          // pin via transforms so it sticks inside the clipped ancestor.
+          pinType: 'transform',
+          // Tight scrub for a direct, smooth follow; anticipatePin is omitted
+          // (it jitters with transform pinning).
+          scrub: 0.4,
+          invalidateOnRefresh: true,
+        },
+      }
     )
-      .fromTo(
-        scaleRef.current,
-        { scale: 0.92 },
-        { scale: 1, duration: 1, ease: 'power1.out' },
-        0
-      )
-      .fromTo(
-        screenRef.current,
-        { filter: 'brightness(0.62)' },
-        { filter: 'brightness(1)', duration: 0.7, ease: 'power1.in' },
-        0.35
-      )
   }, { scope: wrapRef })
 
   return (
     <Section id="proof" className="overflow-hidden px-5 pb-10 pt-16 md:px-10 md:pb-16 md:pt-24">
       <div ref={wrapRef}>
+        {/* Centered headline above the laptop — Apple product-page composition */}
         <Reveal>
-          <Eyebrow n={n} label="proof of work" />
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <H2 accent="compiles.">A resume that</H2>
-            <p className="max-w-md pb-1.5 text-[15px] font-light leading-relaxed text-white/45">
+          <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
+            <div className="flex justify-center">
+              <Eyebrow n={n} label="proof of work" />
+            </div>
+            <H2 accent="compiles." className="text-center">A resume that</H2>
+            <p className="mt-4 max-w-md text-[15px] font-light leading-relaxed text-white/45">
               Every approved task lands on your public profile automatically —
               timestamped, client-rated, linked to the merged PR. Recruiters
               don&apos;t read claims. They read receipts.
             </p>
+            <Link
+              href={showWaitlisterView ? '/' : '/register'}
+              className="group mt-6 inline-flex items-center gap-2 text-[14.5px] font-medium text-white/75 transition-colors hover:text-white"
+            >
+              {showWaitlisterView ? 'Coming soon' : 'Claim your username'}
+              <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
-          <Link
-            href={showWaitlisterView ? '/' : '/register'}
-            className="group mt-6 inline-flex items-center gap-2 text-[14.5px] font-medium text-white/75 transition-colors hover:text-white"
-          >
-            {showWaitlisterView ? 'Coming soon' : 'Claim your username'}
-            <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" />
-          </Link>
         </Reveal>
 
         {/* The artifact: the real profile page (DEV ID card + shipped-work
             ledger) captured as an image, shown on a laptop that opens on scroll */}
-        <div className="relative mt-6 flex justify-center w-full md:mt-8">
+        <div className="relative mt-10 flex justify-center w-full md:mt-14">
           <div aria-hidden className="absolute -inset-x-12 top-10 h-56 rounded-full bg-accent/[0.05] blur-[110px]" />
           <div ref={pinRef} className="relative mx-auto w-full max-w-[920px]">
-            {/* Inner wrapper carries the scale tween so it never fights the
-                pin transform ScrollTrigger writes onto pinRef itself. */}
-            <div ref={scaleRef} className="w-full origin-center will-change-transform">
-              <LaptopMockup lidRef={lidRef} screenRef={screenRef} />
-            </div>
+            <LaptopMockup lidRef={lidRef} screenRef={screenRef} />
           </div>
         </div>
       </div>
