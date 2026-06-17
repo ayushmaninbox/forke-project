@@ -37,13 +37,25 @@ function LaptopMockup({
 }) {
   return (
     <div className="w-full" style={{ perspective: '2200px' }}>
-      {/* Screen / lid — hinged at the bottom edge, rotates open on scroll */}
+      {/* Screen / lid — hinged at the bottom edge, rotates open on scroll.
+          backfaceVisibility:hidden keeps the screen content from bleeding
+          through when the lid is tilted near-closed (it must read as a solid
+          opaque panel, not glass). An opaque aluminium back sits behind it. */}
       <div
         ref={lidRef}
         className="relative mx-auto w-full origin-bottom"
         style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
       >
-        <div className="relative overflow-hidden rounded-t-xl rounded-b-sm border border-white/[0.12] bg-[#0b0b0d] p-[0.6%] pb-[0.9%] shadow-[0_40px_120px_rgba(0,0,0,0.7)]">
+        {/* Opaque lid backing — the aluminium underside of the screen */}
+        <div
+          aria-hidden
+          className="absolute inset-0 rounded-t-xl rounded-b-sm bg-[#0b0b0d]"
+          style={{ transform: 'translateZ(-1px)', backfaceVisibility: 'visible' }}
+        />
+        <div
+          className="relative overflow-hidden rounded-t-xl rounded-b-sm border border-white/[0.12] bg-[#0b0b0d] p-[0.6%] pb-[0.9%] shadow-[0_40px_120px_rgba(0,0,0,0.7)]"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
           {/* Webcam dot on the top bezel */}
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center pt-[0.35%]">
             <span className="h-[3px] w-[3px] rounded-full bg-white/25 sm:h-[4px] sm:w-[4px]" />
@@ -154,7 +166,7 @@ export default function Proof({ n = '004' }: { n?: string }) {
       )
       .fromTo(
         screenRef.current,
-        { filter: 'brightness(0.35)' },
+        { filter: 'brightness(0.62)' },
         { filter: 'brightness(1)', duration: 0.7, ease: 'power1.in' },
         0.35
       )
@@ -184,7 +196,7 @@ export default function Proof({ n = '004' }: { n?: string }) {
 
         {/* The artifact: the real profile page (DEV ID card + shipped-work
             ledger) captured as an image, shown on a laptop that opens on scroll */}
-        <div className="relative mt-14 flex justify-center w-full">
+        <div className="relative mt-6 flex justify-center w-full md:mt-8">
           <div aria-hidden className="absolute -inset-x-12 top-10 h-56 rounded-full bg-accent/[0.05] blur-[110px]" />
           <div ref={pinRef} className="relative mx-auto w-full max-w-[920px]">
             {/* Inner wrapper carries the scale tween so it never fights the
