@@ -9,9 +9,6 @@ import { Button } from '@/components/ui/Button'
 import DotField from '@/components/shared/DotField'
 import { Eyebrow } from '@/components/landing/primitives'
 import {
-  Code,
-  Shield,
-  IndianRupee,
   Target,
   Eye,
   Zap,
@@ -20,6 +17,11 @@ import {
   ShieldCheck,
   ArrowRight,
   Check,
+  Minus,
+  MousePointerClick,
+  GitBranch,
+  GitPullRequest,
+  Wallet,
 } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -59,6 +61,78 @@ const STORY_POINTS = [
   'No waiting — UPI payout the moment it merges',
 ]
 
+const HOW_IT_WORKS = [
+  {
+    step: '01',
+    title: 'Claim a task',
+    desc: 'Browse a feed gated to your level, skill tier, and trust score. Claim one that fits and the soft reservation is yours.',
+    icon: MousePointerClick,
+  },
+  {
+    step: '02',
+    title: 'Build in a branch',
+    desc: 'Work in an isolated, Forke-managed GitHub branch — never directly on the owner’s repo. Just code.',
+    icon: GitBranch,
+  },
+  {
+    step: '03',
+    title: 'Ship a pull request',
+    desc: 'Open a PR with a structured submission. Automated checks and an AI review run before the owner ever sees it.',
+    icon: GitPullRequest,
+  },
+  {
+    step: '04',
+    title: 'Get paid instantly',
+    desc: 'Owner approves the verdict, Forke merges upstream, and your UPI payout releases the moment it lands.',
+    icon: Wallet,
+  },
+]
+
+// status: 'yes' | 'no' | 'partial' — drives the check / cross / partial markers.
+const COMPARISON_COLUMNS = ['Forke', 'Fiverr', 'Upwork'] as const
+
+const COMPARISON = [
+  { feature: 'Bite-sized micro-tasks (30 min – 4 hr)', forke: 'yes', fiverr: 'partial', upwork: 'no' },
+  { feature: 'Developer-only marketplace', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'Skill-gated task access', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'Instant UPI payouts on approval', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'Auto-built, verified GitHub portfolio', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'Git-native PR submission workflow', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'AI-assisted code review pipeline', forke: 'yes', fiverr: 'no', upwork: 'no' },
+  { feature: 'Escrow held before work begins', forke: 'yes', fiverr: 'partial', upwork: 'partial' },
+  { feature: 'No proposals or bidding wars', forke: 'yes', fiverr: 'partial', upwork: 'no' },
+  { feature: 'India-first ₹ pricing & startups', forke: 'yes', fiverr: 'no', upwork: 'no' },
+] as const
+
+// Renders the check / cross / partial marker for a comparison cell.
+function renderMark(status: 'yes' | 'no' | 'partial', highlight: boolean) {
+  if (status === 'yes') {
+    return (
+      <span
+        className={`flex items-center justify-center rounded-full ${
+          highlight
+            ? 'h-7 w-7 bg-accent text-black shadow-[0_0_12px_-4px_rgba(255,122,0,0.6)]'
+            : 'h-6 w-6 bg-white/[0.07] text-white/55'
+        }`}
+      >
+        <Check className={highlight ? 'h-4 w-4' : 'h-3.5 w-3.5'} strokeWidth={highlight ? 3.25 : 2.5} />
+      </span>
+    )
+  }
+  if (status === 'partial') {
+    return (
+      <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.08] px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-amber-400/90">
+        Partial
+      </span>
+    )
+  }
+  return (
+    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/[0.03]">
+      <Minus className="h-3.5 w-3.5 text-white/20" strokeWidth={2.5} />
+    </span>
+  )
+}
+
 export default function WhatsForkePage() {
   const router = useRouter()
   const pageContainerRef = useRef<HTMLDivElement>(null)
@@ -80,16 +154,6 @@ export default function WhatsForkePage() {
       { y: 30, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.8 },
       '-=0.6'
-    )
-    .fromTo('.gsap-wf-hero-row',
-      { y: 20, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 },
-      '-=0.7'
-    )
-    .fromTo('.gsap-wf-hero-image-wrap',
-      { scale: 0.95, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1.2 },
-      '-=1'
     )
 
     // 2. Scroll reveals for elements
@@ -117,15 +181,15 @@ export default function WhatsForkePage() {
     <div ref={pageContainerRef} className="min-h-screen bg-[#050505] text-white overflow-hidden font-sans relative selection:bg-accent selection:text-white">
       <Navbar />
 
-      {/* --- HERO WRAPPER (Confines dotted background to top section & fits viewport) --- */}
-      <div className="relative w-full h-screen lg:min-h-screen lg:h-auto flex items-start lg:items-center overflow-hidden">
-        {/* Ambient background Dot Grid — clear circle follows Forky (lower-center on mobile, right on desktop) */}
+      {/* --- HERO SECTION WITH SCALED DOTTED BACKGROUND --- */}
+      <div className="relative w-full overflow-hidden">
+        {/* Ambient background Dot Grid */}
         <div
-          className="absolute inset-0 z-[1] pointer-events-none opacity-50
-            [mask-image:radial-gradient(circle_at_50%_78%,transparent_18%,black_48%)]
-            [-webkit-mask-image:radial-gradient(circle_at_50%_78%,transparent_18%,black_48%)]
-            lg:[mask-image:radial-gradient(circle_at_80%_50%,transparent_15%,black_45%)]
-            lg:[-webkit-mask-image:radial-gradient(circle_at_80%_50%,transparent_15%,black_45%)]"
+          className="absolute inset-0 z-[1] pointer-events-none opacity-50"
+          style={{
+            maskImage: 'radial-gradient(circle at 50% 50%, transparent 15%, black 45%)',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 15%, black 45%)',
+          }}
         >
           <DotField
             dotRadius={1.2}
@@ -143,94 +207,25 @@ export default function WhatsForkePage() {
           />
         </div>
 
-        {/* --- HERO SECTION (Homepage Hero Layout & Sizing Match) --- */}
-        <section className="relative z-10 w-full pt-28 pb-6 sm:pt-32 sm:pb-16 px-6 max-w-7xl mx-auto">
-          <div className="max-w-7xl mx-auto w-full relative">
-            <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
-
-              {/* Hero Left Content */}
-              <div className="space-y-10 text-center lg:text-left relative z-30 pt-8 lg:pt-0">
-
-                {/* Small badge */}
-                <div className="gsap-wf-hero-badge flex items-center justify-center lg:justify-start gap-2 opacity-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                  <span className="ui-eyebrow">{'//'} about us</span>
-                </div>
-
-                {/* Headline (matches homepage hero typography) */}
-                <h1 className="gsap-wf-hero-title text-[2.5rem] max-[420px]:text-[2.1rem] sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.25rem] font-medium text-white leading-[1.04] tracking-[-0.04em] opacity-0">
-                  What is <span className="font-serif italic font-normal text-accent">Forke?</span>
-                </h1>
-
-                {/* Description (Upscaled to text-lg md:text-xl to match homepage description) */}
-                <p className="gsap-wf-hero-desc text-muted text-base max-[420px]:text-sm sm:text-base md:text-lg lg:text-xl font-light leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-0">
-                  Forke is a gamified open-source contribution space. Claim verified coding tasks, level up your engineering tier, and cash out rewards instantly.
-                </p>
-
-                {/* Row of Three Features */}
-                <div className="gsap-wf-hero-row grid grid-cols-3 gap-2.5 sm:gap-4 md:gap-5 opacity-0 max-w-2xl mx-auto lg:mx-0">
-                  {[
-                    { title: 'Real tasks', desc: 'from real projects', icon: Code },
-                    { title: 'Verified work', desc: 'you can be proud of', icon: Shield },
-                    { title: 'Get paid', desc: 'for your impact', icon: IndianRupee },
-                  ].map((item, idx) => {
-                    const Icon = item.icon
-                    return (
-                      <div key={idx} className="p-3 sm:p-5 rounded-2xl bg-[#0A0A0A]/90 border border-white/[0.06] backdrop-blur-md flex flex-col gap-3 sm:gap-4 hover:border-white/10 transition-colors">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-                          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </div>
-                        <div>
-                          <h4 className="text-white font-bold text-sm md:text-base tracking-tight">{item.title}</h4>
-                          <p className="text-xs text-white/40 font-light mt-1 leading-tight">{item.desc}</p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-              </div>
-
-              {/* DESKTOP Hero Image — absolute right-side (original layout, lg+ only) */}
-              <div className="hidden lg:block absolute right-[-10%] top-1/2 -translate-y-1/2 w-[55vw] h-[55vw] max-w-[850px] max-h-[850px] z-0 pointer-events-none">
-                <div
-                  className="gsap-wf-hero-image-wrap relative w-full h-full"
-                  style={{
-                    maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-                    WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-                  }}
-                >
-                  <Image
-                    src="/forke-assets/about-assets/hero-bg.png"
-                    alt="Chibi Rabbit Coding at Night Rooftop"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                </div>
-              </div>
-
+        <section className="relative z-10 pt-48 pb-20 md:pt-56 md:pb-28 px-6 max-w-7xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto space-y-8 relative z-30">
+            {/* Small badge */}
+            <div className="gsap-wf-hero-badge flex items-center justify-center gap-2 opacity-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+              <span className="ui-eyebrow">{'//'} about us</span>
             </div>
+
+            {/* Headline */}
+            <h1 className="gsap-wf-hero-title text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-medium text-white leading-[1.02] tracking-[-0.04em] opacity-0">
+              What is <span className="font-serif italic font-normal text-accent">Forke?</span>
+            </h1>
+
+            {/* Description */}
+            <p className="gsap-wf-hero-desc text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto opacity-0">
+              Forke is a gamified open-source contribution space. Claim verified coding tasks, level up your engineering tier, and cash out rewards instantly.
+            </p>
           </div>
         </section>
-
-        {/* MOBILE Hero Image — pinned to the very bottom of the full-height hero, behind the text (md:hidden) */}
-        <div className="md:hidden absolute left-1/2 -translate-x-1/2 bottom-0 w-[115%] max-[420px]:w-[108%] sm:w-[min(95%,50dvh)] aspect-square z-0 pointer-events-none">
-          <div
-            className="relative w-full h-full"
-            style={{
-              maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-              WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
-            }}
-          >
-            <Image
-              src="/forke-assets/about-assets/hero-bg.png"
-              alt="Chibi Rabbit Coding at Night Rooftop"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
       </div>
 
       {/* --- THE STORY — editorial split: statement left, narrative right --- */}
@@ -274,6 +269,39 @@ export default function WhatsForkePage() {
         </div>
       </section>
 
+      {/* --- HOW IT WORKS — four-step ledger flow --- */}
+      <section className="gsap-wf-section relative z-10 pb-24 md:pb-32 px-6 max-w-7xl mx-auto">
+        <div className="text-left mb-14 max-w-xl">
+          <div className="gsap-wf-element opacity-0">
+            <Eyebrow n="002" label="how it works" />
+          </div>
+          <h2 className="gsap-wf-element mt-5 text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06] opacity-0">
+            Claim. Build. <span className="font-serif italic font-normal text-accent">Ship.</span>
+          </h2>
+          <p className="gsap-wf-element mt-5 text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
+            From browsing the feed to money in your account — the whole loop is Git-native and built for speed.
+          </p>
+        </div>
+
+        <div className="gsap-wf-element grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-4 opacity-0">
+          {HOW_IT_WORKS.map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.step} className="group bg-[#070708] p-7 transition-colors hover:bg-[#0b0b0d] sm:p-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/25 bg-accent/[0.06] text-accent transition-all duration-500 group-hover:bg-accent group-hover:text-black">
+                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  </div>
+                  <span className="font-mono text-xs tracking-widest text-white/25">{item.step}</span>
+                </div>
+                <h3 className="mt-5 text-lg font-medium tracking-[-0.01em] text-white">{item.title}</h3>
+                <p className="mt-2 text-[13px] font-light leading-relaxed text-white/45">{item.desc}</p>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
       {/* --- MISSION & VISION — one ledger bento --- */}
       <section className="gsap-wf-section relative z-10 px-6 max-w-7xl mx-auto">
         <div className="gsap-wf-element grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] md:grid-cols-2 opacity-0">
@@ -306,7 +334,7 @@ export default function WhatsForkePage() {
       <section className="gsap-wf-section relative z-10 py-24 md:py-32 px-6 max-w-7xl mx-auto">
         <div className="text-left mb-14 max-w-xl">
           <div className="gsap-wf-element opacity-0">
-            <Eyebrow n="002" label="our values" />
+            <Eyebrow n="003" label="our values" />
           </div>
           <h2 className="gsap-wf-element mt-5 text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06] opacity-0">
             What drives <span className="font-serif italic font-normal text-accent">us.</span>
@@ -326,6 +354,72 @@ export default function WhatsForkePage() {
               </div>
             )
           })}
+        </div>
+      </section>
+
+      {/* --- WHY NOT FIVERR — comparison ledger --- */}
+      <section className="gsap-wf-section relative z-10 pb-24 md:pb-32 px-6 max-w-7xl mx-auto">
+        <div className="text-left mb-14 max-w-xl">
+          <div className="gsap-wf-element opacity-0">
+            <Eyebrow n="004" label="why not fiverr" />
+          </div>
+          <h2 className="gsap-wf-element mt-5 text-4xl md:text-[3.25rem] font-medium text-white tracking-[-0.035em] leading-[1.06] opacity-0">
+            Built different, on <span className="font-serif italic font-normal text-accent">purpose.</span>
+          </h2>
+          <p className="gsap-wf-element mt-5 text-white/50 text-base md:text-lg font-light leading-relaxed opacity-0">
+            Generic freelance platforms weren&apos;t made for developers. Every choice here is.
+          </p>
+        </div>
+
+        <div className="gsap-wf-element relative opacity-0">
+          {/* Ambient glow behind the table, gently concentrated under the Forke column */}
+          <div className="pointer-events-none absolute -inset-x-10 -top-4 bottom-0 hidden sm:block">
+            <div className="absolute left-1/2 top-0 h-full w-[30%] -translate-x-[18%] rounded-full bg-accent/[0.035] blur-3xl" />
+          </div>
+
+          {/* Highlighted Forke column — aligned flush with the table box (no overhang).
+              Grid is 2fr 1fr 1fr 1fr → feature 40%, each platform 20%; Forke is the first platform (40%–60%). */}
+          <div className="pointer-events-none absolute inset-y-0 left-[40%] right-[40%] z-20 hidden rounded-2xl border border-accent/30 bg-gradient-to-b from-accent/[0.07] via-accent/[0.03] to-transparent shadow-[0_0_50px_-24px_rgba(255,122,0,0.4)] sm:block" />
+
+          <div className="relative z-10 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0a0b]/80 backdrop-blur-sm">
+            {/* Header row */}
+            <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr] border-b border-white/[0.08] sm:grid-cols-[2fr_1fr_1fr_1fr]">
+              <div className="flex items-end px-4 py-5 font-mono text-[11px] uppercase tracking-widest text-white/35 sm:px-6 sm:py-6">
+                Feature
+              </div>
+              {COMPARISON_COLUMNS.map((col) => {
+                const isForke = col === 'Forke'
+                return (
+                  <div key={col} className="flex flex-col items-center justify-end px-2 py-5 text-center sm:px-4 sm:py-6">
+                    {isForke ? (
+                      <span className="text-base font-semibold tracking-[-0.04em] text-white sm:text-lg">
+                        forke<span className="text-accent">*</span>
+                      </span>
+                    ) : (
+                      <div className="text-sm font-bold tracking-tight text-white/45 sm:text-base">{col}</div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Feature rows */}
+            {COMPARISON.map((row, idx) => (
+              <div
+                key={row.feature}
+                className={`group/row grid grid-cols-[1.6fr_1fr_1fr_1fr] items-center transition-colors hover:bg-white/[0.02] sm:grid-cols-[2fr_1fr_1fr_1fr] ${
+                  idx !== 0 ? 'border-t border-white/[0.05]' : ''
+                }`}
+              >
+                <div className="px-4 py-4 text-[13px] font-medium leading-snug text-white/75 transition-colors group-hover/row:text-white sm:px-6 sm:py-5 sm:text-[15px]">
+                  {row.feature}
+                </div>
+                <div className="flex justify-center px-2 py-4 sm:px-4 sm:py-5">{renderMark(row.forke, true)}</div>
+                <div className="flex justify-center px-2 py-4 sm:px-4 sm:py-5">{renderMark(row.fiverr, false)}</div>
+                <div className="flex justify-center px-2 py-4 sm:px-4 sm:py-5">{renderMark(row.upwork, false)}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -381,7 +475,7 @@ export default function WhatsForkePage() {
           </div>
 
           {/* Right Peeking Mascot Illustration (tablet: hidden; desktop: absolute breakout) */}
-          <div className="gsap-wf-element hidden lg:flex lg:w-[700px] lg:h-[700px] lg:absolute lg:right-6 lg:-top-85 justify-center relative z-10 opacity-0 select-none pointer-events-none">
+          <div className="gsap-wf-element hidden lg:flex lg:w-[700px] lg:h-[700px] lg:absolute lg:right-6 lg:-top-64 justify-center relative z-10 opacity-0 select-none pointer-events-none">
             <div
               className="relative w-full max-w-none lg:w-full lg:h-full aspect-square lg:aspect-auto"
               style={{

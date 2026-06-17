@@ -134,28 +134,42 @@ export default function Proof({ n = '004' }: { n?: string }) {
       return
     }
 
-    gsap.fromTo(
-      lidRef.current,
-      { rotateX: -30, transformOrigin: 'bottom center', force3D: true },
+    // Phones get a shorter pinned scroll (and a slightly smaller initial tilt) so
+    // the open doesn't feel like a long drag; desktop keeps the weightier reveal.
+    const mm = gsap.matchMedia(wrapRef)
+
+    mm.add(
       {
-        rotateX: 0,
-        ease: 'none',
-        force3D: true,
-        scrollTrigger: {
-          trigger: pinRef.current,
-          start: 'center center',
-          // Shorter pinned scroll so the open doesn't drag on.
-          end: '+=80%',
-          pin: pinRef.current,
-          pinSpacing: true,
-          // The section uses overflow-hidden, which breaks position:fixed pinning;
-          // pin via transforms so it sticks inside the clipped ancestor.
-          pinType: 'transform',
-          // Tight scrub for a direct, smooth follow; anticipatePin is omitted
-          // (it jitters with transform pinning).
-          scrub: 0.4,
-          invalidateOnRefresh: true,
-        },
+        isPhone: '(max-width: 767px)',
+        isDesktop: '(min-width: 768px)',
+      },
+      (ctx) => {
+        const { isPhone } = ctx.conditions as { isPhone: boolean }
+
+        gsap.fromTo(
+          lidRef.current,
+          { rotateX: isPhone ? -22 : -30, transformOrigin: 'bottom center', force3D: true },
+          {
+            rotateX: 0,
+            ease: 'none',
+            force3D: true,
+            scrollTrigger: {
+              trigger: pinRef.current,
+              start: 'center center',
+              // Shorter pinned scroll so the open doesn't drag on — even shorter on phones.
+              end: isPhone ? '+=38%' : '+=80%',
+              pin: pinRef.current,
+              pinSpacing: true,
+              // The section uses overflow-hidden, which breaks position:fixed pinning;
+              // pin via transforms so it sticks inside the clipped ancestor.
+              pinType: 'transform',
+              // Tight scrub for a direct, smooth follow; anticipatePin is omitted
+              // (it jitters with transform pinning).
+              scrub: 0.4,
+              invalidateOnRefresh: true,
+            },
+          }
+        )
       }
     )
   }, { scope: wrapRef })

@@ -9,10 +9,37 @@ import { revalidatePath } from 'next/cache'
 import { unlink, readdir, stat } from 'fs/promises'
 import { join, basename } from 'path'
 import { deleteFileByUrl } from './r2'
+import { sendBlogPublishedBroadcast } from './email'
 
 async function ensureAdmin() {
   if (!(await isAdminAuthenticated())) {
     throw new Error('Unauthorized')
+  }
+}
+
+/**
+ * Fire the new-blog email to all subscribers, fail-soft. Never throws — a Resend
+ * outage or a subscriber-query error must not roll back or block a publish.
+ */
+async function announceBlogToSubscribers(blog: {
+  title: string
+  slug: string
+  excerpt?: string | null
+  coverImage?: string | null
+  authorName?: string | null
+  readingMinutes?: number | null
+  publishedAt?: Date | null
+}) {
+  try {
+    const { sentCount } = await sendBlogPublishedBroadcast(blog)
+    await logAudit({
+      category: 'system',
+      action: 'blog.broadcast_sent',
+      target: blog.title,
+      metadata: { sentCount },
+    })
+  } catch (err) {
+    console.error('Failed to broadcast new blog to subscribers:', err)
   }
 }
 
@@ -380,19 +407,31 @@ export async function updateBlog(id: string, input: BlogInput) {
 export async function setBlogStatus(id: string, status: 'draft' | 'published') {
   await ensureAdmin()
   const row = await db
-    .select({ title: blogs.title, publishedAt: blogs.publishedAt })
+    .select({
+      title: blogs.title,
+      slug: blogs.slug,
+      excerpt: blogs.excerpt,
+      coverImage: blogs.coverImage,
+      authorName: blogs.authorName,
+      readingMinutes: blogs.readingMinutes,
+      publishedAt: blogs.publishedAt,
+    })
     .from(blogs)
     .where(eq(blogs.id, id))
     .limit(1)
   if (row.length === 0) return { success: false as const, error: 'Post not found' }
+
+  // First-publish = going live while it has never been published before. Only
+  // then do we announce it to subscribers — re-publishing a post never re-sends.
+  const isFirstPublish = status === 'published' && row[0].publishedAt == null
+  const publishedAt = status === 'published' ? row[0].publishedAt ?? new Date() : row[0].publishedAt
 
   await db
     .update(blogs)
     .set({
       status,
       // Stamp publishedAt the first time it goes live; keep it on re-publish.
-      publishedAt:
-        status === 'published' ? row[0].publishedAt ?? new Date() : row[0].publishedAt,
+      publishedAt,
       updatedAt: new Date(),
     })
     .where(eq(blogs.id, id))
@@ -402,6 +441,11 @@ export async function setBlogStatus(id: string, status: 'draft' | 'published') {
     action: status === 'published' ? 'blog.published' : 'blog.unpublished',
     target: row[0].title,
   })
+
+  if (isFirstPublish) {
+    await announceBlogToSubscribers({ ...row[0], publishedAt })
+  }
+
   revalidatePath('/admin')
   return { success: true as const }
 }
@@ -466,6 +510,23 @@ export async function bulkSetBlogStatus(ids: string[], status: 'draft' | 'publis
   await ensureAdmin()
   if (ids.length === 0) return { success: true as const, count: 0 }
 
+  // Snapshot which of these will be first-time publishes (never published before),
+  // grabbing the fields the announcement email needs, before we mutate the rows.
+  const firstPublishes =
+    status === 'published'
+      ? await db
+          .select({
+            title: blogs.title,
+            slug: blogs.slug,
+            excerpt: blogs.excerpt,
+            coverImage: blogs.coverImage,
+            authorName: blogs.authorName,
+            readingMinutes: blogs.readingMinutes,
+          })
+          .from(blogs)
+          .where(and(inArray(blogs.id, ids), sql`${blogs.publishedAt} IS NULL`))
+      : []
+
   await db
     .update(blogs)
     .set({
@@ -483,6 +544,12 @@ export async function bulkSetBlogStatus(ids: string[], status: 'draft' | 'publis
     action: status === 'published' ? 'blog.bulk_published' : 'blog.bulk_unpublished',
     target: `${ids.length} posts`,
   })
+
+  // Announce each newly-published post to subscribers (fail-soft, sequential).
+  for (const blog of firstPublishes) {
+    await announceBlogToSubscribers({ ...blog, publishedAt: new Date() })
+  }
+
   revalidatePath('/admin')
   return { success: true as const, count: ids.length }
 }

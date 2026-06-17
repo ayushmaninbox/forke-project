@@ -133,7 +133,7 @@ export default function LevelSystem() {
         </div>
 
         {/* Right Column: Stacked Cards */}
-        <div className="gsap-lvl-stack relative hidden sm:flex h-[360px] sm:h-[460px] lg:h-[580px] w-full items-center justify-center lg:justify-end pr-0 lg:pr-32">
+        <div className="gsap-lvl-stack relative hidden sm:flex h-[360px] sm:h-[460px] lg:h-[580px] w-full items-center justify-center lg:justify-start lg:pl-4 pr-0 lg:pr-0">
           <CardSwap
             width={780}
             height={420}
@@ -203,8 +203,10 @@ export default function LevelSystem() {
                     </div>
                   </div>
 
-                  {/* Right Column: Mascot Image (desktop only — mobile uses the top mascot above) */}
-                  <div className="hidden md:flex w-[520px] h-full absolute top-0 right-20 pointer-events-none overflow-visible select-none items-center justify-center z-20">
+                  {/* Right Column: Mascot Image (desktop+tablet — mobile uses the top mascot above).
+                      Tablet (md): the whole card is visible, so hug the right edge instead of
+                      sitting centered. Desktop (lg): pull in so Forky isn't clipped off-screen. */}
+                  <div className="hidden md:flex w-[480px] h-full absolute top-0 right-2 lg:right-40 pointer-events-none overflow-visible select-none items-center justify-end lg:justify-center z-20">
                     <div className={cn(
                       "relative w-full h-[90%] transition-transform duration-500",
                       item.imgClass

@@ -1,517 +1,245 @@
-export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
-  // Safe quote-stripping logic for environment variables to work seamlessly across Vercel and local
-  let apiKey = process.env.RESEND_API_KEY || ''
-  if (apiKey.startsWith('"') && apiKey.endsWith('"')) {
-    apiKey = apiKey.slice(1, -1)
-  }
-  if (apiKey.startsWith("'") && apiKey.endsWith("'")) {
-    apiKey = apiKey.slice(1, -1)
-  }
+/**
+ * Forke transactional email system.
+ *
+ * Design language mirrors the marketing site's "ledger" aesthetic:
+ *  - dark canvas (#050505) with a single hairline-bordered card (#0A0A0B)
+ *  - the `forke*` wordmark (lowercase, accent asterisk) instead of a heavy logo lockup
+ *  - a mono eyebrow (NN ── LABEL) marking each message, like the site's <Eyebrow>
+ *  - headings in Geist/system sans-medium with one serif-italic accent word
+ *  - flat, refined buttons (no 3D drop-shadow / chunky uppercase) — felt, not shouted
+ *  - accent #FF7A00, muted body copy, generous spacing
+ *
+ * All markup is inline-styled table HTML for broad email-client support. Web fonts
+ * aren't reliable in email, so we use a system sans stack for UI/body and Georgia
+ * as the serif stand-in for Instrument Serif's editorial italics.
+ */
 
-  if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping welcome email.')
-    return false
-  }
+// ----------------------------------------------------------------------------
+// Brand tokens (inlined everywhere — email clients ignore <style>/variables)
+// ----------------------------------------------------------------------------
+const BRAND = {
+  accent: '#FF7A00',
+  accentDeep: '#E66E00',
+  canvas: '#050505',
+  card: '#0A0A0B',
+  cardSoft: '#0E0E10',
+  hairline: 'rgba(255,255,255,0.08)',
+  hairlineSoft: 'rgba(255,255,255,0.05)',
+  textHigh: '#F5F5F7',
+  textBody: 'rgba(255,255,255,0.55)',
+  textMuted: 'rgba(255,255,255,0.40)',
+  textFaint: 'rgba(255,255,255,0.28)',
+  sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+  serif: "Georgia,'Times New Roman',serif",
+  mono: "ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace",
+  baseUrl: 'https://forke.space',
+}
 
-  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
-  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
+// ----------------------------------------------------------------------------
+// Reusable markup primitives
+// ----------------------------------------------------------------------------
 
-  const bannerFile = 'main-banner.png'
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="dark only">
-        <title>Welcome to the Forke Waitlist!</title>
-        <!--[if mso]>
-        <style>table,td{font-family:Arial,Helvetica,sans-serif;}</style>
-        <![endif]-->
-      </head>
-      <body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
-          <tr>
-            <td align="center" style="padding:48px 16px;">
-              <!-- Container Card -->
-              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
-                <!-- Banner -->
-                <tr>
-                  <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
-                  </td>
-                </tr>
-                
-                <!-- Content Padding Area -->
-                <tr>
-                  <td style="padding:48px 40px;text-align:center;">
-                    <!-- Brand Logo -->
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px auto;">
-                      <tr>
-                        <td align="center">
-                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="100" style="width:100px;height:auto;display:block;margin:0 auto;" />
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Primary Heading -->
-                    <h1 style="font-family:Georgia,serif;font-size:30px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
-                      Join the waitlist.<br><span style="color:#FF7A00;font-style:italic;">Build the future.</span>
-                    </h1>
-                    
-                    <!-- Description Paragraphs -->
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      Thanks for joining early access. Forke is the premier micro-task marketplace where developers claim bounties, ship real code, and earn rewards.
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      We&apos;ll email you the exact moment we launch your workspace. In the meantime, prepare your editor. Something big is about to drop.
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-                      Have questions or feedback? Feel free to reach out to us at <a href="mailto:support@forke.space" style="color:#FF7A00;text-decoration:none;font-weight:500;">support@forke.space</a>.
-                    </p>
-                    
-                    <!-- Features Checks -->
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 36px auto;">
-                      <tr>
-                        <td align="center" style="font-size:0;">
-                          <!--[if mso]>
-                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-                          <tr>
-                          <td style="padding:4px 8px;">
-                          <![endif]-->
-                          <div style="display:inline-block;background-color:rgba(255,122,0,0.02);border:1px solid rgba(255,122,0,0.1);border-radius:20px;padding:8px 16px;margin:4px;font-size:11px;font-weight:bold;color:#a0a0ab;letter-spacing:0.02em;">
-                            <span style="color:#FF7A00;margin-right:6px;font-weight:bold;">✓</span> Real-world tasks
-                          </div>
-                          <!--[if mso]>
-                          </td><td style="padding:4px 8px;">
-                          <![endif]-->
-                          <div style="display:inline-block;background-color:rgba(255,122,0,0.02);border:1px solid rgba(255,122,0,0.1);border-radius:20px;padding:8px 16px;margin:4px;font-size:11px;font-weight:bold;color:#a0a0ab;letter-spacing:0.02em;">
-                            <span style="color:#FF7A00;margin-right:6px;font-weight:bold;">✓</span> Verified contributions
-                          </div>
-                          <!--[if mso]>
-                          </td><td style="padding:4px 8px;">
-                          <![endif]-->
-                          <div style="display:inline-block;background-color:rgba(255,122,0,0.02);border:1px solid rgba(255,122,0,0.1);border-radius:20px;padding:8px 16px;margin:4px;font-size:11px;font-weight:bold;color:#a0a0ab;letter-spacing:0.02em;">
-                            <span style="color:#FF7A00;margin-right:6px;font-weight:bold;">✓</span> Fast payouts
-                          </div>
-                          <!--[if mso]>
-                          </td>
-                          </tr>
-                          </table>
-                          <![endif]-->
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- CTA Buttons -->
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 40px auto;">
-                      <tr>
-                        <!-- LinkedIn Button -->
-                        <td align="center" style="padding:0 8px;">
-                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                              <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
-                                <a href="https://www.linkedin.com/company/forke/" target="_blank" style="display:inline-block;padding:16px 24px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);white-space:nowrap;">
-                                  Follow us on LinkedIn
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                        <!-- Contact Us Button -->
-                        <td align="center" style="padding:0 8px;">
-                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                            <tr>
-                              <td align="center" style="background-color:rgba(255,122,0,0.03);border:1px solid rgba(255,122,0,0.3);border-radius:12px;box-shadow:0 4px 0 rgba(255,122,0,0.15);">
-                                <a href="mailto:support@forke.space" style="display:inline-block;padding:15px 24px;font-size:11px;font-weight:900;color:#FF7A00;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;white-space:nowrap;">
-                                  Contact Us
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Divider Line -->
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-                      <tr>
-                        <td style="height:1px;background-color:#1a1a24;font-size:0;line-height:0;">&nbsp;</td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Non-italicized Quote Footer with Styled HTML Heart (guarantees orange on all platforms) -->
-                    <p style="font-family:Georgia,serif;font-size:14px;color:#555562;margin:0 0 16px 0;">
-                      See you on the other side! <span style="color:#FF7A00;font-size:16px;font-weight:bold;line-height:1;vertical-align:middle;display:inline-block;">♥</span>
-                    </p>
-                    
-                    <!-- Corporate Footer -->
-                    <p style="font-size:9px;color:#40404a;font-weight:700;text-transform:uppercase;letter-spacing:0.25em;margin:0;">
-                      &copy; 2026 FORKE &middot; REAL CODE &middot; REAL REWARDS
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
+/** The `forke*` wordmark — lowercase, tight tracking, accent asterisk. */
+function wordmark(size = 22): string {
+  return `<span style="font-family:${BRAND.sans};font-size:${size}px;font-weight:600;letter-spacing:-0.04em;color:${BRAND.textHigh};line-height:1;">forke<span style="color:${BRAND.accent};">*</span></span>`
+}
+
+/** Mono eyebrow: NN ──── LABEL, matching the site's <Eyebrow>. */
+function eyebrow(n: string, label: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px 0;">
+      <tr>
+        <td style="font-family:${BRAND.mono};font-size:11px;letter-spacing:0.08em;color:${BRAND.accent};opacity:0.85;padding-right:10px;vertical-align:middle;">${n}</td>
+        <td style="vertical-align:middle;padding-right:10px;"><div style="width:32px;height:1px;background:rgba(255,255,255,0.18);font-size:0;line-height:0;">&nbsp;</div></td>
+        <td style="font-family:${BRAND.mono};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND.textMuted};vertical-align:middle;">${label}</td>
+      </tr>
+    </table>
   `
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: 'Forke Waitlist <waitlist@forke.space>',
-        to: toEmail,
-        reply_to: 'support@forke.space',
-        subject: 'Welcome to the Forke Waitlist!',
-        html: htmlContent,
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error('Failed to send welcome email via Resend:', errText)
-      return false
-    }
-
-    const data = await res.json()
-    console.log('Welcome email dispatched successfully:', data.id)
-    return true
-  } catch (error) {
-    console.error('Error dispatching welcome email:', error)
-    return false
-  }
 }
 
-export async function sendBroadcastEmail(
-  toEmails: string[],
-  subject: string,
-  htmlContent: string
-): Promise<{ success: boolean; sentCount: number }> {
-  let apiKey = process.env.RESEND_API_KEY || ''
-  if (apiKey.startsWith('"') && apiKey.endsWith('"')) {
-    apiKey = apiKey.slice(1, -1)
-  }
-  if (apiKey.startsWith("'") && apiKey.endsWith("'")) {
-    apiKey = apiKey.slice(1, -1)
-  }
-
-  if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping broadcast email.')
-    return { success: false, sentCount: 0 }
-  }
-
-  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
-  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-
-  let sentCount = 0
-  for (const email of toEmails) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          from: 'Forke Updates <updates@forke.space>',
-          to: email,
-          reply_to: 'support@forke.space',
-          subject: subject,
-          html: htmlContent,
-        }),
-      })
-
-      if (res.ok) {
-        sentCount++
-      } else {
-        const errText = await res.text()
-        console.error(`Failed to send broadcast email to ${email} via Resend:`, errText)
-      }
-    } catch (err) {
-      console.error(`Error dispatching broadcast email to ${email}:`, err)
-    }
-  }
-
-  return { success: sentCount > 0, sentCount }
-}
-
-export async function sendAdminInvitation(
-  toEmail: string,
-  name: string,
-  inviteLink: string
-): Promise<boolean> {
-  let apiKey = process.env.RESEND_API_KEY || ''
-  if (apiKey.startsWith('"') && apiKey.endsWith('"')) {
-    apiKey = apiKey.slice(1, -1)
-  }
-  if (apiKey.startsWith("'") && apiKey.endsWith("'")) {
-    apiKey = apiKey.slice(1, -1)
-  }
-
-  if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping invitation email.')
-    return false
-  }
-
-  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
-  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-
-  const bannerFile = 'admin-approval.png'
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="dark only">
-        <title>Forke - Administrative Invitation</title>
-      </head>
-      <body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
-          <tr>
-            <td align="center" style="padding:48px 16px;">
-              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
-                <tr>
-                  <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:48px 40px;text-align:left;color:#ffffff;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
-                      <tr>
-                        <td>
-                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="80" style="width:80px;height:auto;display:block;" />
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
-                      Administrative invitation.<br><span style="color:#FF7A00;font-style:italic;">Access granted.</span>
-                    </h1>
-                    
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      Hello ${name},
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      You have been invited to join the administrative team at Forke. As a member of the console, you will possess administrative privileges to configure settings, manage users, and control system operations.
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-                      Please click the button below to establish your secure username and password to activate your administrative session:
-                    </p>
-                    
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 36px auto;">
-                      <tr>
-                        <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
-                          <a href="${inviteLink}" target="_blank" style="display:inline-block;padding:16px 32px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);white-space:nowrap;">
-                            Activate Admin Account
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
-                      If the button above does not work, copy and paste this link in your browser:<br>
-                      <a href="${inviteLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${inviteLink}</a>
-                    </p>
-                    
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-                      <tr>
-                        <td style="height:1px;background-color:#1a1a24;font-size:0;line-height:0;">&nbsp;</td>
-                      </tr>
-                    </table>
-                    
-                    <p style="font-family:Georgia,serif;font-size:14px;color:#555562;margin:0 0 16px 0;text-align:center;">
-                      See you on the other side! <span style="color:#FF7A00;font-size:16px;font-weight:bold;line-height:1;vertical-align:middle;display:inline-block;">♥</span>
-                    </p>
-                    <p style="font-size:9px;color:#40404a;font-weight:700;text-transform:uppercase;letter-spacing:0.25em;margin:0;text-align:center;">
-                      &copy; 2026 FORKE &middot; SECURE SYSTEM ACCESS
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
+/** Section heading: sans-medium with one serif-italic accent word/clause. */
+function heading(lead: string, accent: string, size = 30): string {
+  return `
+    <h1 style="font-family:${BRAND.sans};font-size:${size}px;font-weight:500;letter-spacing:-0.035em;line-height:1.1;color:${BRAND.textHigh};margin:0 0 18px 0;">
+      ${lead} <span style="font-family:${BRAND.serif};font-style:italic;font-weight:400;color:${BRAND.accent};letter-spacing:0;">${accent}</span>
+    </h1>
   `
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: 'Forke Onboarding <onboarding@forke.space>',
-        to: toEmail,
-        reply_to: 'support@forke.space',
-        subject: 'Action Required: Complete your Forke Admin Setup',
-        html: htmlContent,
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error('Failed to send admin invitation email via Resend:', errText)
-      return false
-    }
-
-    return true
-  } catch (error) {
-    console.error('Error dispatching admin invitation email:', error)
-    return false
-  }
 }
 
-export async function sendAccountDeletionScheduledEmail(toEmail: string): Promise<boolean> {
-  let apiKey = process.env.RESEND_API_KEY || ''
-  if (apiKey.startsWith('"') && apiKey.endsWith('"')) {
-    apiKey = apiKey.slice(1, -1)
-  }
-  if (apiKey.startsWith("'") && apiKey.endsWith("'")) {
-    apiKey = apiKey.slice(1, -1)
-  }
+/** Body paragraph. */
+function p(text: string, mb = 18): string {
+  return `<p style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 ${mb}px 0;font-weight:400;">${text}</p>`
+}
 
-  if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping deletion scheduled email.')
-    return false
-  }
-
-  let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
-  if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-  if (fromEmail.startsWith("'") && fromEmail.endsWith("'")) {
-    fromEmail = fromEmail.slice(1, -1)
-  }
-
-  const bannerFile = 'main-banner.png'
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="dark only">
-        <title>Forke - Account Deletion Scheduled</title>
-      </head>
-      <body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
-          <tr>
-            <td align="center" style="padding:48px 16px;">
-              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
-                <tr>
-                  <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:48px 40px;text-align:left;color:#ffffff;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
-                      <tr>
-                        <td>
-                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="80" style="width:80px;height:auto;display:block;" />
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
-                      Account deletion scheduled.<br><span style="color:#FF7A00;font-style:italic;">30 days remaining.</span>
-                    </h1>
-                    
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      Hello,
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      We received a request to delete your Forke account. In accordance with our security policies, your account has been scheduled for permanent deletion in <strong>30 days</strong>.
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-                      If this request was made in error or you have changed your mind, you can cancel this request at any time before the 30-day window expires. To do so, simply log back into your account using your standard credentials or connected accounts.
-                    </p>
-                    <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-                      No further action is required if you wish to proceed with the deletion. Your data will be permanently erased after the 30-day period.
-                    </p>
-                    
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-                      <tr>
-                        <td style="height:1px;background-color:#1a1a24;font-size:0;line-height:0;">&nbsp;</td>
-                      </tr>
-                    </table>
-                    
-                    <p style="font-family:Georgia,serif;font-size:14px;color:#555562;margin:0 0 16px 0;text-align:center;">
-                      The Forke Team
-                    </p>
-                    <p style="font-size:9px;color:#40404a;font-weight:700;text-transform:uppercase;letter-spacing:0.25em;margin:0;text-align:center;">
-                      &copy; 2026 FORKE &middot; ACCOUNT DELETION SCHEDULE
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
+/** Flat, refined primary button (filled accent). */
+function buttonPrimary(href: string, label: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 4px 0;">
+      <tr>
+        <td align="center" style="border-radius:10px;background:${BRAND.accent};">
+          <a href="${href}" target="_blank" style="display:inline-block;padding:13px 26px;font-family:${BRAND.sans};font-size:14px;font-weight:600;letter-spacing:-0.01em;color:#0A0A0B;text-decoration:none;border-radius:10px;white-space:nowrap;">${label}&nbsp;&rarr;</a>
+        </td>
+      </tr>
+    </table>
   `
-
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: 'Forke Security <security@forke.space>',
-        to: toEmail,
-        reply_to: 'support@forke.space',
-        subject: 'Forke: Your account deletion has been scheduled',
-        html: htmlContent,
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error('Failed to send deletion schedule email via Resend:', errText)
-      return false
-    }
-
-    return true
-  } catch (error) {
-    console.error('Error dispatching deletion schedule email:', error)
-    return false
-  }
 }
 
-// --- Shared helpers for owner lifecycle emails ---------------------------------
+/** Flat, refined secondary button (hairline outline). */
+function buttonGhost(href: string, label: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 4px 0;">
+      <tr>
+        <td align="center" style="border-radius:10px;border:1px solid ${BRAND.hairline};background:rgba(255,255,255,0.02);">
+          <a href="${href}" target="_blank" style="display:inline-block;padding:12px 24px;font-family:${BRAND.sans};font-size:14px;font-weight:500;letter-spacing:-0.01em;color:${BRAND.textHigh};text-decoration:none;border-radius:10px;white-space:nowrap;">${label}</a>
+        </td>
+      </tr>
+    </table>
+  `
+}
 
-// Resolves the Resend API key with the same quote-stripping the other senders use.
+/** Subtle "paste this link" fallback line under a button. */
+function fallbackLink(href: string): string {
+  return `<p style="font-family:${BRAND.sans};font-size:12px;line-height:1.7;color:${BRAND.textFaint};margin:14px 0 0 0;font-weight:400;">Button not working? Paste this into your browser:<br><a href="${href}" style="color:${BRAND.accent};text-decoration:none;word-break:break-all;">${href}</a></p>`
+}
+
+/** An accent-tinted callout box (used for reasons, key facts). */
+function calloutBox(label: string, body: string): string {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px 0;">
+      <tr>
+        <td style="background:rgba(255,122,0,0.04);border:1px solid rgba(255,122,0,0.18);border-radius:12px;padding:16px 18px;">
+          <p style="font-family:${BRAND.mono};font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:${BRAND.accent};margin:0 0 8px 0;">${label}</p>
+          <p style="font-family:${BRAND.sans};font-size:14px;line-height:1.65;color:rgba(255,255,255,0.72);margin:0;font-weight:400;">${body}</p>
+        </td>
+      </tr>
+    </table>
+  `
+}
+
+/** A row of feature "pills" (ledger chips). `items` is an array of labels. */
+function featurePills(items: string[]): string {
+  const cells = items
+    .map(
+      (item) => `
+      <!--[if mso]></td><td style="padding:0 4px;"><![endif]-->
+      <div style="display:inline-block;background:rgba(255,255,255,0.02);border:1px solid ${BRAND.hairline};border-radius:999px;padding:7px 14px;margin:4px;font-family:${BRAND.sans};font-size:12px;font-weight:500;color:rgba(255,255,255,0.6);">
+        <span style="color:${BRAND.accent};font-weight:700;">+</span>&nbsp; ${item}
+      </div>`
+    )
+    .join('')
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left" style="margin:4px 0 28px 0;">
+      <tr><td align="left" style="font-size:0;">
+        <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:0 4px;"><![endif]-->
+        ${cells}
+        <!--[if mso]></td></tr></table><![endif]-->
+      </td></tr>
+    </table>
+  `
+}
+
+/** A thin hairline divider. */
+function divider(mt = 8, mb = 24): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:${mt}px 0 ${mb}px 0;"><tr><td style="height:1px;background:${BRAND.hairlineSoft};font-size:0;line-height:0;">&nbsp;</td></tr></table>`
+}
+
+/**
+ * The shared email shell — dark canvas, single hairline card, optional banner,
+ * wordmark header bar, slot for body, and a consistent footer.
+ */
+function emailShell(opts: {
+  title: string
+  preheader?: string
+  banner?: string
+  bodyHtml: string
+  footerLabel: string
+  /** Optional extra <style> injected into <head> (progressive-enhancement only). */
+  headStyle?: string
+}): string {
+  const bannerRow = opts.banner
+    ? `<tr><td align="center" style="padding:0;line-height:0;font-size:0;">
+         <img src="${BRAND.baseUrl}/forke-assets/email-banners/${opts.banner}" alt="Forke" width="600" style="width:100%;max-width:600px;height:auto;display:block;border-bottom:1px solid ${BRAND.hairlineSoft};" />
+       </td></tr>`
+    : ''
+
+  const preheader = opts.preheader
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`
+    : ''
+
+  return `<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark only">
+    <meta name="supported-color-schemes" content="dark">
+    <title>${opts.title}</title>
+    <!--[if mso]><style>table,td,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->
+    ${opts.headStyle ? `<style>${opts.headStyle}</style>` : ''}
+  </head>
+  <body style="margin:0;padding:0;background:${BRAND.canvas};-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
+    ${preheader}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.canvas};">
+      <tr>
+        <td align="center" style="padding:40px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${BRAND.card};border:1px solid ${BRAND.hairline};border-radius:20px;overflow:hidden;">
+
+            <!-- Header bar: wordmark + tiny mono tag -->
+            <tr>
+              <td style="padding:22px 32px;border-bottom:1px solid ${BRAND.hairlineSoft};">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="left" style="vertical-align:middle;">${wordmark(22)}</td>
+                    <td align="right" style="vertical-align:middle;font-family:${BRAND.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${BRAND.textFaint};">prove skill by shipping</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            ${bannerRow}
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:40px 32px 36px 32px;">
+                ${opts.bodyHtml}
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:24px 32px 30px 32px;border-top:1px solid ${BRAND.hairlineSoft};">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="left" style="vertical-align:top;">
+                      ${wordmark(16)}
+                      <p style="font-family:${BRAND.sans};font-size:12px;line-height:1.6;color:${BRAND.textFaint};margin:8px 0 0 0;">
+                        The micro-task marketplace for developers.<br>
+                        <a href="mailto:support@forke.space" style="color:${BRAND.textMuted};text-decoration:none;">support@forke.space</a>
+                      </p>
+                    </td>
+                    <td align="right" style="vertical-align:top;">
+                      <a href="https://www.linkedin.com/company/forke/" style="font-family:${BRAND.mono};font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.textMuted};text-decoration:none;">LinkedIn &rarr;</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="font-family:${BRAND.mono};font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.22em;color:rgba(255,255,255,0.20);margin:22px 0 0 0;">
+                  &copy; 2026 Forke &nbsp;&middot;&nbsp; ${opts.footerLabel}
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
+}
+
+// ----------------------------------------------------------------------------
+// Resend transport helpers (quote-stripping kept identical to before)
+// ----------------------------------------------------------------------------
+
 function resolveResendApiKey(): string {
   let apiKey = process.env.RESEND_API_KEY || ''
   if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.slice(1, -1)
@@ -519,7 +247,6 @@ function resolveResendApiKey(): string {
   return apiKey
 }
 
-// Resolves the "from" address with the same quote-stripping the other senders use.
 function resolveFromEmail(): string {
   let fromEmail = process.env.WAITLIST_EMAIL_FROM || 'Forke <onboarding@resend.dev>'
   if (fromEmail.startsWith('"') && fromEmail.endsWith('"')) fromEmail = fromEmail.slice(1, -1)
@@ -534,92 +261,10 @@ function resolveBaseUrl(): string {
   return baseUrl.replace(/\/$/, '')
 }
 
-// Wraps body markup in the standard dark Forke email shell (banner + logo + footer).
-// `banner` is the email-banners filename (e.g. 'owner-approved.png'); defaults to main-banner.
-function ownerEmailShell(opts: {
-  title: string
-  heading: string
-  headingAccent: string
-  bodyHtml: string
-  footerLabel: string
-  banner?: string
-}): string {
-  const bannerFile = opts.banner || 'main-banner.png'
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="color-scheme" content="dark only">
-        <title>${opts.title}</title>
-      </head>
-      <body style="margin:0;padding:0;background-color:#050508;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#050508;">
-          <tr>
-            <td align="center" style="padding:48px 16px;">
-              <table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0" style="max-width:580px;width:100%;background-color:#0A0A10;border:1px solid rgba(255,122,0,0.15);border-radius:24px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.85);">
-                <tr>
-                  <td align="center" style="padding:0;line-height:0;font-size:0;">
-                    <img src="https://forke.space/forke-assets/email-banners/${bannerFile}" alt="Forke Banner" width="580" style="width:100%;max-width:580px;height:auto;display:block;border-bottom:1px solid rgba(255,122,0,0.05);" />
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:48px 40px;text-align:left;color:#ffffff;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
-                      <tr>
-                        <td>
-                          <img src="https://forke.space/forke-assets/forke_logo.png" alt="Forke Logo" width="80" style="width:80px;height:auto;display:block;" />
-                        </td>
-                      </tr>
-                    </table>
-
-                    <h1 style="font-family:Georgia,serif;font-size:24px;font-weight:normal;font-style:italic;line-height:1.3;color:#ffffff;margin:0 0 20px 0;">
-                      ${opts.heading}<br><span style="color:#FF7A00;font-style:italic;">${opts.headingAccent}</span>
-                    </h1>
-
-                    ${opts.bodyHtml}
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
-                      <tr>
-                        <td style="height:1px;background-color:#1a1a24;font-size:0;line-height:0;">&nbsp;</td>
-                      </tr>
-                    </table>
-
-                    <p style="font-family:Georgia,serif;font-size:14px;color:#555562;margin:0 0 16px 0;text-align:center;">
-                      The Forke Team <span style="color:#FF7A00;font-size:16px;font-weight:bold;line-height:1;vertical-align:middle;display:inline-block;">♥</span>
-                    </p>
-                    <p style="font-size:9px;color:#40404a;font-weight:700;text-transform:uppercase;letter-spacing:0.25em;margin:0;text-align:center;">
-                      &copy; 2026 FORKE &middot; ${opts.footerLabel}
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      </body>
-    </html>
-  `
-}
-
-// Renders a standard orange CTA button used across the owner lifecycle emails.
-function ctaButton(href: string, label: string): string {
-  return `
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 36px auto;">
-      <tr>
-        <td align="center" style="background:linear-gradient(180deg,#FF7A00 0%,#D97706 100%);border-radius:12px;box-shadow:0 4px 0 #b45309;">
-          <a href="${href}" target="_blank" style="display:inline-block;padding:16px 32px;font-size:11px;font-weight:900;color:#050505;text-decoration:none;text-transform:uppercase;letter-spacing:0.15em;border-radius:12px;border-bottom:2px solid rgba(0,0,0,0.25);white-space:nowrap;">
-            ${label}
-          </a>
-        </td>
-      </tr>
-    </table>
-  `
-}
-
-// Posts an email through Resend. Fail-soft: logs and returns false, never throws,
-// so a Resend outage can never block the underlying DB action.
+/**
+ * Posts an email through Resend. Fail-soft: logs and returns false, never throws,
+ * so a Resend outage can never block the underlying action.
+ */
 async function sendResendEmail(
   toEmail: string,
   subject: string,
@@ -644,7 +289,7 @@ async function sendResendEmail(
         to: toEmail,
         reply_to: 'support@forke.space',
         subject,
-        html
+        html,
       }),
     })
     if (!res.ok) {
@@ -659,96 +304,364 @@ async function sendResendEmail(
   }
 }
 
-export async function sendOwnerApprovedEmail(toEmail: string, name: string): Promise<boolean> {
-  const baseUrl = resolveBaseUrl()
-  const signInLink = `${baseUrl}/signin`
-  const html = ownerEmailShell({
-    title: 'Forke - Your Owner Account is Approved',
-    heading: 'Application approved.',
-    headingAccent: 'Welcome aboard.',
-    footerLabel: 'OWNER ACCESS GRANTED',
-    banner: 'owner-approved.png',
+// ----------------------------------------------------------------------------
+// Email builders — exported so the /email preview page can render them too.
+// Each returns the full HTML string for one message.
+// ----------------------------------------------------------------------------
+
+export function buildWelcomeEmail(): string {
+  return emailShell({
+    title: 'Welcome to the Forke Waitlist',
+    preheader: 'You’re on the list. Prepare your editor — something big is about to drop.',
+    banner: 'main-banner.png',
+    footerLabel: 'Waitlist Confirmation',
     bodyHtml: `
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-        Great news — your owner application has been reviewed and <strong style="color:#ffffff;">approved</strong>. You now have full access to the Forke owner dashboard, where you can post tasks, manage submissions, and collaborate with developers.
-      </p>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-        Click below to sign in and open your dashboard:
-      </p>
-      ${ctaButton(signInLink, 'Enter Owner Dashboard')}
-      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
-        If the button does not work, paste this link into your browser:<br>
-        <a href="${signInLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${signInLink}</a>
-      </p>
+      ${eyebrow('001', 'waitlist')}
+      ${heading('You’re on the list.', 'Build the future.')}
+      ${p('Thanks for joining early. Forke is the micro-task marketplace where developers claim real bounties, ship real code, and get paid instantly over UPI — no fake projects, no proposals, no waiting.')}
+      ${p('We’ll email you the moment your workspace is ready. Until then, prepare your editor.')}
+      ${featurePills(['Real-world tasks', 'Verified contributions', 'Instant payouts'])}
+      ${buttonPrimary('https://www.linkedin.com/company/forke/', 'Follow along on LinkedIn')}
+      ${divider(24, 22)}
+      ${p('Questions or feedback? Just reply to this email or reach us at <a href="mailto:support@forke.space" style="color:' + BRAND.accent + ';text-decoration:none;">support@forke.space</a>.', 0)}
     `,
   })
-  return sendResendEmail(toEmail, 'Your Forke owner account is approved', html, 'owner approval', 'Forke Approvals <approvals@forke.space>')
+}
+
+export function buildAdminInvitationEmail(name: string, inviteLink: string): string {
+  return emailShell({
+    title: 'Forke — Administrative Invitation',
+    preheader: 'You’ve been invited to the Forke admin console. Set up your account to get started.',
+    banner: 'admin-approval.png',
+    footerLabel: 'Secure System Access',
+    bodyHtml: `
+      ${eyebrow('001', 'admin access')}
+      ${heading('You’re invited.', 'Access granted.')}
+      ${p(`Hello ${name},`)}
+      ${p('You’ve been invited to the Forke admin console. As a member, you can configure settings, manage users, and oversee platform operations.')}
+      ${p('Set up your secure username and password to activate your session:')}
+      ${buttonPrimary(inviteLink, 'Activate admin account')}
+      ${fallbackLink(inviteLink)}
+    `,
+  })
+}
+
+export function buildAccountDeletionScheduledEmail(): string {
+  return emailShell({
+    title: 'Forke — Account Deletion Scheduled',
+    preheader: 'Your account is scheduled for deletion in 30 days. Sign back in to cancel.',
+    banner: 'main-banner.png',
+    footerLabel: 'Account Deletion Schedule',
+    bodyHtml: `
+      ${eyebrow('001', 'account')}
+      ${heading('Deletion scheduled.', '30 days remaining.')}
+      ${p('Hello,')}
+      ${p('We received a request to delete your Forke account. Per our security policy, it’s scheduled for permanent deletion in <strong style="color:' + BRAND.textHigh + ';font-weight:600;">30 days</strong>.')}
+      ${calloutBox('Changed your mind?', 'Simply sign back in with your usual credentials any time before the window closes — that automatically cancels the deletion.')}
+      ${p('No action is needed if you wish to proceed. Your data will be permanently erased after 30 days.', 0)}
+    `,
+  })
+}
+
+export function buildOwnerApprovedEmail(name: string, signInLink: string): string {
+  return emailShell({
+    title: 'Forke — Your Owner Account is Approved',
+    preheader: 'Your owner application is approved. Your dashboard is ready.',
+    banner: 'owner-approved.png',
+    footerLabel: 'Owner Access Granted',
+    bodyHtml: `
+      ${eyebrow('001', 'application')}
+      ${heading('Application approved.', 'Welcome aboard.')}
+      ${p(`Hello ${name},`)}
+      ${p('Great news — your owner application has been reviewed and <strong style="color:' + BRAND.textHigh + ';font-weight:600;">approved</strong>. You now have full access to the Forke owner dashboard, where you can post tasks, review submissions, and collaborate with developers.')}
+      ${buttonPrimary(signInLink, 'Enter owner dashboard')}
+      ${fallbackLink(signInLink)}
+    `,
+  })
+}
+
+export function buildOwnerDeclinedEmail(name: string, reason: string, applyLink: string): string {
+  const safeReason = (reason || '').trim() || 'Your application did not meet our current onboarding criteria.'
+  return emailShell({
+    title: 'Forke — Owner Application Update',
+    preheader: 'An update on your Forke owner application.',
+    banner: 'owner-rejected.png',
+    footerLabel: 'Owner Application Review',
+    bodyHtml: `
+      ${eyebrow('001', 'application')}
+      ${heading('Application update.', 'You can apply again.')}
+      ${p(`Hello ${name},`)}
+      ${p('Thank you for your interest in becoming an owner on Forke. After review, we weren’t able to approve your application at this time.')}
+      ${calloutBox('Reason', safeReason)}
+      ${p('You’re welcome to address the above and re-apply whenever you’re ready — we’d be glad to take another look.')}
+      ${buttonGhost(applyLink, 'Apply again')}
+      ${fallbackLink(applyLink)}
+    `,
+  })
+}
+
+export function buildBannedEmail(name: string, accountKind: 'owner' | 'developer', reviewLink: string): string {
+  return emailShell({
+    title: 'Forke — Account Suspended',
+    preheader: 'Your account has been suspended. You can request a review.',
+    banner: 'user-ban.png',
+    footerLabel: 'Account Suspension Notice',
+    bodyHtml: `
+      ${eyebrow('001', 'account')}
+      ${heading('Account suspended.', 'You can request a review.')}
+      ${p(`Hello ${name},`)}
+      ${p(`Your Forke ${accountKind} account has been <strong style="color:${BRAND.textHigh};font-weight:600;">suspended</strong> and access is temporarily restricted. This can follow a policy review or activity that needs further verification.`)}
+      ${p('If you believe this was a mistake, submit a request for review below and our team will look into it:')}
+      ${buttonPrimary(reviewLink, 'Request a review')}
+      ${fallbackLink(reviewLink)}
+    `,
+  })
+}
+
+export interface BlogEmailData {
+  title: string
+  excerpt?: string | null
+  coverImage?: string | null
+  authorName?: string | null
+  readingMinutes?: number | null
+  publishedAt?: Date | string | null
+  url: string
+}
+
+function formatBlogDate(value: Date | string | null | undefined): string | null {
+  if (!value) return null
+  const d = typeof value === 'string' ? new Date(value) : value
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+/**
+ * New-blog announcement — echoes the public blog page's featured card: a cover
+ * hero, a mono meta row, a serif title, the excerpt, and a "Read more" button.
+ *
+ * Progressive fade-in: each block is wrapped in a `.fx` class that the <head>
+ * <style> starts at opacity:0 and eases to 1 with a staggered delay, the button
+ * (`.fx-cta`) revealing last. Clients that strip <style> (Gmail) ignore all of
+ * it and render everything visible immediately — so nothing is ever hidden.
+ */
+export function buildBlogEmail(data: BlogEmailData): string {
+  const dateStr = formatBlogDate(data.publishedAt)
+  const minutes = data.readingMinutes && data.readingMinutes > 0 ? data.readingMinutes : 1
+
+  const cover = data.coverImage
+    ? `<a href="${data.url}" target="_blank" style="text-decoration:none;display:block;"><img src="${data.coverImage}" alt="${data.title}" width="536" style="width:100%;max-width:536px;height:auto;display:block;border-radius:14px;border:1px solid ${BRAND.hairline};" /></a>`
+    : `<a href="${data.url}" target="_blank" style="text-decoration:none;display:block;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:14px;border:1px solid ${BRAND.hairline};background:rgba(255,255,255,0.02);"><tr><td align="center" style="height:200px;font-family:${BRAND.serif};font-size:64px;color:rgba(255,255,255,0.10);">F</td></tr></table></a>`
+
+  const metaParts = [
+    `<span style="color:${BRAND.accent};text-transform:uppercase;letter-spacing:0.12em;">New post</span>`,
+    dateStr ? `<span style="color:rgba(255,255,255,0.18);">&middot;</span> <span>${dateStr}</span>` : '',
+    `<span style="color:rgba(255,255,255,0.18);">&middot;</span> <span>${minutes} min read</span>`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  const excerpt = data.excerpt?.trim()
+    ? `<p class="fx fx-3" style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 26px 0;font-weight:400;">${data.excerpt.trim()}</p>`
+    : ''
+
+  const authorRow = data.authorName?.trim()
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 4px 0;"><tr>
+         <td style="vertical-align:middle;"><div style="width:26px;height:26px;border-radius:999px;background:rgba(255,122,0,0.12);border:1px solid rgba(255,122,0,0.3);font-family:${BRAND.sans};font-size:12px;font-weight:600;color:${BRAND.accent};text-align:center;line-height:26px;">${data.authorName.trim().charAt(0).toUpperCase()}</div></td>
+         <td style="vertical-align:middle;padding-left:10px;font-family:${BRAND.sans};font-size:13px;color:${BRAND.textMuted};">${data.authorName.trim()}</td>
+       </tr></table>`
+    : ''
+
+  // Staggered fade-in. Base = visible (no opacity inline); .fx classes only take
+  // effect where <style> + CSS animations are honored.
+  const headStyle = `
+    @media (prefers-reduced-motion: no-preference) {
+      .fx { opacity: 0; animation: forkeFade 0.9s ease-out forwards; }
+      .fx-1 { animation-delay: 0.05s; }
+      .fx-2 { animation-delay: 0.35s; }
+      .fx-3 { animation-delay: 0.65s; }
+      .fx-4 { animation-delay: 0.95s; }
+      .fx-cta { opacity: 0; animation: forkeRise 1s ease-out 1.35s forwards; }
+    }
+    @keyframes forkeFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes forkeRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  `
+
+  return emailShell({
+    title: data.title,
+    preheader: data.excerpt?.trim() || `New on the Forke blog: ${data.title}`,
+    footerLabel: 'New Blog Post',
+    headStyle,
+    bodyHtml: `
+      <div class="fx fx-1" style="margin:0 0 22px 0;">${cover}</div>
+      <div class="fx fx-2" style="font-family:${BRAND.mono};font-size:11px;letter-spacing:0.04em;color:rgba(255,255,255,0.40);margin:0 0 14px 0;">${metaParts}</div>
+      <h1 class="fx fx-2" style="font-family:${BRAND.serif};font-size:30px;font-weight:400;line-height:1.18;color:${BRAND.textHigh};margin:0 0 18px 0;">
+        <a href="${data.url}" target="_blank" style="color:${BRAND.textHigh};text-decoration:none;">${data.title}</a>
+      </h1>
+      ${excerpt}
+      <div class="fx fx-4">${authorRow}</div>
+      <div class="fx-cta" style="margin-top:14px;">
+        ${buttonPrimary(data.url, 'Read more')}
+      </div>
+    `,
+  })
+}
+
+// ----------------------------------------------------------------------------
+// Public senders — signatures, subjects, and from-addresses unchanged.
+// ----------------------------------------------------------------------------
+
+export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
+  return sendResendEmail(
+    toEmail,
+    'Welcome to the Forke Waitlist!',
+    buildWelcomeEmail(),
+    'welcome',
+    'Forke Waitlist <waitlist@forke.space>'
+  )
+}
+
+export async function sendBroadcastEmail(
+  toEmails: string[],
+  subject: string,
+  htmlContent: string
+): Promise<{ success: boolean; sentCount: number }> {
+  const apiKey = resolveResendApiKey()
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping broadcast email.')
+    return { success: false, sentCount: 0 }
+  }
+
+  let sentCount = 0
+  for (const email of toEmails) {
+    const ok = await sendResendEmail(
+      email,
+      subject,
+      htmlContent,
+      'broadcast',
+      'Forke Updates <updates@forke.space>'
+    )
+    if (ok) sentCount++
+  }
+
+  return { success: sentCount > 0, sentCount }
+}
+
+/**
+ * Fan a new-blog announcement out to every subscriber. Builds the branded blog
+ * email once, resolves the absolute post URL, then sends per-recipient via
+ * Resend. Fully fail-soft: a missing API key or a Resend hiccup logs and returns
+ * a zero count — it must never block or throw into the blog-publish action.
+ *
+ * The DB import is lazy so this module stays importable in non-DB contexts
+ * (e.g. the email preview page renders builders without ever touching Postgres).
+ */
+export async function sendBlogPublishedBroadcast(blog: {
+  title: string
+  slug: string
+  excerpt?: string | null
+  coverImage?: string | null
+  authorName?: string | null
+  readingMinutes?: number | null
+  publishedAt?: Date | string | null
+}): Promise<{ success: boolean; sentCount: number }> {
+  const apiKey = resolveResendApiKey()
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping blog broadcast.')
+    return { success: false, sentCount: 0 }
+  }
+
+  // Resolve recipients.
+  let emails: string[] = []
+  try {
+    const { db } = await import('./db')
+    const { subscribers } = await import('./db/schema')
+    const rows = await db.select({ email: subscribers.email }).from(subscribers)
+    emails = rows.map((r) => r.email).filter(Boolean)
+  } catch (err) {
+    console.error('Failed to load subscribers for blog broadcast:', err)
+    return { success: false, sentCount: 0 }
+  }
+
+  if (emails.length === 0) {
+    return { success: true, sentCount: 0 }
+  }
+
+  const url = `${resolveBaseUrl()}/blogs/${blog.slug}`
+  const html = buildBlogEmail({
+    title: blog.title,
+    excerpt: blog.excerpt,
+    coverImage: blog.coverImage,
+    authorName: blog.authorName,
+    readingMinutes: blog.readingMinutes,
+    publishedAt: blog.publishedAt,
+    url,
+  })
+  const subject = `New on the Forke blog: ${blog.title}`
+
+  let sentCount = 0
+  for (const email of emails) {
+    const ok = await sendResendEmail(email, subject, html, 'blog broadcast', 'Forke Blog <blog@forke.space>')
+    if (ok) sentCount++
+  }
+
+  return { success: sentCount > 0, sentCount }
+}
+
+export async function sendAdminInvitation(
+  toEmail: string,
+  name: string,
+  inviteLink: string
+): Promise<boolean> {
+  return sendResendEmail(
+    toEmail,
+    'Action Required: Complete your Forke Admin Setup',
+    buildAdminInvitationEmail(name, inviteLink),
+    'admin invitation',
+    'Forke Onboarding <onboarding@forke.space>'
+  )
+}
+
+export async function sendAccountDeletionScheduledEmail(toEmail: string): Promise<boolean> {
+  return sendResendEmail(
+    toEmail,
+    'Forke: Your account deletion has been scheduled',
+    buildAccountDeletionScheduledEmail(),
+    'deletion scheduled',
+    'Forke Security <security@forke.space>'
+  )
+}
+
+export async function sendOwnerApprovedEmail(toEmail: string, name: string): Promise<boolean> {
+  const signInLink = `${resolveBaseUrl()}/signin`
+  return sendResendEmail(
+    toEmail,
+    'Your Forke owner account is approved',
+    buildOwnerApprovedEmail(name, signInLink),
+    'owner approval',
+    'Forke Approvals <approvals@forke.space>'
+  )
 }
 
 export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reason: string): Promise<boolean> {
-  const baseUrl = resolveBaseUrl()
-  const applyLink = `${baseUrl}/signin`
-  const safeReason = (reason || '').trim() || 'Your application did not meet our current onboarding criteria.'
-  const html = ownerEmailShell({
-    title: 'Forke - Owner Application Update',
-    heading: 'Application update.',
-    headingAccent: 'You can apply again.',
-    footerLabel: 'OWNER APPLICATION REVIEW',
-    banner: 'owner-rejected.png',
-    bodyHtml: `
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-        Thank you for your interest in becoming an owner on Forke. After review, we were unable to approve your application at this time.
-      </p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
-        <tr>
-          <td style="background-color:rgba(255,122,0,0.04);border:1px solid rgba(255,122,0,0.18);border-radius:12px;padding:16px 18px;">
-            <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#FF7A00;margin:0 0 8px 0;">Reason</p>
-            <p style="font-size:14px;line-height:1.7;color:#cfcfd6;margin:0;font-weight:300;">${safeReason}</p>
-          </td>
-        </tr>
-      </table>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-        You're welcome to address the above and re-apply at any time. We'd be glad to take another look.
-      </p>
-      ${ctaButton(applyLink, 'Apply Again')}
-      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
-        If the button does not work, paste this link into your browser:<br>
-        <a href="${applyLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${applyLink}</a>
-      </p>
-    `,
-  })
-  return sendResendEmail(toEmail, 'Update on your Forke owner application', html, 'owner decline', 'Forke Approvals <approvals@forke.space>')
+  const applyLink = `${resolveBaseUrl()}/signin`
+  return sendResendEmail(
+    toEmail,
+    'Update on your Forke owner application',
+    buildOwnerDeclinedEmail(name, reason, applyLink),
+    'owner decline',
+    'Forke Approvals <approvals@forke.space>'
+  )
 }
 
-// Shared suspension email used for both owners and developers — identical copy,
-// links to the existing /auth-error unban-request form.
 async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owner' | 'developer'): Promise<boolean> {
-  const baseUrl = resolveBaseUrl()
-  const reviewLink = `${baseUrl}/auth-error?error=AccessDenied`
-  const html = ownerEmailShell({
-    title: 'Forke - Account Suspended',
-    heading: 'Account suspended.',
-    headingAccent: 'You can request a review.',
-    footerLabel: 'ACCOUNT SUSPENSION NOTICE',
-    banner: 'user-ban.png',
-    bodyHtml: `
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">Hello ${name},</p>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 20px 0;font-weight:300;">
-        Your Forke ${accountKind} account has been <strong style="color:#ffffff;">suspended</strong> and access has been temporarily restricted. This may be the result of a policy review or activity that requires further verification.
-      </p>
-      <p style="font-size:14px;line-height:1.75;color:#a0a0ab;margin:0 0 28px 0;font-weight:300;">
-        If you believe this was a mistake, you can submit a request for review using the form below and our team will look into it:
-      </p>
-      ${ctaButton(reviewLink, 'Request a Review')}
-      <p style="font-size:12px;line-height:1.75;color:#60606b;margin:0 0 28px 0;font-weight:300;">
-        If the button does not work, paste this link into your browser:<br>
-        <a href="${reviewLink}" style="color:#FF7A00;text-decoration:none;word-break:break-all;">${reviewLink}</a>
-      </p>
-    `,
-  })
-  return sendResendEmail(toEmail, 'Your Forke account has been suspended', html, `${accountKind} ban`, 'Forke Bans <bans@forke.space>')
+  const reviewLink = `${resolveBaseUrl()}/auth-error?error=AccessDenied`
+  return sendResendEmail(
+    toEmail,
+    'Your Forke account has been suspended',
+    buildBannedEmail(name, accountKind, reviewLink),
+    `${accountKind} ban`,
+    'Forke Bans <bans@forke.space>'
+  )
 }
 
 export async function sendOwnerBannedEmail(toEmail: string, name: string): Promise<boolean> {
