@@ -147,9 +147,19 @@ export default function PublicProfileView({
       {/* Identity bento */}
       <div className={`${tile} p-4 sm:p-6`}>
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate">{data.name}</h1>
-            <p className="text-sm text-white/40 font-mono mt-0.5">@{data.username}</p>
+          <div className="flex items-center gap-3 min-w-0">
+            {data.avatarUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={data.avatarUrl}
+                alt={data.name}
+                className="w-12 h-12 rounded-full object-cover border border-white/10 md:hidden"
+              />
+            )}
+            <div className="min-w-0">
+              <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight truncate">{data.name}</h1>
+              <p className="text-sm text-white/40 font-mono mt-0.5">@{data.username}</p>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -237,6 +247,11 @@ export default function PublicProfileView({
         </Section>
       )}
 
+      {/* Heatmap */}
+      <Section icon={<Sparkles className="w-4 h-4 text-[#ff8a00]" />} title="XP Activity">
+        <Heatmap data={data.heatmap} username={data.username} joinedAt={data.joinedAt} />
+      </Section>
+
       {/* Achievements */}
       {(!contained && data.achievements.filter(a => a.unlocked).length === 0) ? null : (
         <Section icon={<Award className="w-4 h-4 text-[#ff8a00]" />} title="Achievements" subtitle={`${data.achievements.filter(a => a.unlocked).length} / ${data.achievements.length} unlocked`}>
@@ -260,11 +275,6 @@ export default function PublicProfileView({
           </div>
         </Section>
       )}
-
-      {/* Heatmap */}
-      <Section icon={<Sparkles className="w-4 h-4 text-[#ff8a00]" />} title="XP Activity">
-        <Heatmap data={data.heatmap} username={data.username} joinedAt={data.joinedAt} />
-      </Section>
     </>
   )
 
@@ -272,7 +282,7 @@ export default function PublicProfileView({
     // Dashboard: card pinned full-height on the left, only the bento scrolls.
     return (
       <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full min-[1920px]:max-w-[1920px]">
-        <div className="w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
+        <div className="hidden md:block w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
         {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
       </div>
@@ -284,7 +294,7 @@ export default function PublicProfileView({
   // scrolled, the row ends and the card scrolls away with it, revealing the footer.
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start w-full">
-      <div className="w-full lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
+      <div className="hidden md:block w-full lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
       <div className="w-full space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
       {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
     </div>

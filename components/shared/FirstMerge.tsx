@@ -1,9 +1,17 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 export default function FirstMerge() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const videoWrapRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
 
   // 1. Lazy loading observer
@@ -27,6 +35,31 @@ export default function FirstMerge() {
     return () => observer.disconnect()
   }, [])
 
+  // Subtle Apple-style ken-burns: the video drifts from slightly zoomed to rest
+  // as the banner scrolls through the viewport. Only the video layer moves; the
+  // edge-blend overlays stay fixed. Skipped under reduced motion.
+  useGSAP(
+    () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      gsap.fromTo(
+        videoWrapRef.current,
+        { scale: 1.12, yPercent: -3 },
+        {
+          scale: 1,
+          yPercent: 3,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 0.6,
+          },
+        }
+      )
+    },
+    { scope: containerRef }
+  )
+
   return (
     <div ref={containerRef} className="w-full relative overflow-hidden bg-bg">
       {/* Edge blending overlays */}
@@ -37,7 +70,7 @@ export default function FirstMerge() {
       <div className="absolute top-0 bottom-0 right-0 w-3 md:w-20 bg-gradient-to-l from-[#050505] to-transparent pointer-events-none z-10" />
 
       {/* Video Content */}
-      <div className="w-full flex items-center justify-center">
+      <div ref={videoWrapRef} className="w-full flex items-center justify-center will-change-transform">
         {isVisible ? (
           <video
             autoPlay

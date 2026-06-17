@@ -1,7 +1,16 @@
-import React from 'react'
+'use client'
+
+import React, { useRef } from 'react'
 import { Cpu, Sparkles, Gauge, UserCheck } from 'lucide-react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useGSAP } from '@gsap/react'
 import { Section, Eyebrow, H2 } from './primitives'
 import Reveal from './Reveal'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 /**
  * The review system as a 3D blueprint — an isometric scene built entirely in
@@ -107,10 +116,38 @@ function SpinnerRing({ className = '' }: { className?: string }) {
 }
 
 function BlueprintScene() {
+  const sceneRef = useRef<HTMLDivElement>(null)
+  const cameraRef = useRef<HTMLDivElement>(null)
+
+  // Scroll-tied parallax: the blueprint board lifts and tilts toward you as the
+  // section scrolls through, so the static iso scene gains depth on scroll. Only
+  // the camera wrapper moves — the intricate board transform below is untouched.
+  useGSAP(
+    () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+      gsap.fromTo(
+        cameraRef.current,
+        { yPercent: 8, rotateX: 6 },
+        {
+          yPercent: -6,
+          rotateX: -4,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: sceneRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: 0.8,
+          },
+        }
+      )
+    },
+    { scope: sceneRef }
+  )
+
   return (
-    <div aria-hidden className="pointer-events-none relative mx-auto h-[290px] w-full max-w-[860px] select-none sm:h-[380px] md:h-[440px]">
+    <div ref={sceneRef} aria-hidden className="pointer-events-none relative mx-auto h-[290px] w-full max-w-[860px] select-none sm:h-[380px] md:h-[440px]">
       {/* Perspective camera */}
-      <div className="absolute inset-0" style={{ perspective: '1400px', perspectiveOrigin: '50% 30%' }}>
+      <div ref={cameraRef} className="absolute inset-0 will-change-transform" style={{ perspective: '1400px', perspectiveOrigin: '50% 30%' }}>
         {/* The isometric drawing plane */}
         <div
           className="absolute left-1/2 top-1/2 h-[680px] w-[680px] origin-center [--blueprint-scale:scale(0.52)] sm:[--blueprint-scale:scale(0.75)] md:[--blueprint-scale:scale(1)]"
@@ -209,7 +246,7 @@ export default function ReviewSystem({ n = '006' }: { n?: string }) {
         </Reveal>
 
         {/* Plain-English gates */}
-        <div className="mt-8 grid gap-10 md:mt-14 md:grid-cols-4 md:gap-8">
+        <div className="mt-8 grid gap-10 md:mt-14 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 md:gap-8">
           {GATES.map((gate, i) => (
             <Reveal key={gate.n} delay={i * 110}>
               <div className="flex items-start gap-4 md:block">

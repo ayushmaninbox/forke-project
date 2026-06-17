@@ -236,7 +236,7 @@ export default function Pipeline() {
 
       <div
         ref={gridRef}
-        className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] md:grid-cols-3"
+        className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.07] grid-cols-1 lg:grid-cols-3"
       >
         {STEPS.map((step, i) => (
           <div key={step.n} className="flex flex-col bg-[#070708]">

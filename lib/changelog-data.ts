@@ -7,6 +7,14 @@ export const CHANGELOG_DATA = [
     "label": "jun 16, 2026",
     "entries": [
       {
+        "shortHash": "4fee008",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-16T23:21:59+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Standardize main content padding and update small button border radius for improved layout consistency"
+      },
+      {
         "shortHash": "789d362",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-16T23:09:24+05:30",
@@ -1380,4 +1388,4 @@ export const CHANGELOG_DATA = [
   }
 ];
 
-export const COMMIT_COUNT = 154;
+export const COMMIT_COUNT = 155;
