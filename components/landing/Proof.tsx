@@ -148,16 +148,20 @@ export default function Proof({ n = '004' }: { n?: string }) {
 
         gsap.fromTo(
           lidRef.current,
-          { rotateX: isPhone ? -22 : -30, transformOrigin: 'bottom center', force3D: true },
+          // Start more closed (deeper tilt) for a stronger "opening" payoff.
+          { rotateX: isPhone ? -42 : -55, transformOrigin: 'bottom center', force3D: true },
           {
             rotateX: 0,
+            // Linear so the open maps evenly across the (now short) pin — the lid
+            // reaches fully-flat exactly as the pin releases, leaving no dead hold.
             ease: 'none',
             force3D: true,
             scrollTrigger: {
               trigger: pinRef.current,
               start: 'center center',
-              // Shorter pinned scroll so the open doesn't drag on — even shorter on phones.
-              end: isPhone ? '+=38%' : '+=80%',
+              // Pin only long enough to finish the open, then release — a brief pause
+              // to "watch it open", after which the rest of the page continues.
+              end: isPhone ? '+=18%' : '+=30%',
               pin: pinRef.current,
               pinSpacing: true,
               // The section uses overflow-hidden, which breaks position:fixed pinning;
