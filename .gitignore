@@ -49,6 +49,3 @@ package-lock.json
 
 # User Uploads
 /public/uploads/
-
-# generated files
-/lib/changelog-data.ts

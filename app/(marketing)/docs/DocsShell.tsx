@@ -116,9 +116,9 @@ function Sidebar({
           <Image
             src="/forke-assets/forke_logo.png"
             alt="Forke"
-            width={26}
-            height={26}
-            className="h-[26px] w-[26px] object-contain"
+            width={36}
+            height={36}
+            className="h-[36px] w-[36px] object-contain"
             priority
           />
         </Link>

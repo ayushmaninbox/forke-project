@@ -1,5 +1,8 @@
 import { execSync } from 'child_process'
-import { CHANGELOG_DATA, COMMIT_COUNT } from './changelog-data'
+import CHANGELOG_JSON from './changelog.json'
+
+const CHANGELOG_DATA = CHANGELOG_JSON as any[]
+const COMMIT_COUNT = CHANGELOG_DATA.reduce((acc, day) => acc + (day.entries?.length || 0), 0)
 
 /**
  * Changelog sourced directly from git history.
