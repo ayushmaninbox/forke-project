@@ -73,6 +73,17 @@ function parseSubject(subject: string): { kind: ChangeKind; scope: string | null
   return { kind: 'update', scope: null, title: title.charAt(0).toUpperCase() + title.slice(1) }
 }
 
+export function isChangelogCommit(subject: string): boolean {
+  const normalized = subject.toLowerCase()
+  return (
+    normalized.includes('changelog') &&
+    (normalized.includes('commit count') ||
+     normalized.includes('update changelog') ||
+     normalized.includes('changelog entries') ||
+     normalized.includes('add changelog'))
+  )
+}
+
 function dayLabel(isoDate: string): string {
   return new Date(`${isoDate}T12:00:00Z`)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -106,6 +117,8 @@ export function getChangelog(limit = 300): ChangelogDay[] {
     const date = isoDate.slice(0, 10)
     const { kind, scope, title } = parseSubject(subject)
 
+    if (isChangelogCommit(title)) continue
+
     let day = days.get(date)
     if (!day) {
       day = { date, label: dayLabel(date), entries: [] }
@@ -124,10 +137,12 @@ export function getCommitCount(): number | null {
   }
 
   try {
-    return parseInt(
-      execSync('git rev-list --count HEAD', { cwd: process.cwd(), encoding: 'utf8' }).trim(),
-      10
-    )
+    const changelog = getChangelog()
+    let count = 0
+    for (const day of changelog) {
+      count += day.entries.length
+    }
+    return count
   } catch {
     return COMMIT_COUNT
   }
