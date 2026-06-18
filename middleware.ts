@@ -97,7 +97,10 @@ function isPublicProfilePath(pathname: string): boolean {
     'waitlist', 'checkout', 'admin', 'api', 'signin', 'register', 'onboarding',
     'dashboard', 'profile', 'tasks', 'submissions', 'earnings', 'settings',
     'analytics', 'developers', 'escrow', 'messages', 'notifications', 'post-task',
-    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund', 'blogs', 'changelog', 'docs'
+    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy',
+    'refund', 'blogs', 'changelog', 'docs',
+    // Workspace routes (sandbox feature)
+    'owner', 'developer'
   ]
   return !reservedNames.includes(segments[0])
 }
@@ -171,6 +174,9 @@ export default auth(async (req) => {
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/auth') ||
     pathname.endsWith('/opengraph-image') ||
+    // Workspace routes — always accessible (sandbox OAuth feature)
+    pathname === '/owner' ||
+    pathname === '/developer' ||
     // The blog is a public, indexable surface — readable even during the
     // waitlist gate so posts can be shared and crawled.
     pathname === '/blogs' ||
