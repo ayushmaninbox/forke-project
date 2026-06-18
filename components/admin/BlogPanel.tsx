@@ -476,13 +476,9 @@ function Checkbox({
 }
 
 function StatusBadge({ status }: { status: 'draft' | 'published' }) {
-  return status === 'published' ? (
-    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-0.5 text-[10px] font-semibold leading-none text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.08)] backdrop-blur-sm">
-      <Globe className="h-2.5 w-2.5 animate-[spin_8s_linear_infinite]" /> Published
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 text-[10px] font-semibold leading-none text-white/40 backdrop-blur-sm">
-      <CircleDot className="h-2.5 w-2.5" /> Draft
+  return (
+    <span className="inline-flex items-center rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 font-mono text-[11px] lowercase leading-none text-white/60">
+      {status}
     </span>
   )
 }
