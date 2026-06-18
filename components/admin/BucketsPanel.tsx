@@ -38,6 +38,7 @@ import {
   Lock
 } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
+import { PanelSkeleton } from '@/components/ui/Skeleton'
 
 interface BucketsPanelProps {
   currentAdmin?: {
@@ -506,14 +507,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
   const totalStorageSize = objects.reduce((acc, o) => acc + o.size, 0)
 
   if (loading && objects.length === 0) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[400px] bg-[#070709]">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-accent" />
-          <span className="text-xs text-white/40 font-mono">Loading storage parameters...</span>
-        </div>
-      </div>
-    )
+    return <PanelSkeleton />
   }
 
   return (

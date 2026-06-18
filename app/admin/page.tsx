@@ -30,6 +30,7 @@ import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { Skeleton } from '@/components/ui/Skeleton'
 import ToastContainer, { toast } from '@/components/shared/Toast'
 import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 import { cn } from '@/lib/utils/cn'
@@ -861,10 +862,29 @@ export default function AdminDashboard() {
 
   if (activeTab === null) {
     return (
-      <div className="min-h-screen bg-[#070709] text-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-[var(--color-text-muted)] font-medium font-mono animate-pulse">Loading Admin Panel...</p>
+      <div className="min-h-screen bg-[#070709] text-white flex">
+        {/* Sidebar skeleton */}
+        <div className="hidden md:flex w-60 border-r border-white/[0.06] flex-col p-4 gap-2 shrink-0">
+          <Skeleton className="h-8 w-36 mb-4" />
+          {[...Array(7)].map((_, i) => (
+            <Skeleton key={i} className="h-9 w-full rounded-lg" />
+          ))}
+        </div>
+        {/* Main content skeleton */}
+        <div className="flex-grow p-6 md:p-8 space-y-6 max-w-6xl">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.018] p-4 space-y-3">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-8 w-24" />
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       </div>
     )

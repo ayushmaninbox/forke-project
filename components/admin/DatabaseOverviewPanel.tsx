@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { getDatabaseOverview } from '@/lib/db-client-actions'
+import { PanelSkeleton } from '@/components/ui/Skeleton'
 import { 
   RefreshCw, 
   Copy, 
@@ -77,14 +78,7 @@ export default function DatabaseOverviewPanel() {
   }
 
   if (loading) {
-    return (
-      <div className="flex-grow flex items-center justify-center min-h-[400px] bg-[#070709]">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-accent" />
-          <span className="text-xs text-white/40 font-mono">Querying database metadata...</span>
-        </div>
-      </div>
-    )
+    return <PanelSkeleton />
   }
 
   return (

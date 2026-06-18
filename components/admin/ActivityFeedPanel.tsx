@@ -6,6 +6,7 @@ import {
   RefreshCw, Pause, Play, Terminal, Trash2
 } from 'lucide-react'
 import { getActivityFeed, purgeAuditLogsAction, getActivityLogLiveStatusAction, setActivityLogLiveStatusAction, type ActivityEvent, type ActivityCategory } from '@/lib/actions/audit-actions'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils/cn'
 import { toast } from '@/components/shared/Toast'
 import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
@@ -262,8 +263,14 @@ export default function ActivityFeedPanel({ currentAdmin }: ActivityFeedPanelPro
 
         <div className="flex-grow min-h-0 overflow-y-auto p-2 font-mono text-[12px] leading-relaxed">
           {loading && events.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-white/30 text-xs gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin" /> Loading activity…
+            <div className="p-2 space-y-2">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-2 py-2">
+                  <Skeleton className="h-3 w-16 shrink-0" />
+                  <Skeleton className="h-3 w-20 shrink-0" />
+                  <Skeleton className="h-3 flex-grow" style={{ maxWidth: `${50 + ((i * 7) % 40)}%` }} />
+                </div>
+              ))}
             </div>
           ) : events.length === 0 ? (
             <div className="h-full flex items-center justify-center text-white/25 text-xs">No activity in this view yet.</div>

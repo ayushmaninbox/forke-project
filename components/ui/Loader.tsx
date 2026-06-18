@@ -16,7 +16,7 @@ export function Loader({ text = 'LOADING...', fullScreen = false }: LoaderProps)
       {/* Subtle Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-accent/20 blur-[100px] rounded-full pointer-events-none" />
 
-      <div className="relative z-10 flex flex-col items-center gap-6">
+      <div className="relative z-10 flex flex-col items-center gap-2">
         {/* Mascot Container with floating animation */}
         <div className="relative w-32 h-32 animate-[bounce_3s_ease-in-out_infinite]">
           {/* Subtle drop shadow for depth */}
@@ -39,19 +39,18 @@ export function Loader({ text = 'LOADING...', fullScreen = false }: LoaderProps)
             </span>
           </div>
           
-          {/* Progress Line */}
-          <div className="w-32 h-0.5 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-accent w-1/3 rounded-full animate-[translateX_1.5s_ease-in-out_infinite] origin-left" style={{ animationName: 'progressSlide' }} />
+          {/* Progress Line — Track Bar style */}
+          <div className="relative w-32 h-1 bg-white/5 rounded-full overflow-hidden">
+            <div className="absolute inset-y-0 left-0 w-2/5 bg-accent rounded-full" style={{ animation: 'progressSlide 1.4s cubic-bezier(.65,.05,.36,1) infinite' }} />
           </div>
         </div>
       </div>
-      
+
       {/* Inline styles for custom keyframes if needed */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes progressSlide {
-          0% { transform: translateX(-100%); width: 30%; }
-          50% { transform: translateX(150%); width: 60%; }
-          100% { transform: translateX(300%); width: 30%; }
+          0% { left: -40%; }
+          100% { left: 100%; }
         }
       `}} />
     </div>

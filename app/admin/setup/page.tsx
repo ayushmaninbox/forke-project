@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { validateInviteToken, setupAdminCredentials } from '@/lib/admin-dashboard-actions'
 import { Button } from '@/components/ui/Button'
-import { Lock, User, Terminal, ShieldAlert, KeyRound, Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { User, ShieldAlert, KeyRound, Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
 
 function SetupFormContent() {
@@ -107,7 +107,7 @@ function SetupFormContent() {
           <ShieldAlert className="w-5 h-5" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-lg font-medium text-white tracking-tight">Verification Failed</h2>
+          <h2 className="text-xl font-medium text-white tracking-[-0.03em]">Verification Failed</h2>
           <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">{validationError}</p>
         </div>
         <Button 
@@ -127,7 +127,7 @@ function SetupFormContent() {
           <Check className="w-5 h-5" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-lg font-semibold text-emerald-400 tracking-tight">Setup Completed</h2>
+          <h2 className="text-xl font-medium text-emerald-400 tracking-[-0.03em]">Setup Completed</h2>
           <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed">
             Your administrator account credentials have been successfully configured. Redirecting to login...
           </p>
@@ -143,7 +143,9 @@ function SetupFormContent() {
       className="p-6 rounded-xl bg-white/[0.018] border border-[var(--color-border)] space-y-5 text-left max-w-md w-full"
     >
       <div className="border-b border-[var(--color-border)] pb-3">
-        <h2 className="text-lg font-medium text-white tracking-tight">Activate Admin Credentials</h2>
+        <h2 className="text-xl font-medium text-white tracking-[-0.03em] leading-[1.1]">
+          Activate <span className="font-serif italic font-normal text-accent">credentials</span>
+        </h2>
         <p className="text-[13px] text-[var(--color-text-muted)] mt-0.5">Choose your username and password</p>
       </div>
 
@@ -257,24 +259,24 @@ export default function AdminSetupPage() {
       <div className="w-full max-w-[440px] space-y-6 relative z-10 animate-in fade-in zoom-in-95 duration-1000 flex flex-col items-center">
         {/* Logo and Identity */}
         <div className="text-center space-y-2">
-          <div className="flex items-center justify-center h-12 relative mb-2">
-            <div className="w-12 h-12 relative">
-              <Image 
-                src="/forke-assets/forke_logo.png" 
-                alt="Logo" 
+          <div className="flex items-center justify-center h-20 relative mb-2">
+            <div className="w-20 h-20 relative">
+              <Image
+                src="/forke-assets/forke_logo.png"
+                alt="Logo"
                 fill
-                className="object-contain select-none pointer-events-none"
+                className="object-contain drop-shadow-[0_0_18px_rgba(255,122,0,0.3)] select-none pointer-events-none"
                 draggable={false}
               />
             </div>
           </div>
-          <div className="space-y-1">
-            <h1 className="text-xl font-medium text-white tracking-tight">
-              Forke admin setup
+          <div className="flex flex-col items-center space-y-3">
+            <h1 className="text-3xl font-medium text-white tracking-[-0.04em] leading-[1.04]">
+              forke<span className="text-accent">*</span> <span className="font-serif italic font-normal text-accent">admin setup</span>
             </h1>
-            <p className="text-[13px] text-[var(--color-text-muted)]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-[11px] text-white/55">
               Complete administrator account configuration
-            </p>
+            </div>
           </div>
         </div>
 

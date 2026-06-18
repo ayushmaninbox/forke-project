@@ -48,6 +48,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { toast } from '@/components/shared/Toast'
 import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 import { cn } from '@/lib/utils/cn'
@@ -1882,9 +1883,16 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
                   <div className="flex-grow overflow-y-auto py-2 space-y-3.5 pr-1.5 min-h-0 mt-2">
                     {isLoadingRequests && requestsList.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-white/30 space-y-2 py-12">
-                        <RefreshCw className="w-5 h-5 animate-spin text-accent" />
-                        <p className="text-xs">Loading requests queue...</p>
+                      <div className="space-y-3 py-2">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.01] p-3 space-y-2">
+                            <div className="flex justify-between">
+                              <Skeleton className="h-3.5 w-28" />
+                              <Skeleton className="h-3.5 w-14" />
+                            </div>
+                            <Skeleton className="h-3 w-3/4" />
+                          </div>
+                        ))}
                       </div>
                     ) : requestsList.length === 0 ? (
                       <div className="h-full flex flex-col items-center justify-center text-white/20 py-12 text-xs italic space-y-1">
@@ -2061,9 +2069,21 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
               <p className="text-sm">Select a table in the sidebar to begin</p>
             </div>
           ) : isLoadingData && rows.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/30 space-y-2 bg-[#060608]/40">
-              <RefreshCw className="w-6 h-6 animate-spin text-accent" />
-              <p className="text-xs font-medium">Loading database table data...</p>
+            <div className="absolute inset-0 bg-[#060608]/40 p-4 space-y-2 overflow-hidden">
+              {/* header row */}
+              <div className="flex gap-3 pb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-4 flex-1" />
+                ))}
+              </div>
+              {/* body rows */}
+              {[...Array(10)].map((_, r) => (
+                <div key={r} className="flex gap-3">
+                  {[...Array(5)].map((_, c) => (
+                    <Skeleton key={c} className="h-3.5 flex-1" />
+                  ))}
+                </div>
+              ))}
             </div>
           ) : activeSubTab === 'structure' ? (
             

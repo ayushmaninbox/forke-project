@@ -55,13 +55,13 @@ export default function AdminLoginPage() {
               />
             </div>
           </div>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-serif text-white tracking-wide leading-tight">
-              Forke <span className="text-accent italic font-normal">Admin Panel</span>
+          <div className="flex flex-col items-center space-y-3">
+            <h1 className="text-3xl font-medium text-white tracking-[-0.04em] leading-[1.04]">
+              forke<span className="text-accent">*</span> <span className="font-serif italic font-normal text-accent">Admin Panel</span>
             </h1>
-            <p className="text-[9px] text-white/30 font-black uppercase tracking-[0.3em] font-mono">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-[11px] text-white/55">
               Secure Operations Interface
-            </p>
+            </div>
           </div>
         </div>
 

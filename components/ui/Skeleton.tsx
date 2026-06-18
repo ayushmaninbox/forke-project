@@ -1,12 +1,12 @@
 import React from 'react'
 import { cn } from '@/lib/utils/cn'
 
-// 1. Core Reusable Shimmer/Pulse Block
+// 1. Core Reusable Shimmer Block (#7 shimmer sweep)
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-md bg-white/[0.02] border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)]",
+        "skeleton-shimmer rounded-md bg-white/[0.02] border border-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.01)]",
         className
       )}
       {...props}
@@ -385,12 +385,51 @@ export function SupportSkeleton() {
   )
 }
 
+// I. Admin Panel Skeleton — full-panel loading state for admin console panels.
+export function PanelSkeleton() {
+  return (
+    <div className="flex-grow flex flex-col min-h-[400px] bg-[#070709] p-6 space-y-6">
+      {/* Toolbar row */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-3 w-56" />
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-20 rounded-lg" />
+          <Skeleton className="h-8 w-8 rounded-lg" />
+        </div>
+      </div>
+      {/* Stat row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.018] p-4 space-y-3">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-7 w-20" />
+          </div>
+        ))}
+      </div>
+      {/* Table / body rows */}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.01] divide-y divide-white/[0.04]">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+            <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+            <Skeleton className="h-3.5 w-1/4" />
+            <Skeleton className="h-3.5 w-1/3" />
+            <Skeleton className="h-3.5 w-16 ml-auto" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Generic Fallback Loader
 export function GenericPageSkeleton() {
   return (
     <div className="flex flex-col h-full bg-[#060608] text-white p-8 space-y-6">
       <Skeleton className="h-6 w-32" />
-      <Skeleton className="h-4 w-64 animate-pulse" />
+      <Skeleton className="h-4 w-64" />
       <div className="grid grid-cols-3 gap-4">
         <Skeleton className="h-20 w-full rounded-xl" />
         <Skeleton className="h-20 w-full rounded-xl" />

@@ -14,6 +14,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { toast } from '@/components/shared/Toast'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils/cn'
 
 // ─── Interfaces ───────────────────────────────────────────
@@ -643,12 +644,15 @@ export default function DatabaseMonitoringPanel() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] font-mono">
                   {loadingQueries ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-white/30 font-sans">
-                        <RefreshCw className="w-4 h-4 animate-spin text-accent mx-auto mb-2" />
-                        Fetching active transactions...
-                      </td>
-                    </tr>
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i}>
+                        {[...Array(5)].map((_, c) => (
+                          <td key={c} className="px-4 py-3">
+                            <Skeleton className="h-3.5 w-full" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
                   ) : queries.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center text-white/30 font-sans select-none">
@@ -711,12 +715,15 @@ export default function DatabaseMonitoringPanel() {
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] font-mono">
                   {loadingPerformance ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-white/30 font-sans">
-                        <RefreshCw className="w-4 h-4 animate-spin text-accent mx-auto mb-2" />
-                        Analyzing pg_stat_statements metrics...
-                      </td>
-                    </tr>
+                    [...Array(5)].map((_, i) => (
+                      <tr key={i}>
+                        {[...Array(5)].map((_, c) => (
+                          <td key={c} className="px-4 py-3">
+                            <Skeleton className="h-3.5 w-full" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
                   ) : performance.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center text-white/30 font-sans select-none">
@@ -759,10 +766,16 @@ export default function DatabaseMonitoringPanel() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
               {loadingAdvisors ? (
-                <div className="col-span-2 border border-white/[0.06] rounded-xl bg-[#111114] p-12 text-center text-white/30">
-                  <RefreshCw className="w-5 h-5 animate-spin text-accent mx-auto mb-2" />
-                  Running database indexing & security rules advisory scanning...
-                </div>
+                [...Array(4)].map((_, i) => (
+                  <div key={i} className="border border-white/[0.06] rounded-xl bg-[#111114] p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-5 rounded" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-2/3" />
+                  </div>
+                ))
               ) : advisors.length === 0 ? (
                 <div className="col-span-2 border border-white/[0.06] rounded-xl bg-[#111114] p-12 text-center text-emerald-400 space-y-2 select-none">
                   <Check className="w-8 h-8 mx-auto" />
