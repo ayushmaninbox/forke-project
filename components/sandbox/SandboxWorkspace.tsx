@@ -1,0 +1,3602 @@
+'use client'
+
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { IndianRupee, Calendar, Tag, AlertCircle, CheckCircle2, Search, X, Plus } from 'lucide-react'
+import { cn } from '@/lib/utils/cn'
+
+interface Repository {
+  id: number
+  name: string
+  full_name: string
+  private: boolean
+  language: string | null
+  description: string | null
+  html_url: string
+}
+
+interface Organization {
+  login: string
+  id: number
+  description: string | null
+}
+
+interface SandboxRepo {
+  id: string
+  sourceRepo: string
+  sandboxRepo: string
+  taskTitle: string | null
+  taskDescription: string | null
+  frontendStack: string | null
+  backendStack: string | null
+  allowedPaths: string | null
+  restrictedPaths: string | null
+  acceptanceCriteria: string | null
+  createdAt: string
+  verificationStatus?: 'verifying' | 'verified' | 'failed' | null
+}
+
+interface PRDetails {
+  title: string
+  url: string
+  number: number
+  state: string
+  createdAt: string
+}
+
+interface DevStatus {
+  hasFork: boolean
+  hasPR: boolean
+  prDetails: PRDetails | null
+}
+
+interface AIIssue {
+  file: string
+  line: number
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  message: string
+  suggestion: string
+  status?: 'new' | 'unresolved'
+}
+
+interface AIRisk {
+  category: 'security' | 'safety' | 'credential'
+  message: string
+  severity: 'high' | 'medium' | 'low'
+  status?: 'new' | 'unresolved'
+}
+
+interface AIResolvedIssue {
+  file: string
+  line: number
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  message: string
+  resolution: string
+}
+
+interface AIResolvedRisk {
+  category: 'security' | 'safety' | 'credential'
+  message: string
+  severity: 'high' | 'medium' | 'low'
+  resolution: string
+}
+
+interface AIReview {
+  id: string
+  prNumber: number
+  verdict: 'pass' | 'needs_changes' | 'high_risk'
+  score: number
+  requirementMatch: number
+  summary: string
+  strengths: string[]
+  issues: AIIssue[]
+  risks: AIRisk[]
+  unauthorizedEdits: string[]
+  resolvedIssues?: AIResolvedIssue[]
+  resolvedRisks?: AIResolvedRisk[]
+  // Deterministic review fields
+  results?: Record<string, any>
+  comparison?: Record<string, any>
+  reportHtml?: string
+  commitSha?: string
+  createdAt: string
+}
+
+interface PRWithReview {
+  fork: {
+    id: string
+    githubUsername: string
+    sandboxRepo: string
+    forkUrl: string
+    prUrl: string | null
+    createdAt: string
+  }
+  review: AIReview | null
+}
+
+interface SandboxWorkspaceProps {
+  presetRole?: 'owner' | 'developer'
+}
+
+export default function SandboxWorkspace({ presetRole }: SandboxWorkspaceProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // --- Core Session State ---
+  const [githubUsername, setGithubUsername] = useState<string | null>(null)
+  const [role, setRole] = useState<'owner' | 'developer' | null>(presetRole || null)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [loadingSession, setLoadingSession] = useState(true)
+
+  useEffect(() => {
+    if (presetRole) {
+      setRole(presetRole)
+    }
+  }, [presetRole])
+
+  // --- Owner Dashboard State ---
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedScope, setSelectedScope] = useState<string>('personal')
+  const [ownerRepos, setOwnerRepos] = useState<Repository[]>([])
+  const [loadingRepos, setLoadingRepos] = useState(false)
+  const [repoSearch, setRepoSearch] = useState('')
+  const [selectedOwnerRepo, setSelectedOwnerRepo] = useState<Repository | null>(null)
+  const [mirroredRepos, setMirroredRepos] = useState<SandboxRepo[]>([])
+
+  // --- Mirroring Pipeline State ---
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
+  const [mirrorStatus, setMirrorStatus] = useState<'idle' | 'running' | 'success' | 'failed'>('idle')
+  const [mirrorProgress, setMirrorProgress] = useState(0)
+  const [mirrorLogs, setMirrorLogs] = useState<string[]>([])
+  const logsEndRef = useRef<HTMLDivElement>(null)
+  const terminalRef = useRef<HTMLDivElement>(null)
+  const [deletingRepos, setDeletingRepos] = useState<Record<string, boolean>>({})
+
+  // --- Review Engine Baseline & Validation States ---
+  const [baselines, setBaselines] = useState<Record<string, any>>({})
+  const [triggeringBaseline, setTriggeringBaseline] = useState<Record<string, boolean>>({})
+  const [selectedBaselineReport, setSelectedBaselineReport] = useState<any>(null)
+  const [selectedBaselineCategoryLog, setSelectedBaselineCategoryLog] = useState<string | null>(null)
+
+  // --- Owner Task Form State ---
+  const [taskFormSandbox, setTaskFormSandbox] = useState<SandboxRepo | null>(null)
+  const [taskFormOpen, setTaskFormOpen] = useState(false)
+  const [savingTask, setSavingTask] = useState(false)
+  const [taskForm, setTaskForm] = useState({
+    taskTitle: '',
+    taskDescription: '',
+    frontendStack: '',
+    backendStack: '',
+    allowedPaths: '',
+    restrictedPaths: '',
+    acceptanceCriteria: '',
+  })
+
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [skillSearchQuery, setSkillSearchQuery] = useState('')
+  const [isSkillDropdownOpen, setIsSkillDropdownOpen] = useState(false)
+  const [budget, setBudget] = useState('500')
+  const [deadline, setDeadline] = useState('')
+
+  // Derive frontend/backend stack based on selected skills to keep the backend validated
+  useEffect(() => {
+    let frontend = ''
+    let backend = ''
+
+    if (selectedSkills.length > 0) {
+      frontend = 'Vanilla HTML/CSS/JS'
+      backend = 'Node.js + Express'
+
+      if (selectedSkills.includes('Next.js')) {
+        frontend = 'Next.js'
+        backend = 'Next.js API Routes'
+      } else if (selectedSkills.includes('React') || selectedSkills.includes('Tailwind') || selectedSkills.includes('TypeScript')) {
+        frontend = 'React + Vite'
+      } else if (selectedSkills.includes('Vue')) {
+        frontend = 'Vue + Vite'
+      } else if (selectedSkills.includes('Svelte')) {
+        frontend = 'Svelte'
+      } else if (selectedSkills.includes('Angular')) {
+        frontend = 'Angular'
+      }
+
+      if (selectedSkills.includes('Python') || selectedSkills.includes('FastAPI')) {
+        backend = 'FastAPI (Python)'
+      } else if (selectedSkills.includes('Django')) {
+        backend = 'Django'
+      } else if (selectedSkills.includes('Go')) {
+        backend = 'Go + Gin'
+      }
+    }
+
+    setTaskForm(prev => ({
+      ...prev,
+      frontendStack: frontend,
+      backendStack: backend
+    }))
+  }, [selectedSkills])
+
+  const selectedRepoMirror = useMemo(() => {
+    if (!selectedOwnerRepo) return null;
+    return mirroredRepos.find(m => m.sourceRepo === selectedOwnerRepo.full_name) || null;
+  }, [selectedOwnerRepo, mirroredRepos]);
+
+  // --- Owner PR Review Dashboard State ---
+  const [selectedSandboxForPRs, setSelectedSandboxForPRs] = useState<SandboxRepo | null>(null)
+  const [sandboxPRs, setSandboxPRs] = useState<PRWithReview[]>([])
+  const [loadingPRs, setLoadingPRs] = useState(false)
+  const [selectedPR, setSelectedPR] = useState<PRWithReview | null>(null)
+  const [prActionInProgress, setPrActionInProgress] = useState(false)
+  const [prActionMessage, setPrActionMessage] = useState('')
+
+  // --- Developer Dashboard State ---
+  const [selectedSandboxRepo, setSelectedSandboxRepo] = useState<SandboxRepo | null>(null)
+  const [loadingSandboxRepos, setLoadingSandboxRepos] = useState(false)
+
+  // --- Developer Fork / Verification State ---
+  const [registeringFork, setRegisteringFork] = useState(false)
+  const [forkRegistered, setForkRegistered] = useState(false)
+  const [forkUrl, setForkUrl] = useState('')
+
+  const [checkingStatus, setCheckingStatus] = useState(false)
+  const [devStatus, setDevStatus] = useState<DevStatus>({
+    hasFork: false,
+    hasPR: false,
+    prDetails: null
+  })
+
+  // --- Developer AI Review State ---
+  const [loadingReview, setLoadingReview] = useState(false)
+  const [aiReview, setAiReview] = useState<AIReview | null>(null)
+  const [devReviewStatus, setDevReviewStatus] = useState<'idle' | 'verifying' | 'done'>('idle')
+  const [activeReviewJobId, setActiveReviewJobId] = useState<string | null>(null)
+  const [activeReviewProgress, setActiveReviewProgress] = useState<number>(0)
+  const [activeReviewLogs, setActiveReviewLogs] = useState<string[]>([])
+  const devTerminalRef = useRef<HTMLDivElement>(null)
+
+  // --- PR Comparison Modal State ---
+  const [comparisonModalOpen, setComparisonModalOpen] = useState(false)
+  const [comparisonPRReview, setComparisonPRReview] = useState<AIReview | null>(null)
+  const [comparisonTitle, setComparisonTitle] = useState<string>('')
+  const [comparisonTab, setComparisonTab] = useState<'overview' | 'issues' | 'risks' | 'deterministic'>('overview')
+
+  const [reviewExpandedSections, setReviewExpandedSections] = useState<Record<string, boolean>>({
+    strengths: true, issues: true, risks: true, unauthorized: true, resolved: true,
+  })
+
+  // --- Parse & Persist Session ---
+  useEffect(() => {
+    const successParam = searchParams.get('success') === 'true'
+    const githubIdParam = searchParams.get('github_id')
+    const roleParam = searchParams.get('role') as 'owner' | 'developer' | null
+
+    if (successParam && githubIdParam && roleParam) {
+      setGithubUsername(githubIdParam)
+      setRole(roleParam)
+      setIsLoggedIn(true)
+      localStorage.setItem('forke_github_username', githubIdParam)
+      localStorage.setItem('forke_role', roleParam)
+      // Clean up search params
+      router.replace(roleParam === 'owner' ? '/post-task' : '/dashboard')
+    } else {
+      const savedUsername = localStorage.getItem('forke_github_username')
+      const savedRole = localStorage.getItem('forke_role') as 'owner' | 'developer' | null
+      const activeRole = presetRole || savedRole
+      if (savedUsername && activeRole) {
+        setGithubUsername(savedUsername)
+        setRole(activeRole)
+        setIsLoggedIn(true)
+      }
+    }
+    setLoadingSession(false)
+  }, [searchParams, router, presetRole])
+
+  const handleSignOut = () => {
+    localStorage.removeItem('forke_github_username')
+    localStorage.removeItem('forke_role')
+    setGithubUsername(null)
+    setRole(presetRole || null)
+    setIsLoggedIn(false)
+    router.push(presetRole === 'owner' ? '/post-task' : '/dashboard')
+  }
+
+  // --- API Fetches: Owner ---
+  const fetchOwnerReposAndOrgs = async (scope: string) => {
+    if (!githubUsername) return
+    setLoadingRepos(true)
+    try {
+      const orgParam = scope === 'personal' ? '' : `&org=${scope}`
+      const response = await fetch(`/api/owner/repos?username=${githubUsername}${orgParam}`)
+      const data = await response.json()
+      if (response.ok) {
+        setOwnerRepos(data.repos || [])
+        if (data.organizations) {
+          setOrganizations(data.organizations)
+        }
+      } else {
+        console.error('Error fetching repos:', data.error)
+      }
+    } catch (err) {
+      console.error('Network error fetching repos:', err)
+    } finally {
+      setLoadingRepos(false)
+    }
+  };
+
+  const fetchBaselineForRepo = async (sandboxRepoName: string) => {
+    try {
+      const res = await fetch(`/api/owner/baseline?sandboxRepo=${encodeURIComponent(sandboxRepoName)}`)
+      const data = await res.json()
+      if (res.ok && data.snapshot) {
+        setBaselines(prev => ({ ...prev, [sandboxRepoName]: data.snapshot }))
+      } else {
+        setBaselines(prev => ({ ...prev, [sandboxRepoName]: null }))
+      }
+    } catch (err) {
+      console.error(`Failed to fetch baseline for ${sandboxRepoName}:`, err)
+    }
+  }
+
+  const triggerBaselineSnapshot = async (sandboxRepoName: string) => {
+    setTriggeringBaseline(prev => ({ ...prev, [sandboxRepoName]: true }))
+    setMirrorStatus('running')
+    setMirrorProgress(0)
+    setMirrorLogs(['INIT Triggering manual baseline snapshot generation...'])
+    try {
+      const res = await fetch('/api/owner/baseline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: githubUsername,
+          sandboxRepo: sandboxRepoName
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setMirrorStatus('success')
+        setMirrorProgress(100)
+        setMirrorLogs(prev => [...prev, 'SUCCESS Baseline snapshot generated successfully.'])
+        fetchBaselineForRepo(sandboxRepoName)
+      } else {
+        setMirrorStatus('failed')
+        setMirrorLogs(prev => [...prev, `FAILED ${data.error || 'Failed to trigger baseline snapshot.'}`])
+      }
+    } catch (err: any) {
+      setMirrorStatus('failed')
+      setMirrorLogs(prev => [...prev, `FAILED ${err.message || 'Unknown network error.'}`])
+    } finally {
+      setTriggeringBaseline(prev => ({ ...prev, [sandboxRepoName]: false }))
+    }
+  }
+
+  const copyAllBaselineLogs = () => {
+    if (!selectedBaselineReport || !selectedBaselineReport.results) return;
+    let allLogs = '';
+    Object.keys(selectedBaselineReport.results).forEach(category => {
+      const res = selectedBaselineReport.results[category];
+      const logContent = res ? (res.logs || res.output) : '';
+      if (logContent) {
+        allLogs += `=== CATEGORY: ${category.toUpperCase()} ===\n${logContent}\n\n`;
+      }
+    });
+    navigator.clipboard.writeText(allLogs);
+    alert('All baseline logs copied to clipboard!');
+  };
+
+  const fetchMirrors = async () => {
+    try {
+      const response = await fetch(`/api/owner/mirrors?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setMirroredRepos(data || [])
+        if (Array.isArray(data)) {
+          data.forEach(m => fetchBaselineForRepo(m.sandboxRepo))
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch mirrors:', err)
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && role === 'owner' && githubUsername) {
+      fetchOwnerReposAndOrgs(selectedScope)
+      fetchMirrors()
+    }
+  }, [isLoggedIn, role, githubUsername, selectedScope])
+
+  // --- API Fetches: Developer ---
+  useEffect(() => {
+    if (isLoggedIn && role === 'developer') {
+      setLoadingSandboxRepos(true)
+      fetchMirrors().finally(() => setLoadingSandboxRepos(false))
+    }
+  }, [isLoggedIn, role])
+
+  // --- Poll Developer PR Review Status ---
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout
+    if (isLoggedIn && role === 'developer' && devStatus.hasPR && devReviewStatus === 'verifying') {
+      intervalId = setInterval(async () => {
+        const review = await fetchAIReview()
+        if (review) {
+          setDevReviewStatus('done')
+          setActiveReviewJobId(null)
+        }
+      }, 4000)
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [devStatus.hasPR, devReviewStatus, isLoggedIn, role])
+
+  // --- Poll Developer PR Review Verification Logs ---
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout
+    if (isLoggedIn && role === 'developer' && devReviewStatus === 'verifying' && activeReviewJobId) {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/owner/mirror-status?jobId=${activeReviewJobId}`)
+          const data = await res.json()
+          if (res.ok && data) {
+            if (data.logs) {
+              setActiveReviewLogs(data.logs)
+            }
+            if (typeof data.progress === 'number') {
+              setActiveReviewProgress(data.progress)
+            }
+            if (data.status === 'success') {
+              const review = await fetchAIReview()
+              if (review) {
+                setDevReviewStatus('done')
+              }
+              setActiveReviewJobId(null)
+            } else if (data.status === 'failed') {
+              setActiveReviewJobId(null)
+              setDevReviewStatus('idle')
+            }
+          }
+        } catch (err) {
+          console.error('Error polling verification logs:', err)
+        }
+      }, 1500)
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [isLoggedIn, role, devReviewStatus, activeReviewJobId])
+
+  // --- Search Filter ---
+  const filteredRepos = useMemo(() => {
+    return ownerRepos.filter(repo =>
+      repo.name.toLowerCase().includes(repoSearch.toLowerCase()) ||
+      (repo.description && repo.description.toLowerCase().includes(repoSearch.toLowerCase()))
+    )
+  }, [ownerRepos, repoSearch])
+
+  // --- Background Mirror Pipeline Polling ---
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout
+    if (activeJobId && mirrorStatus === 'running') {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/owner/mirror-status?jobId=${activeJobId}`)
+          const data = await res.json()
+          if (res.ok) {
+            setMirrorLogs(data.logs || [])
+            setMirrorProgress(data.progress || 0)
+            if (data.status === 'success' || data.status === 'failed') {
+              setMirrorStatus(data.status)
+              setActiveJobId(null)
+              fetchMirrors() // refresh list of active mirrors
+            }
+          }
+        } catch (err) {
+          console.error('Error polling mirror status:', err)
+        }
+      }, 800)
+    }
+    return () => clearInterval(intervalId)
+  }, [activeJobId, mirrorStatus])
+
+  // --- Poll for Verification Status updates ---
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout
+    const hasVerifying = mirroredRepos.some(r => r.verificationStatus === 'verifying')
+    if (hasVerifying && isLoggedIn && role === 'owner') {
+      intervalId = setInterval(() => {
+        fetchMirrors()
+      }, 3000)
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [mirroredRepos, isLoggedIn, role])
+
+  // Auto-scroll logs terminal container without moving browser window scroll
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight
+    }
+  }, [mirrorLogs])
+
+  // Auto-scroll developer review terminal logs
+  useEffect(() => {
+    if (devTerminalRef.current) {
+      devTerminalRef.current.scrollTop = devTerminalRef.current.scrollHeight
+    }
+  }, [activeReviewLogs])
+
+  const executeMirrorPipeline = async () => {
+    if (!githubUsername || !selectedOwnerRepo) return
+
+    setMirrorStatus('running')
+    setMirrorProgress(0)
+    setMirrorLogs(['INIT Triggering mirroring request...'])
+    
+    try {
+      const response = await fetch('/api/owner/mirror', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: githubUsername,
+          sourceRepo: selectedOwnerRepo.full_name,
+          targetOrg: selectedScope,
+          taskTitle: '',
+          taskDescription: '',
+          frontendStack: '',
+          backendStack: '',
+          allowedPaths: '',
+          restrictedPaths: '',
+          acceptanceCriteria: '',
+        })
+      })
+
+      const data = await response.json()
+      if (response.ok && data.jobId) {
+        setActiveJobId(data.jobId)
+      } else {
+        setMirrorStatus('failed')
+        setMirrorLogs(prev => [...prev, `FAILED ${data.error || 'Failed to start mirroring pipeline'}`])
+      }
+    } catch (err: any) {
+      setMirrorStatus('failed')
+      setMirrorLogs(prev => [...prev, `FAILED Connection error: ${err.message}`])
+    }
+  };
+
+  const handleDeleteSandbox = async (sandboxRepoName: string) => {
+    if (!githubUsername) return
+    if (!confirm(`Are you absolutely sure you want to delete the sandbox "${sandboxRepoName}"?\n\nThis will delete the repository from GitHub, clean up its database entry, and delete all associated developer forks from the database and GitHub.`)) {
+      return
+    }
+
+    setDeletingRepos(prev => ({ ...prev, [sandboxRepoName]: true }))
+    try {
+      const response = await fetch('/api/owner/sandbox', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: githubUsername,
+          sandboxRepo: sandboxRepoName
+        })
+      })
+      const data = await response.json()
+      if (response.ok && data.success) {
+        let message = `Sandbox "${sandboxRepoName}" deleted successfully!\n\n`
+        if (data.sandboxDeletedOnGitHub) {
+          message += `• Cleaned up sandbox organization repository on GitHub.\n`
+        } else {
+          message += `• Warning: Failed to clean up organization repo on GitHub: ${data.sandboxDeleteError || 'Unknown API issue'}.\n`
+        }
+
+        const deletedForks = data.deletedForks || []
+        if (deletedForks.length > 0) {
+          const ghCount = deletedForks.filter((f: any) => f.deletedOnGitHub).length
+          message += `• Cleaned up ${deletedForks.length} fork record(s) from database.\n`
+          message += `• Cleaned up ${ghCount} fork repository/repositories from GitHub (best effort).`
+        }
+        alert(message)
+        fetchMirrors()
+      } else {
+        alert(data.error || 'Failed to delete sandbox repository')
+      }
+    } catch (err: any) {
+      alert(`Connection error deleting sandbox: ${err.message}`)
+    } finally {
+      setDeletingRepos(prev => {
+        const copy = { ...prev }
+        delete copy[sandboxRepoName]
+        return copy
+      })
+    }
+  }
+
+  // --- Developer Actions ---
+  const handleSelectSandboxRepo = (repo: SandboxRepo) => {
+    setSelectedSandboxRepo(repo)
+    setForkRegistered(false)
+    setForkUrl('')
+    setDevStatus({
+      hasFork: false,
+      hasPR: false,
+      prDetails: null
+    })
+    setAiReview(null) // reset AI review when switching repos
+  };
+
+  const openTaskForm = (sandbox: SandboxRepo) => {
+    // 1. Set selected owner repo (either real or mock)
+    const existingRepo = ownerRepos.find(r => r.full_name === sandbox.sourceRepo)
+    if (existingRepo) {
+      setSelectedOwnerRepo(existingRepo)
+    } else {
+      setSelectedOwnerRepo({
+        id: Date.now(),
+        name: sandbox.sourceRepo.split('/')[1] || sandbox.sourceRepo,
+        full_name: sandbox.sourceRepo,
+        private: true,
+        language: sandbox.frontendStack || sandbox.backendStack || null,
+        description: sandbox.taskDescription || null,
+        html_url: `https://github.com/${sandbox.sourceRepo}`
+      })
+    }
+
+    setTaskFormSandbox(sandbox)
+    setTaskForm({
+      taskTitle: sandbox.taskTitle || '',
+      taskDescription: sandbox.taskDescription || '',
+      frontendStack: sandbox.frontendStack || '',
+      backendStack: sandbox.backendStack || '',
+      allowedPaths: sandbox.allowedPaths || '',
+      restrictedPaths: sandbox.restrictedPaths || '',
+      acceptanceCriteria: sandbox.acceptanceCriteria || '',
+    })
+
+    // Populate selectedSkills
+    const skillsList: string[] = []
+    if (sandbox.frontendStack) {
+      if (sandbox.frontendStack.includes('Next.js')) skillsList.push('Next.js')
+      else if (sandbox.frontendStack.includes('React')) skillsList.push('React')
+      else if (sandbox.frontendStack.includes('Vue')) skillsList.push('Vue')
+      else if (sandbox.frontendStack.includes('Svelte')) skillsList.push('Svelte')
+      else if (sandbox.frontendStack.includes('Angular')) skillsList.push('Angular')
+      if (sandbox.frontendStack.includes('Tailwind')) skillsList.push('Tailwind')
+    }
+    if (sandbox.backendStack) {
+      if (sandbox.backendStack.includes('Node')) skillsList.push('Node.js')
+      if (sandbox.backendStack.includes('Python') || sandbox.backendStack.includes('FastAPI')) {
+        if (!skillsList.includes('Python')) skillsList.push('Python')
+        if (sandbox.backendStack.includes('FastAPI') && !skillsList.includes('FastAPI')) skillsList.push('FastAPI')
+      }
+      if (sandbox.backendStack.includes('Go')) skillsList.push('Go')
+      if (sandbox.backendStack.includes('Django')) skillsList.push('Django')
+    }
+    setSelectedSkills(skillsList)
+
+    // Scroll smoothly to top
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  };
+
+  const saveTaskForm = async () => {
+    const activeSandbox = taskFormSandbox || selectedRepoMirror
+    if (!githubUsername || !activeSandbox) return
+    if (!taskForm.taskTitle.trim() || !taskForm.taskDescription.trim() || !taskForm.frontendStack || !taskForm.backendStack) {
+      alert('Please fill out all required task configuration fields (Title, Description, and Required Skills) before saving.')
+      return
+    }
+    setSavingTask(true)
+    try {
+      const response = await fetch('/api/owner/task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...taskForm,
+          sandboxRepo: activeSandbox.sandboxRepo,
+          username: githubUsername,
+        })
+      })
+      const data = await response.json()
+      if (response.ok) {
+        alert('Task guidelines saved successfully!')
+        setTaskFormOpen(false)
+        fetchMirrors() // refresh mirrors list to show updated task metadata
+      } else {
+        alert(data.error || 'Failed to save task')
+      }
+    } catch (err: any) {
+      alert(`Network error: ${err.message}`)
+    } finally {
+      setSavingTask(false)
+    }
+  };
+
+  // --- Owner: PR Dashboard Actions ---
+  const openSandboxPRs = async (sandbox: SandboxRepo) => {
+    setSelectedSandboxForPRs(sandbox)
+    setSelectedPR(null)
+    setSandboxPRs([])
+    setLoadingPRs(true)
+    try {
+      const response = await fetch(`/api/owner/prs?sandboxRepo=${encodeURIComponent(sandbox.sandboxRepo)}`)
+      const data = await response.json()
+      if (response.ok) {
+        setSandboxPRs(data.prs || [])
+      }
+    } catch (err) {
+      console.error('Error loading PRs:', err)
+    } finally {
+      setLoadingPRs(false)
+    }
+  };
+
+  const handlePRAction = async (action: 'merge' | 'request_changes' | 'reject', pr: PRWithReview) => {
+    if (!githubUsername || !selectedSandboxForPRs || !pr.review) return
+    const confirmMsg = action === 'merge'
+      ? `Approve & Merge PR #${pr.review.prNumber} from @${pr.fork.githubUsername}?`
+      : action === 'reject'
+      ? `Reject and close PR #${pr.review.prNumber} from @${pr.fork.githubUsername}?`
+      : `Request changes on PR #${pr.review.prNumber} from @${pr.fork.githubUsername}?`
+    if (!confirm(confirmMsg)) return
+
+    setPrActionInProgress(true)
+    try {
+      const response = await fetch('/api/owner/pr-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          sandboxRepo: selectedSandboxForPRs.sandboxRepo,
+          prNumber: pr.review.prNumber,
+          username: githubUsername,
+          message: prActionMessage,
+        })
+      })
+      const data = await response.json()
+      if (response.ok) {
+        alert(`✅ Action "${action.replace('_', ' ')}" completed successfully!`)
+        openSandboxPRs(selectedSandboxForPRs) // refresh PR list
+        setSelectedPR(null)
+        setPrActionMessage('')
+      } else {
+        alert(data.error || 'PR action failed')
+      }
+    } catch (err: any) {
+      alert(`Network error: ${err.message}`)
+    } finally {
+      setPrActionInProgress(false)
+    }
+  };
+
+  // --- Open PR Review Report ---
+  const handleOpenComparison = async (sandboxRepoId: string, prReview: AIReview, title: string) => {
+    setComparisonPRReview(prReview)
+    setComparisonTitle(title)
+    setComparisonModalOpen(true)
+    setComparisonTab('overview') // reset tab to overview
+  }
+
+  // --- Developer: Fetch AI Review ---
+  const fetchAIReview = async () => {
+    if (!githubUsername || !selectedSandboxRepo || !devStatus.prDetails) return null
+    setLoadingReview(true)
+    try {
+      const params = new URLSearchParams({
+        username: githubUsername,
+        sandboxRepo: selectedSandboxRepo.sandboxRepo,
+        prNumber: String(devStatus.prDetails.number),
+      })
+      const response = await fetch(`/api/developer/review?${params}`)
+      const data = await response.json()
+      if (response.ok && data.review) {
+        setAiReview(data.review)
+        return data.review
+      } else {
+        setAiReview(null)
+      }
+    } catch (err) {
+      console.error('Error fetching AI review:', err)
+    } finally {
+      setLoadingReview(false)
+    }
+    return null
+  };
+
+  const toggleSection = (key: string) => {
+    setReviewExpandedSections(prev => ({ ...prev, [key]: !prev[key] }))
+  };
+
+
+  const executeForkPipeline = async () => {
+    if (!githubUsername || !selectedSandboxRepo) return
+    setRegisteringFork(true)
+    try {
+      const response = await fetch('/api/developer/fork', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: githubUsername,
+          sandboxRepo: selectedSandboxRepo.sandboxRepo
+        })
+      })
+      const data = await response.json()
+      if (response.ok) {
+        setForkRegistered(true)
+        setForkUrl(data.forkUrl)
+        // Automatically open the GitHub Fork creation screen in a new tab
+        window.open(data.githubForkPage, '_blank')
+      } else {
+        alert(data.error || 'Failed to trigger fork workflow')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Network error registering fork')
+    } finally {
+      setRegisteringFork(false)
+    }
+  };
+
+  const checkLiveDeveloperStatus = async () => {
+    if (!githubUsername || !selectedSandboxRepo) return
+    setCheckingStatus(true)
+    try {
+      const response = await fetch(
+        `/api/developer/status?username=${githubUsername}&sandboxRepo=${selectedSandboxRepo.sandboxRepo}`
+      )
+      const data = await response.json()
+      if (response.ok) {
+        setDevStatus({
+          hasFork: data.hasFork,
+          hasPR: data.hasPR,
+          prDetails: data.prDetails
+        })
+
+        if (data.hasPR && data.prDetails) {
+          // Trigger the review pipeline (in case it wasn't already triggered by webhook)
+          let reviewJobId: string | null = null
+          try {
+            const trigRes = await fetch('/api/developer/trigger-review', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: githubUsername,
+                sandboxRepo: selectedSandboxRepo.sandboxRepo,
+                prNumber: data.prDetails.number
+              })
+            })
+            const trigData = await trigRes.json()
+            if (trigRes.ok && trigData.jobId) {
+              reviewJobId = trigData.jobId
+              setActiveReviewJobId(trigData.jobId)
+              setActiveReviewProgress(5)
+              setActiveReviewLogs(['INIT Pull request verification triggered.'])
+            }
+          } catch (triggerErr) {
+            console.error('Error triggering review:', triggerErr)
+          }
+
+          // Fetch the AI review immediately
+          setLoadingReview(true)
+          try {
+            const params = new URLSearchParams({
+              username: githubUsername,
+              sandboxRepo: selectedSandboxRepo.sandboxRepo,
+              prNumber: String(data.prDetails.number),
+            })
+            const revRes = await fetch(`/api/developer/review?${params}`)
+            const revData = await revRes.json()
+            if (revRes.ok && revData.review) {
+              setAiReview(revData.review)
+              setDevReviewStatus('done')
+              setActiveReviewJobId(null)
+            } else {
+              setAiReview(null)
+              setDevReviewStatus('verifying')
+              if (reviewJobId) {
+                setActiveReviewJobId(reviewJobId)
+              }
+            }
+          } catch (revErr) {
+            console.error('Error fetching initial review:', revErr)
+            setDevReviewStatus('verifying')
+            if (reviewJobId) {
+              setActiveReviewJobId(reviewJobId)
+            }
+          } finally {
+            setLoadingReview(false)
+          }
+        } else {
+          setDevReviewStatus('idle')
+          setAiReview(null)
+          setActiveReviewJobId(null)
+        }
+      } else {
+        alert(data.error || 'Status verification failed')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Network error verifying status')
+    } finally {
+      setCheckingStatus(false)
+    }
+  };
+
+  // --- Styled Terminal Logs Color Formatter ---
+  const formatTerminalLog = (log: string) => {
+    const spaceIndex = log.indexOf(' ')
+    if (spaceIndex === -1) return <span>{log}</span>
+
+    const tag = log.substring(0, spaceIndex)
+    const message = log.substring(spaceIndex + 1)
+
+    let tagColor = 'text-zinc-400'
+    if (tag === 'INIT') tagColor = 'text-blue-400 font-bold'
+    if (tag === 'CHECKING') tagColor = 'text-amber-400 font-semibold'
+    if (tag === 'CREATING' || tag === 'GIT_INIT') tagColor = 'text-teal-400 font-semibold animate-pulse'
+    if (tag === 'CREATED' || tag === 'GIT_CLONE_SUCCESS' || tag === 'GIT_PUSH_SUCCESS') tagColor = 'text-emerald-400 font-bold'
+    if (tag === 'GIT_CLONE') tagColor = 'text-purple-400'
+    if (tag === 'GIT_PUSH') tagColor = 'text-pink-400'
+    if (tag === 'CLEANUP') tagColor = 'text-zinc-500'
+    if (tag === 'SUCCESS') tagColor = 'text-emerald-400 font-black tracking-wide border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/10'
+    if (tag === 'FAILED') tagColor = 'text-red-400 font-black border border-red-500/20 px-2 py-0.5 rounded bg-red-500/10 animate-bounce'
+
+    return (
+      <div className="py-1 flex items-start gap-2 select-text font-mono text-xs md:text-sm">
+        <span className={`shrink-0 ${tagColor} select-none`}>[{tag}]</span>
+        <span className="text-zinc-300">{message}</span>
+      </div>
+    )
+  };
+
+  // --- Clipboard Copy Helper ---
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  };
+
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#030303] text-zinc-100 font-sans relative overflow-hidden">
+        {/* Background ambient blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none animate-ambient-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        <div className="flex flex-col items-center gap-6 relative z-10">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/20 flex items-center justify-center font-black text-amber-500 text-3xl shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+              F
+            </div>
+            <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 opacity-20 blur-md animate-pulse"></div>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-10 h-1 border-t-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest animate-pulse">
+              Authenticating Sandbox Session...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full relative z-10">
+        {!isLoggedIn ? (
+          /* ========================================================================= */
+          /* ======================== 1. Welcome / Auth Page ======================== */
+          /* ========================================================================= */
+          <div className="flex-1 flex flex-col items-center justify-center max-w-4xl w-full mx-auto py-12">
+            <div className="text-center mb-16 animate-fade-in relative">
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+              
+              <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 items-center justify-center font-black text-black text-3xl shadow-xl shadow-amber-500/20 mb-8 hover:rotate-6 transition duration-300">
+                F
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4 bg-gradient-to-b from-white via-zinc-100 to-zinc-500 bg-clip-text text-transparent">
+                Forke Native Sandbox
+              </h1>
+              <p className="text-zinc-400 max-w-2xl mx-auto text-sm md:text-base leading-relaxed font-medium">
+                A secure environment to validate OAuth role-permissions, orchestrate git mirrors under <span className="text-zinc-200 font-bold">{process.env.NEXT_PUBLIC_GITHUB_SANDBOX_ORG || 'forke-sandbox'}</span>, and configure fork-based engineering workspaces with real-time GitHub status checks.
+              </p>
+            </div>
+
+            <div className={cn(
+              presetRole ? "w-full max-w-md mx-auto" : "grid md:grid-cols-2 gap-8 w-full max-w-3xl animate-scale-up"
+            )}>
+              {/* Owner Authentication Box */}
+              {(!presetRole || presetRole === 'owner') && (
+                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-amber-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(245,158,11,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
+                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-amber-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-all duration-500"></div>
+
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-amber-500/40 group-hover:bg-amber-500/15 transition-all duration-300 shadow-inner">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-amber-400 transition-colors">
+                      Repository Owner
+                    </h3>
+
+                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
+                      Import production repository structures, select scopes/organizations, and run bare mirroring pipelines inside sandbox target directories.
+                    </p>
+                  </div>
+
+                  <a
+                    href="/api/auth/login?role=owner"
+                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
+                  >
+                    Authorize as Owner
+                  </a>
+                </div>
+              )}
+
+              {/* Developer Authentication Box */}
+              {(!presetRole || presetRole === 'developer') && (
+                <div className="group relative rounded-3xl bg-zinc-900/10 border border-zinc-800/80 hover:border-emerald-500/40 hover:bg-zinc-900/20 transition-all duration-500 p-8 flex flex-col justify-between hover:shadow-[0_0_50px_-12px_rgba(16,185,129,0.15)] backdrop-blur-md overflow-hidden min-h-[380px]">
+                  <div className="absolute right-[-10%] top-[-10%] w-36 h-36 bg-emerald-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-500"></div>
+
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/15 transition-all duration-300 shadow-inner">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                      </svg>
+                    </div>
+
+                    <h3 className="text-2xl font-black mb-3 tracking-wide text-zinc-100 group-hover:text-emerald-400 transition-colors">
+                      Developer Contributor
+                    </h3>
+
+                    <p className="text-zinc-400 text-xs md:text-sm leading-relaxed mb-10 font-medium">
+                      Fork sandbox projects seamlessly, execute branchless git instructions locally, and push contributions directly back via native pull request checks.
+                    </p>
+                  </div>
+
+                  <a
+                    href="/api/auth/login?role=developer"
+                    className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-black text-center text-xs tracking-widest uppercase shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] block relative z-10"
+                  >
+                    Authorize as Developer
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : role === 'owner' ? (
+          /* ========================================================================= */
+          /* ======================== 2. Owner Dashboard Space ======================== */
+          /* ========================================================================= */
+          <div className="space-y-10 animate-fade-in">
+            {/* Core Ingestion Panel */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12 select-none">
+              
+              {/* Left Column (lg:col-span-2) */}
+              <div className="lg:col-span-2 space-y-6 text-left">
+                
+                {/* Case 1: Selected repo has NOT been imported yet */}
+                {selectedRepoMirror === null ? (
+                  <>
+                    {/* Repository Selection */}
+                    <div className="space-y-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[var(--color-border)] pb-3">
+                        <div>
+                          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Repository</h3>
+                          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">Choose a repository to start the review</p>
+                        </div>
+                        
+                        {/* Search & Scope Selector */}
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                          <div className="relative group">
+                            <select
+                              value={selectedScope}
+                              onChange={(e) => setSelectedScope(e.target.value)}
+                              className="bg-[#070709] border border-[var(--color-border)] hover:border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/80 focus:outline-none focus:border-accent cursor-pointer transition appearance-none pr-8 min-w-[150px]"
+                            >
+                              <option value="personal">Personal Profile</option>
+                              {organizations.map(org => (
+                                <option key={org.id} value={org.login}>
+                                  Org: {org.login}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+                              ▼
+                            </div>
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Search repositories..."
+                              value={repoSearch}
+                              onChange={(e) => setRepoSearch(e.target.value)}
+                              className="bg-white/[0.02] border border-[var(--color-border)] focus:border-accent rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/20 focus:outline-none transition min-w-[180px]"
+                            />
+                            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500">
+                              <Search className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Repository Cards Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[290px] overflow-y-auto pr-2 custom-scrollbar">
+                        {loadingRepos ? (
+                          <div className="col-span-full flex flex-col items-center justify-center py-12 gap-2 bg-white/[0.01] border border-[var(--color-border)] rounded-xl">
+                            <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-[11px] text-[var(--color-text-muted)] font-medium">Scanning repositories...</span>
+                          </div>
+                        ) : filteredRepos.length === 0 ? (
+                          <div className="col-span-full py-12 text-center text-[var(--color-text-muted)] text-xs border border-dashed border-[var(--color-border)] rounded-xl bg-white/[0.01]">
+                            No matching repositories found.
+                          </div>
+                        ) : (
+                          filteredRepos.map(repo => {
+                            const isSelected = selectedOwnerRepo?.id === repo.id
+                            return (
+                              <button
+                                key={repo.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedOwnerRepo(repo);
+                                  // Maintain clean form fields on switch
+                                  setTaskForm(prev => ({
+                                    ...prev,
+                                    taskTitle: prev.taskTitle || '',
+                                    taskDescription: prev.taskDescription || '',
+                                  }));
+                                }}
+                                className={cn(
+                                  "w-full text-left p-4 rounded-xl border flex flex-col gap-2 relative overflow-hidden transition-all duration-300 cursor-pointer",
+                                  isSelected
+                                    ? "bg-accent/[0.04] border-accent shadow-[0_0_15px_rgba(245,158,11,0.08)]"
+                                    : "bg-white/[0.02] border-[var(--color-border)] hover:border-white/20"
+                                )}
+                              >
+                                <div className="flex items-center justify-between gap-3 w-full">
+                                  <span className="font-bold text-[13px] text-white truncate max-w-[70%]">
+                                    {repo.name}
+                                  </span>
+                                  <span className={cn(
+                                    "text-[9px] font-black uppercase px-1.5 py-0.5 rounded border leading-none shrink-0",
+                                    repo.private
+                                      ? "border-accent/20 bg-accent/5 text-accent"
+                                      : "border-zinc-800 bg-zinc-900 text-zinc-400"
+                                  )}>
+                                    {repo.private ? 'Private' : 'Public'}
+                                  </span>
+                                </div>
+                                
+                                {repo.description && (
+                                  <p className="text-[var(--color-text-muted)] text-xs line-clamp-2 leading-relaxed">
+                                    {repo.description}
+                                  </p>
+                                )}
+
+                                <div className="flex items-center justify-between text-[10px] text-[var(--color-text-muted)] border-t border-white/[0.04] pt-2 mt-1">
+                                  <span className="font-mono text-white/30 truncate max-w-[65%]">{repo.full_name}</span>
+                                  {repo.language && (
+                                    <span className="flex items-center gap-1.5 text-[var(--color-text-muted)] shrink-0">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm shadow-accent/50"></span>
+                                      {repo.language}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Import Callout & Action Button */}
+                    <div className="pt-6 border-t border-[var(--color-border)] space-y-4">
+                      {selectedOwnerRepo ? (
+                        <div className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.01] text-xs text-[var(--color-text-muted)] leading-relaxed">
+                          Repository <span className="text-white font-semibold">{selectedOwnerRepo.name}</span> will be cloned and imported into the private Forke sandbox environment. Once imported, you will be able to configure tasks, requirements, and review guidelines.
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl border border-dashed border-[var(--color-border)] bg-white/[0.005] text-center text-xs text-[var(--color-text-muted)]">
+                          Select a repository from the list above to begin the import process.
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={executeMirrorPipeline}
+                        disabled={mirrorStatus === 'running' || !selectedOwnerRepo}
+                        className={cn(
+                          "w-full md:w-auto min-w-[220px] h-10 text-[13px] font-medium ui-btn-primary rounded-lg cursor-pointer transition-colors flex items-center gap-2 justify-center",
+                          (mirrorStatus === 'running' || !selectedOwnerRepo) && "opacity-60 cursor-not-allowed"
+                        )}
+                      >
+                        {mirrorStatus === 'running' ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                            Ingesting...
+                          </>
+                        ) : (
+                          'Import Repository & Start Review'
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Logging output */}
+                    {mirrorStatus !== 'idle' && (
+                      <div className="p-4 rounded-xl border border-[var(--color-border)] bg-white/[0.01] space-y-3 mt-4 animate-in fade-in duration-300">
+                        <div className="flex items-center justify-between text-xs font-medium">
+                          <span className="text-[var(--color-text-muted)] uppercase tracking-wider">Verification Pipeline Status</span>
+                          <span className={cn(
+                            "font-semibold",
+                            mirrorStatus === 'success' ? 'text-emerald-400' :
+                            mirrorStatus === 'failed' ? 'text-red-400' : 'text-amber-500'
+                          )}>
+                            {mirrorStatus === 'success' ? 'Import Complete' :
+                             mirrorStatus === 'failed' ? 'Pipeline Failed' : `Processing... ${mirrorProgress}%`}
+                          </span>
+                        </div>
+                        
+                        <div className="h-1.5 bg-white/[0.03] border border-white/[0.05] rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-500 rounded-full",
+                              mirrorStatus === 'success' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' :
+                              mirrorStatus === 'failed' ? 'bg-red-500' : 'bg-amber-500'
+                            )}
+                            style={{ width: `${mirrorProgress}%` }}
+                          />
+                        </div>
+
+                        <details className="group">
+                          <summary className="text-[11px] text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1 mt-2">
+                            <span>View Pipeline Logs</span>
+                            <span className="transition-transform group-open:rotate-180">▼</span>
+                          </summary>
+                          <div ref={terminalRef} className="w-full bg-[#040406]/98 rounded-xl p-4 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-[11px] text-zinc-300 leading-normal max-h-[165px] overflow-y-auto mt-2 custom-scrollbar">
+                            {mirrorLogs.map((log, idx) => (
+                              <div key={idx}>{formatTerminalLog(log)}</div>
+                            ))}
+                          </div>
+                        </details>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Selected Repository Card with Switch action */}
+                    <div className="p-4 rounded-xl border border-accent bg-accent/[0.03] space-y-3 relative overflow-hidden">
+                      <div className="flex items-center justify-between gap-3 w-full">
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-wider text-accent">Selected Repository (Imported)</div>
+                          <h4 className="font-bold text-[14px] text-white mt-1">
+                            {selectedOwnerRepo?.name}
+                          </h4>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOwnerRepo(null);
+                            setTaskForm({
+                              taskTitle: '',
+                              taskDescription: '',
+                              frontendStack: '',
+                              backendStack: '',
+                              allowedPaths: '',
+                              restrictedPaths: '',
+                              acceptanceCriteria: '',
+                            });
+                            setSelectedSkills([]);
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-medium border border-white/10 hover:border-white/20 text-[var(--color-text-muted)] hover:text-white rounded-lg transition-colors cursor-pointer"
+                        >
+                          Switch Repo
+                        </button>
+                      </div>
+                      {selectedOwnerRepo?.description && (
+                        <p className="text-[var(--color-text-muted)] text-xs leading-relaxed">
+                          {selectedOwnerRepo.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 text-[10px] text-[var(--color-text-muted)] font-medium pt-2 border-t border-white/[0.04]">
+                        <span>{selectedOwnerRepo?.full_name}</span>
+                        {selectedOwnerRepo?.language && (
+                          <span className="flex items-center gap-1.5 shrink-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                            {selectedOwnerRepo.language}
+                          </span>
+                        )}
+                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[9px]">
+                          {selectedOwnerRepo?.private ? 'Private' : 'Public'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Task Form Elements */}
+                    <div className="space-y-6 pt-4 border-t border-[var(--color-border)]">
+                      {/* Task Title */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-end">
+                          <label htmlFor="title" className="text-xs font-medium text-[var(--color-text-muted)]">
+                            Task title
+                          </label>
+                          <span className={cn(
+                            "text-[11px] tabular-nums",
+                            taskForm.taskTitle.length > 90 ? "text-red-400" : "text-white/30"
+                          )}>
+                            {taskForm.taskTitle.length}/100
+                          </span>
+                        </div>
+                        <input
+                          id="title"
+                          type="text"
+                          required
+                          placeholder="e.g. Fix navbar overlap on mobile view"
+                          value={taskForm.taskTitle}
+                          onChange={(e) => setTaskForm(prev => ({ ...prev, taskTitle: e.target.value.slice(0, 100) }))}
+                          className="w-full h-10 px-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white placeholder-white/25"
+                        />
+                      </div>
+
+                      {/* Description */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-end">
+                          <label htmlFor="description" className="text-xs font-medium text-[var(--color-text-muted)]">
+                            Description
+                          </label>
+                          <span className={cn(
+                            "text-[11px] tabular-nums",
+                            taskForm.taskDescription.length > 900 ? "text-red-400" : "text-white/30"
+                          )}>
+                            {taskForm.taskDescription.length}/1000
+                          </span>
+                        </div>
+                        <textarea
+                          id="description"
+                          required
+                          rows={5}
+                          placeholder="Describe the task, requirements, and deliverables..."
+                          value={taskForm.taskDescription}
+                          onChange={(e) => setTaskForm(prev => ({ ...prev, taskDescription: e.target.value.slice(0, 1000) }))}
+                          className="w-full px-3 py-2.5 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white placeholder-white/25 resize-none min-h-[120px] leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Required Skills Searchable Multi-Select */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <Tag className="w-3.5 h-3.5 text-accent" />
+                          <label className="text-xs font-medium text-[var(--color-text-muted)]">
+                            Required Skills
+                          </label>
+                        </div>
+
+                        <div className="relative">
+                          {/* Search Bar Input */}
+                          <div className="flex flex-wrap gap-1.5 p-1.5 bg-white/[0.01] border border-[var(--color-border)] focus-within:border-accent rounded-lg transition-colors items-center min-h-[40px]">
+                            {/* Chips list */}
+                            {selectedSkills.map(skill => (
+                              <span
+                                key={skill}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[13px] font-medium bg-accent text-[#0a0a0a] border border-accent"
+                              >
+                                {skill}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
+                                  className="ml-0.5 hover:opacity-75 text-base leading-none cursor-pointer"
+                                  aria-label={`Remove ${skill}`}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+
+                            <input
+                              type="text"
+                              placeholder={selectedSkills.length > 0 ? "" : "Search or add skills..."}
+                              value={skillSearchQuery}
+                              onChange={(e) => {
+                                setSkillSearchQuery(e.target.value)
+                                setIsSkillDropdownOpen(true)
+                              }}
+                              onFocus={() => setIsSkillDropdownOpen(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && skillSearchQuery.trim()) {
+                                  e.preventDefault();
+                                  const trimmed = skillSearchQuery.trim();
+                                  if (!selectedSkills.includes(trimmed)) {
+                                    setSelectedSkills(prev => [...prev, trimmed]);
+                                  }
+                                  setSkillSearchQuery('');
+                                }
+                              }}
+                              className="bg-transparent border-none outline-none text-[13px] text-white placeholder-white/20 px-2 flex-grow min-w-[100px]"
+                            />
+
+                            {skillSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => { setSkillSearchQuery(''); setIsSkillDropdownOpen(false) }}
+                                className="text-white/40 hover:text-white p-1"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Dropdown Menu */}
+                          {isSkillDropdownOpen && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setIsSkillDropdownOpen(false)} />
+                              <div className="absolute left-0 right-0 mt-1.5 max-h-[200px] overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[#0c0c0f] p-1.5 z-20 shadow-xl custom-scrollbar animate-in fade-in duration-200">
+                                {(() => {
+                                  const options = [
+                                    'React', 'Next.js', 'TypeScript', 'Node.js', 'Python', 
+                                    'FastAPI', 'PostgreSQL', 'Docker', 'AWS', 'Tailwind'
+                                  ];
+                                  const filtered = options.filter(s => 
+                                    s.toLowerCase().includes(skillSearchQuery.toLowerCase()) && 
+                                    !selectedSkills.includes(s)
+                                  );
+                                  
+                                  return (
+                                    <>
+                                      {filtered.length > 0 ? (
+                                        filtered.map(skill => (
+                                          <button
+                                            key={skill}
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedSkills(prev => [...prev, skill]);
+                                              setSkillSearchQuery('');
+                                              setIsSkillDropdownOpen(false);
+                                            }}
+                                            className="w-full text-left px-3 py-2 rounded-md text-xs text-white/85 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+                                          >
+                                            {skill}
+                                          </button>
+                                        ))
+                                      ) : (
+                                        <div className="text-left px-3 py-2 text-xs text-[var(--color-text-muted)] italic">
+                                          {skillSearchQuery ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const trimmed = skillSearchQuery.trim();
+                                                if (!selectedSkills.includes(trimmed)) {
+                                                  setSelectedSkills(prev => [...prev, trimmed]);
+                                                }
+                                                setSkillSearchQuery('');
+                                                setIsSkillDropdownOpen(false);
+                                              }}
+                                              className="text-accent hover:underline w-full text-left"
+                                            >
+                                              + Add custom skill "{skillSearchQuery}"
+                                            </button>
+                                          ) : (
+                                            "Type to search skills..."
+                                          )}
+                                        </div>
+                                      )}
+                                    </>
+                                  )
+                                })()}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Budget & Deadline Row */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Budget */}
+                        <div className="space-y-1.5">
+                          <label htmlFor="budget" className="text-xs font-medium text-[var(--color-text-muted)]">
+                            Budget (rupees)
+                          </label>
+                          <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+                              <IndianRupee className="w-4 h-4" />
+                            </div>
+                            <input
+                              id="budget"
+                              type="number"
+                              required
+                              min={100}
+                              max={100000}
+                              placeholder="500"
+                              value={budget}
+                              onChange={(e) => setBudget(e.target.value)}
+                              className="w-full h-10 pl-9 pr-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white placeholder-white/25"
+                            />
+                          </div>
+                          <p className="text-[10px] text-[var(--color-text-muted)]">Minimum ₹100 · Maximum ₹1,00,000</p>
+                        </div>
+
+                        {/* Deadline */}
+                        <div className="space-y-1.5">
+                          <label htmlFor="deadline" className="text-xs font-medium text-[var(--color-text-muted)]">
+                            Deadline (optional)
+                          </label>
+                          <div className="relative">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <input
+                              id="deadline"
+                              type="date"
+                              value={deadline}
+                              onChange={(e) => setDeadline(e.target.value)}
+                              className="w-full h-10 pl-9 pr-3 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-[13px] text-white/70 appearance-none cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Advanced configuration inputs (paths and criteria) directly editable now */}
+                      <details className="group border-t border-white/[0.05] pt-4">
+                        <summary className="text-xs text-[var(--color-text-muted)] hover:text-white cursor-pointer select-none font-medium flex items-center gap-1">
+                          <span>Advanced guidelines config (file paths, criteria)</span>
+                          <span className="transition-transform group-open:rotate-180">▼</span>
+                        </summary>
+                        <div className="space-y-4 pt-4">
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
+                              Allowed File Paths <span className="text-white/30 font-normal normal-case">(optional, globs like src/components/**)</span>
+                            </label>
+                            <textarea
+                              value={taskForm.allowedPaths}
+                              onChange={e => setTaskForm(prev => ({ ...prev, allowedPaths: e.target.value }))}
+                              placeholder={`src/components/Navbar.tsx\nsrc/styles/navbar.css`}
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white font-mono placeholder-white/20 resize-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
+                              Restricted Paths <span className="text-white/30 font-normal normal-case">(optional)</span>
+                            </label>
+                            <textarea
+                              value={taskForm.restrictedPaths}
+                              onChange={e => setTaskForm(prev => ({ ...prev, restrictedPaths: e.target.value }))}
+                              placeholder={`.env\npackage.json`}
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white font-mono placeholder-white/20 resize-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] mb-1.5">
+                              Acceptance Criteria <span className="text-white/30 font-normal normal-case">(optional)</span>
+                            </label>
+                            <textarea
+                              value={taskForm.acceptanceCriteria}
+                              onChange={e => setTaskForm(prev => ({ ...prev, acceptanceCriteria: e.target.value }))}
+                              placeholder={`- Navbar collapses on mobile\n- Animation is smooth`}
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg bg-white/[0.02] border border-[var(--color-border)] focus:border-accent transition-colors outline-none text-xs text-white placeholder-white/20 resize-none"
+                            />
+                          </div>
+                        </div>
+                      </details>
+
+                      {/* Submission Row */}
+                      <div className="pt-4 border-t border-[var(--color-border)]">
+                        <button
+                          type="button"
+                          onClick={saveTaskForm}
+                          disabled={savingTask}
+                          className={cn(
+                            "w-full md:w-auto min-w-[220px] h-10 text-[13px] font-medium ui-btn-primary rounded-lg cursor-pointer transition-colors flex items-center gap-2 justify-center",
+                            savingTask && "opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          {savingTask ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                              Saving Guidelines...
+                            </>
+                          ) : (
+                            'Save Task Guidelines & Start Review'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+              </div>
+
+              {/* Right Column (lg:col-span-1) - Preview & Tip cards */}
+              <div className="lg:col-span-1 text-left">
+                <div className="sticky top-20 space-y-4">
+                  {selectedRepoMirror === null ? (
+                    /* Step 1: Repository Preview during import */
+                    <div>
+                      <h3 className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5 mb-1.5">Repository Preview</h3>
+                      <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 space-y-3.5">
+                        <div>
+                          <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none">
+                            Repository Name
+                          </span>
+                          <h4 className="text-sm font-bold text-white break-words mt-1">
+                            {selectedOwnerRepo?.name || 'No repository selected'}
+                          </h4>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-xs font-medium border-t border-white/[0.03] pt-3">
+                          <div>
+                            <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                              Language
+                            </span>
+                            <span className="text-white/80">{selectedOwnerRepo?.language || 'Unknown'}</span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                              Visibility
+                            </span>
+                            <span className="text-white/80">{selectedOwnerRepo ? (selectedOwnerRepo.private ? 'Private' : 'Public') : '—'}</span>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-white/[0.03] pt-3">
+                          <span className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider block font-bold leading-none select-none mb-1">
+                            Description
+                          </span>
+                          <p className="text-[12px] text-white/45 leading-relaxed">
+                            {selectedOwnerRepo?.description || 'Select a repository to see its description here…'}
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
+                          <span>Import Status</span>
+                          <span className={cn(
+                            "font-bold",
+                            mirrorStatus === 'success' ? "text-emerald-400" :
+                            mirrorStatus === 'running' ? "text-amber-500 animate-pulse" : "text-zinc-500"
+                          )}>
+                            {mirrorStatus === 'success' ? 'Imported' : mirrorStatus === 'running' ? 'Ingesting...' : 'Ready to Import'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Step 2: PostTaskForm-aligned Live Preview */
+                    <div>
+                      <h3 className="text-xs font-medium text-[var(--color-text-muted)] pl-0.5 mb-1.5">Live preview</h3>
+                      <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-4 space-y-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <h4 className="text-sm font-medium text-white break-words min-h-[1.25em] leading-snug">
+                            {taskForm.taskTitle || 'Your task title'}
+                          </h4>
+                          <div className="bg-accent/10 border border-accent/20 px-2 py-0.5 rounded text-accent font-medium text-[13px] tabular-nums whitespace-nowrap shrink-0">
+                            ₹{(budget ? Number(budget) : 0).toLocaleString()}
+                          </div>
+                        </div>
+
+                        <p className="text-[13px] text-white/45 line-clamp-3 min-h-[4em] leading-relaxed">
+                          {taskForm.taskDescription || 'Your task description will appear here as you type…'}
+                        </p>
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedSkills.length > 0 ? (
+                            selectedSkills.map(tag => (
+                              <span key={tag} className="px-1.5 py-0.5 bg-white/[0.04] border border-[var(--color-border)] text-[var(--color-text-muted)] text-[11px] font-medium rounded">
+                                {tag}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] text-white/30">No tags selected</span>
+                          )}
+                        </div>
+
+                        <div className="pt-3.5 border-t border-[var(--color-border)] flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
+                          <span>Status: Open</span>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{deadline ? `Expires: ${deadline}` : 'Expires soon'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Associated Repository Info under Preview */}
+                      <div className="mt-3 p-3 bg-white/[0.01] border border-[var(--color-border)] rounded-xl flex items-center justify-between text-[11px] text-[var(--color-text-muted)]">
+                        <span className="truncate max-w-[70%]">
+                          Repo: <span className="text-white font-mono">{selectedOwnerRepo?.name || selectedRepoMirror?.sourceRepo?.split('/')[1] || ''}</span>
+                        </span>
+                        <span className="capitalize px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-[9px] shrink-0">
+                          {selectedOwnerRepo?.private ? 'Private' : 'Public'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card 3: Tip Card */}
+                  <div className="p-3.5 bg-white/[0.02] border border-[var(--color-border)] rounded-xl">
+                    <div className="flex gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+                      <p className="text-[13px] text-white/60 leading-relaxed">
+                        <span className="font-medium text-white">Tip:</span> Clear instructions attract better-quality developers. Be specific about your deliverables.
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            {/* Active Sandbox Mirrors Grid section */}
+            <div className="space-y-6 border-t border-zinc-900/80 pt-10">
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-zinc-50 mb-1 flex items-center gap-2">
+                  Active Sandbox Mirrors
+                  <span className="px-2 py-0.5 rounded-md border border-zinc-850 bg-zinc-900 text-[10px] font-black text-zinc-400">
+                    {mirroredRepos.length}
+                  </span>
+                </h3>
+                <p className="text-zinc-400 text-xs font-medium">
+                  Review sandbox environments that have been successfully cloned and mapped.
+                </p>
+              </div>
+
+              {mirroredRepos.length === 0 ? (
+                <div className="bg-[#070709] border border-zinc-900 rounded-2xl p-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest shadow-inner">
+                  No active mirrored sandboxes found
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {mirroredRepos.map(mirror => (
+                    <div
+                      key={mirror.id}
+                      className="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 relative overflow-hidden group/card hover:-translate-y-1 hover:border-amber-500/30 hover:shadow-[0_10px_35px_-10px_rgba(245,158,11,0.06)] transition-all duration-300"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {mirror.verificationStatus === 'verifying' ? (
+                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-amber-500/20 bg-amber-500/5 text-amber-400 tracking-widest animate-pulse">
+                              ⏳ Under Verification
+                            </span>
+                          ) : mirror.verificationStatus === 'failed' ? (
+                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-red-500/20 bg-red-500/5 text-red-400 tracking-widest">
+                              ❌ Verification Failed
+                            </span>
+                          ) : (
+                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 tracking-widest">
+                              🟢 Verified
+                            </span>
+                          )}
+                          {mirror.taskTitle && (
+                            <span className="text-[8.5px] font-black uppercase px-2.5 py-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-400 tracking-widest font-bold">
+                              ✦ Task Active
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-mono text-xs md:text-sm font-extrabold truncate text-zinc-100 group-hover/card:text-amber-400 transition-colors">
+                          {mirror.sandboxRepo}
+                        </div>
+                        {mirror.taskTitle && (
+                          <div className="text-[10px] text-violet-300 font-semibold leading-snug line-clamp-1">
+                            📋 {mirror.taskTitle}
+                          </div>
+                        )}
+                        <div className="text-[10px] text-zinc-500 font-semibold truncate leading-none">
+                          Source: <span className="font-mono text-zinc-400">{mirror.sourceRepo}</span>
+                        </div>
+
+                        {/* Baseline Snapshot Status */}
+                        <div className="flex items-center gap-2 border-t border-zinc-900/60 pt-2.5 mt-1.5 text-[10px] font-semibold">
+                          <span className="text-zinc-500 uppercase tracking-wider">Baseline snap:</span>
+                          {baselines[mirror.sandboxRepo] ? (
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                              Ready ({baselines[mirror.sandboxRepo].commitSha.substring(0, 7)})
+                            </span>
+                          ) : (
+                            <span className="text-amber-500 font-bold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                              Pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          {mirror.verificationStatus === 'verifying' ? (
+                            <>
+                              <button
+                                disabled
+                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
+                              >
+                                Verifying...
+                              </button>
+                              <button
+                                disabled
+                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
+                              >
+                                View PRs
+                              </button>
+                            </>
+                          ) : mirror.verificationStatus === 'failed' ? (
+                            <>
+                              <button
+                                disabled
+                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-red-950/20 bg-red-950/10 text-red-500 cursor-not-allowed opacity-50 font-bold"
+                              >
+                                Failed
+                              </button>
+                              <button
+                                disabled
+                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-zinc-900 bg-zinc-950/20 text-zinc-500 cursor-not-allowed opacity-50 font-bold"
+                              >
+                                View PRs
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => openSandboxPRs(mirror)}
+                                className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:border-violet-500/60 transition-all duration-200 cursor-pointer font-bold"
+                              >
+                                View PRs
+                              </button>
+
+                              {baselines[mirror.sandboxRepo] ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedBaselineReport(baselines[mirror.sandboxRepo])
+                                    setSelectedBaselineCategoryLog(null)
+                                  }}
+                                  className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 hover:border-emerald-500/60 transition-all duration-200 cursor-pointer font-bold"
+                                >
+                                  View Baseline
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => triggerBaselineSnapshot(mirror.sandboxRepo)}
+                                  disabled={triggeringBaseline[mirror.sandboxRepo]}
+                                  className="flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 hover:border-amber-500/60 transition-all duration-200 cursor-pointer font-bold disabled:opacity-50"
+                                >
+                                  {triggeringBaseline[mirror.sandboxRepo] ? 'Running...' : 'Gen Baseline'}
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] font-semibold">
+                          <span className="text-zinc-500">
+                            {new Date(mirror.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => openTaskForm(mirror)}
+                              className="border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 hover:border-violet-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-0.5 transition-all duration-300 cursor-pointer"
+                            >
+                              Config
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSandbox(mirror.sandboxRepo)}
+                              disabled={deletingRepos[mirror.sandboxRepo]}
+                              className={`border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:border-red-500/50 px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider font-extrabold flex items-center gap-1 transition-all duration-300 cursor-pointer ${
+                                deletingRepos[mirror.sandboxRepo] ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {deletingRepos[mirror.sandboxRepo] ? '...' : 'Delete'}
+                            </button>
+                            <a
+                              href={`https://github.com/${mirror.sandboxRepo}`}
+                              target="_blank" rel="noreferrer"
+                              className="text-amber-400 hover:text-amber-300 font-bold transition duration-200 flex items-center gap-1 uppercase tracking-wider text-[9px]"
+                            >
+                              GitHub
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ===== Owner PR Review Dashboard ===== */}
+            {selectedSandboxForPRs && (
+              <div className="border-t border-zinc-900/80 pt-10 space-y-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-zinc-50 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Received PRs
+                      <span className="font-mono text-sm text-zinc-400 font-normal">— {selectedSandboxForPRs.sandboxRepo}</span>
+                    </h3>
+                    <p className="text-zinc-400 text-xs font-medium mt-1">Developer submissions with AI review reports</p>
+                  </div>
+                  <button
+                    onClick={() => { setSelectedSandboxForPRs(null); setSelectedPR(null) }}
+                    className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+
+                {loadingPRs ? (
+                  <div className="flex items-center gap-3 py-12 justify-center">
+                    <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-zinc-400 text-sm font-bold">Loading PRs...</span>
+                  </div>
+                ) : sandboxPRs.length === 0 ? (
+                  <div className="bg-[#070709] border border-zinc-900 rounded-2xl p-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                    No developer PRs found for this sandbox
+                  </div>
+                ) : (
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    {/* PR List */}
+                    <div className="space-y-3">
+                      {sandboxPRs.map(pr => {
+                        const v = pr.review?.verdict
+                        const verdictStyle = v === 'pass'
+                          ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-400'
+                          : v === 'high_risk'
+                          ? 'border-red-500/40 bg-red-500/5 text-red-400'
+                          : 'border-amber-500/40 bg-amber-500/5 text-amber-400'
+                        const verdictLabel = v === 'pass' ? '🟢 PASS' : v === 'high_risk' ? '🔴 HIGH RISK' : v === 'needs_changes' ? '🟡 NEEDS CHANGES' : '⏳ PENDING'
+
+                        return (
+                          <button
+                            key={pr.fork.id}
+                            onClick={() => setSelectedPR(pr)}
+                            className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 ${
+                              selectedPR?.fork.id === pr.fork.id
+                                ? 'border-violet-500/50 bg-violet-500/5'
+                                : 'border-zinc-800/60 bg-[#070709]/60 hover:border-zinc-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="font-bold text-zinc-200 text-sm">@{pr.fork.githubUsername}</div>
+                                <div className="text-[10px] text-zinc-500 mt-0.5">
+                                  {pr.review ? `PR #${pr.review.prNumber}` : 'No PR'} · {new Date(pr.fork.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                {pr.review ? (
+                                  <>
+                                    <div className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border ${verdictStyle}`}>
+                                      {verdictLabel}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-400 mt-1 font-bold">{pr.review.score}/100</div>
+                                  </>
+                                ) : (
+                                  <div className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-500">
+                                    Awaiting Review
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* PR Detail Panel */}
+                    {selectedPR ? (
+                      <div className="glass-card rounded-2xl p-5 space-y-5">
+                        {selectedPR.review ? (
+                          <>
+                            {/* Header */}
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-xs font-black text-zinc-400 uppercase tracking-widest">AI Review Report</div>
+                                <div className="text-sm font-bold text-zinc-200 mt-0.5">@{selectedPR.fork.githubUsername} · PR #{selectedPR.review.prNumber}</div>
+                              </div>
+                              <div className={`text-xs font-black px-3 py-1.5 rounded-xl border ${
+                                selectedPR.review.verdict === 'pass' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                                : selectedPR.review.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
+                                : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
+                              }`}>
+                                {selectedPR.review.verdict === 'pass' ? '🟢 PASS' : selectedPR.review.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
+                              </div>
+                            </div>
+
+                            {/* Score bar */}
+                            <div>
+                              <div className="flex justify-between text-xs font-bold mb-1.5">
+                                <span className="text-zinc-400">Score</span>
+                                <span className="text-zinc-200">{selectedPR.review.score}/100</span>
+                              </div>
+                              <div className="h-2 bg-zinc-900 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-700 ${
+                                    selectedPR.review.score >= 75 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                                    selectedPR.review.score >= 50 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
+                                    'bg-gradient-to-r from-red-600 to-rose-500'
+                                  }`}
+                                  style={{ width: `${selectedPR.review.score}%` }}
+                                />
+                              </div>
+                              <div className="text-[10px] text-zinc-500 mt-1">Requirement match: {Math.round(selectedPR.review.requirementMatch * 100)}%</div>
+                            </div>
+
+                            <button
+                              onClick={() => handleOpenComparison(selectedSandboxForPRs!.id, selectedPR.review!, `PR #${selectedPR.review!.prNumber} from @${selectedPR.fork.githubUsername}`)}
+                              className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-400 border border-amber-500/30 hover:border-amber-500/50 shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                              📊 View AI Review Report
+                            </button>
+
+                            {/* Summary */}
+                            <div className="bg-zinc-900/50 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-800/60">
+                              <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1.5">AI Summary</div>
+                              {selectedPR.review.summary}
+                            </div>
+
+                            {/* Strengths */}
+                            {selectedPR.review.strengths && selectedPR.review.strengths.length > 0 && (
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">✅ Strengths ({selectedPR.review.strengths.length})</div>
+                                <div className="space-y-1 pl-1">
+                                  {selectedPR.review.strengths.map((s, i) => (
+                                    <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
+                                      <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
+                                      {s}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Issues */}
+                            {selectedPR.review.issues.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider">⚠️ Active Issues ({selectedPR.review.issues.length})</div>
+                                <div className="space-y-2">
+                                  {selectedPR.review.issues.map((issue, i) => (
+                                    <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
+                                      issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/20 bg-red-500/5 text-red-300'
+                                      : issue.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
+                                      : 'border-zinc-800 bg-zinc-900/50 text-zinc-400'
+                                    }`}>
+                                      <div className="flex items-center justify-between font-black mb-1">
+                                        <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                        {issue.status && (
+                                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                            issue.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                                          }`}>
+                                            {issue.status}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div>{issue.message}</div>
+                                      {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Risks */}
+                            {selectedPR.review.risks && selectedPR.review.risks.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">🔴 Active Security Risks ({selectedPR.review.risks.length})</div>
+                                <div className="space-y-2">
+                                  {selectedPR.review.risks.map((risk, i) => (
+                                    <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
+                                      <div className="flex items-center justify-between font-black mb-1">
+                                        <span>[{risk.severity.toUpperCase()}] {risk.category}</span>
+                                        {risk.status && (
+                                          <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                            risk.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                                          }`}>
+                                            {risk.status}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {risk.message}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Corrected items */}
+                            {((selectedPR.review.resolvedIssues && selectedPR.review.resolvedIssues.length > 0) || 
+                              (selectedPR.review.resolvedRisks && selectedPR.review.resolvedRisks.length > 0)) && (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider">🟢 Corrected Items ({
+                                  (selectedPR.review.resolvedIssues?.length || 0) + (selectedPR.review.resolvedRisks?.length || 0)
+                                })</div>
+                                <div className="space-y-2">
+                                  {selectedPR.review.resolvedIssues?.map((issue, i) => (
+                                    <div key={`resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
+                                      <div className="font-black mb-1 flex items-center gap-1.5">
+                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                        <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                      </div>
+                                      <div className="line-through text-zinc-500">{issue.message}</div>
+                                      {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
+                                    </div>
+                                  ))}
+                                  {selectedPR.review.resolvedRisks?.map((risk, i) => (
+                                    <div key={`resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
+                                      <div className="font-black mb-1 flex items-center gap-1.5">
+                                        <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                        <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
+                                      </div>
+                                      <div className="line-through text-zinc-500">{risk.message}</div>
+                                      {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Unauthorized Edits */}
+                            {selectedPR.review.unauthorizedEdits && selectedPR.review.unauthorizedEdits.length > 0 && (
+                              <div className="space-y-1.5">
+                                <div className="text-[10px] font-black text-red-500 uppercase tracking-wider">🚫 Unauthorized Edits ({selectedPR.review.unauthorizedEdits.length})</div>
+                                <div className="space-y-1">
+                                  {selectedPR.review.unauthorizedEdits.map((f, i) => (
+                                    <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1 rounded-lg">
+                                      🚫 {f}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Links */}
+                            {selectedPR.fork.prUrl && (
+                              <a href={selectedPR.fork.prUrl} target="_blank" rel="noreferrer"
+                                className="flex items-center gap-1.5 text-xs font-bold text-violet-400 hover:text-violet-300 transition">
+                                View PR on GitHub →
+                              </a>
+                            )}
+
+                            {/* Owner action buttons */}
+                            <div className="border-t border-zinc-800/60 pt-4 space-y-3">
+                              <textarea
+                                value={prActionMessage}
+                                onChange={e => setPrActionMessage(e.target.value)}
+                                placeholder="Optional message to leave on the PR..."
+                                className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-violet-500/60 resize-none h-16"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handlePRAction('merge', selectedPR)}
+                                  disabled={prActionInProgress || selectedPR.review.verdict === 'high_risk'}
+                                  className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                                >
+                                  ✅ Approve & Merge
+                                </button>
+                                <button
+                                  onClick={() => handlePRAction('request_changes', selectedPR)}
+                                  disabled={prActionInProgress}
+                                  className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                                >
+                                  🔄 Request Changes
+                                </button>
+                                <button
+                                  onClick={() => handlePRAction('reject', selectedPR)}
+                                  disabled={prActionInProgress}
+                                  className="py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+                                >
+                                  ✕ Reject
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="py-12 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                            No AI review yet for this PR.<br />
+                            <span className="text-[10px] normal-case font-normal mt-2 block">The review runs automatically after the developer opens a PR.</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="glass-card rounded-2xl p-12 text-center text-zinc-600 text-xs font-bold uppercase tracking-widest">
+                        Select a PR from the list to view its AI review
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+
+          /* ========================================================================= */
+          /* ======================== 3. Developer Workspace Space ==================== */
+          /* ========================================================================= */
+          <div className="space-y-10 animate-fade-in">
+            {/* Developer Workspace Header */}
+            <div className="flex flex-col gap-1">
+              <h2 className="text-3xl font-black tracking-tight text-zinc-50 flex items-center gap-3">
+                <svg className="w-8 h-8 text-emerald-400 shadow-inner" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                Developer Workspace Engine
+              </h2>
+              <p className="text-zinc-400 text-sm font-medium">
+                Fork fully isolated project codebases, clone them locally using simplified branchless commands, and verify pull requests targeting the main sandbox environment.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-5 gap-8">
+              {/* Left Sandbox Repos list (Col Span 2) */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="glass-card rounded-3xl p-6 space-y-4">
+                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">
+                    Available Sandbox repositories
+                  </span>
+
+                  <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1.5 custom-scrollbar">
+                    {loadingSandboxRepos ? (
+                      <div className="flex flex-col items-center justify-center py-16 gap-3">
+                        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider animate-pulse">Syncing sandboxes...</span>
+                      </div>
+                    ) : mirroredRepos.filter(repo => repo.verificationStatus === 'verified').length === 0 ? (
+                      <div className="py-16 text-center text-zinc-500 text-xs font-bold uppercase tracking-widest font-mono">
+                        No verified sandboxes available
+                      </div>
+                    ) : (
+                      mirroredRepos.filter(repo => repo.verificationStatus === 'verified').map(repo => (
+                        <button
+                          key={repo.id}
+                          onClick={() => handleSelectSandboxRepo(repo)}
+                          className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex flex-col gap-2 relative overflow-hidden group/item ${
+                            selectedSandboxRepo?.id === repo.id
+                              ? 'bg-emerald-500/5 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.02)]'
+                              : 'bg-[#070709]/60 border-zinc-800/60 hover:border-zinc-700/80 hover:bg-[#0d0d11]/80 hover:translate-x-1'
+                          }`}
+                        >
+                          <div className="font-extrabold text-sm text-zinc-100 truncate w-full font-mono group-hover/item:text-emerald-400 transition-colors">
+                            {repo.sandboxRepo}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-semibold border-t border-zinc-900/60 pt-2 mt-1">
+                            Original: <span className="font-mono text-zinc-300">{repo.sourceRepo}</span>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Workspace interactive CLI (Col Span 3) */}
+              <div className="lg:col-span-3 space-y-6">
+                {selectedSandboxRepo ? (
+                  <div className="glass-card rounded-3xl p-6 space-y-6">
+                    {/* Selected Repository Header */}
+                    <div className="border-b border-zinc-900 pb-5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                          Active Sandbox Workspace
+                        </span>
+                        <a
+                          href={`https://github.com/${selectedSandboxRepo.sandboxRepo}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 leading-none transition"
+                        >
+                          Open Sandbox
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </a>
+                      </div>
+                      <h4 className="text-xl font-mono font-black text-zinc-100 truncate flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-sm animate-pulse"></span>
+                        {selectedSandboxRepo.sandboxRepo}
+                      </h4>
+                    </div>
+
+                    {/* Step-by-step Interactive Pipeline */}
+                    <div className="space-y-7">
+                      
+                      {/* Step 1: Fork */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
+                              devStatus.hasFork ? 'bg-emerald-400 text-black shadow-emerald-400/20' : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                            }`}>
+                              {devStatus.hasFork ? '✓' : '1'}
+                            </span>
+                            Step 1: Create Isolated Workspace (GitHub Fork)
+                          </h5>
+                          {devStatus.hasFork && (
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5 shadow-inner">
+                              Verified
+                            </span>
+                          )}
+                        </div>
+
+                        {!devStatus.hasFork ? (
+                          <div className="bg-[#070709] border border-zinc-850 p-5 rounded-2xl flex flex-col gap-4 shadow-inner">
+                            <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+                              GitHub forks serve as fully isolated developer workspaces. This maps the repository safely to your profile, giving you a completely isolated repository to work on.
+                            </p>
+                            <button
+                              onClick={executeForkPipeline}
+                              disabled={registeringFork}
+                              className={`py-3.5 px-4 rounded-2xl text-black font-black text-xs tracking-widest uppercase transition-all duration-300 shadow-xl ${
+                                registeringFork
+                                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none border border-zinc-700/30'
+                                  : 'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-emerald-500/10 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-[1.01] active:scale-[0.99] cursor-pointer'
+                              }`}
+                            >
+                              {registeringFork ? 'Initiating Fork Access...' : 'Fork Sandbox Repository'}
+                            </button>
+                            {forkRegistered && (
+                              <p className="text-[10px] text-amber-500/90 font-semibold flex items-center gap-1">
+                                <span>💡</span> GitHub fork page opened in a new tab! Complete the fork creation, then proceed below to clone.
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="bg-emerald-500/5 border border-emerald-500/15 p-4 rounded-2xl flex items-center gap-3 shadow-inner">
+                            <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-zinc-300 text-xs font-bold truncate leading-none">
+                              Fork successfully verified at:{' '}
+                              <a
+                                href={forkUrl || `https://github.com/${githubUsername}/${selectedSandboxRepo.sandboxRepo.split('/')[1]}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline decoration-wavy decoration-emerald-500/55 hover:decoration-emerald-400 text-emerald-400 font-mono"
+                              >
+                                {githubUsername}/{selectedSandboxRepo.sandboxRepo.split('/')[1]}
+                              </a>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Step 2: Git Terminals */}
+                      <div className="space-y-3">
+                        <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                          <span className="w-5.5 h-5.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center justify-center text-[10px] font-black shadow-inner">
+                            2
+                          </span>
+                          Step 2: Initialize Git & Commit Contributions
+                        </h5>
+
+                        <div className="space-y-4 bg-[#040406] rounded-2xl border border-zinc-900 shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)] p-5 font-mono text-zinc-200">
+                          {/* Command clone */}
+                          <div className="space-y-2 relative group">
+                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                              A — Clone your isolated Fork locally
+                            </span>
+                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
+                              <span className="text-emerald-400 select-text truncate">
+                                git clone https://github.com/{githubUsername}/{selectedSandboxRepo.sandboxRepo.split('/')[1]}.git
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(`git clone https://github.com/${githubUsername}/${selectedSandboxRepo.sandboxRepo.split('/')[1]}.git`)}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Command remote */}
+                          <div className="space-y-2 relative group">
+                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                              B — Add upstream tracking to sandbox
+                            </span>
+                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
+                              <span className="text-teal-400 select-text truncate">
+                                git remote add upstream https://github.com/{selectedSandboxRepo.sandboxRepo}.git
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard(`git remote add upstream https://github.com/${selectedSandboxRepo.sandboxRepo}.git`)}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Command push */}
+                          <div className="space-y-2 relative group">
+                            <span className="text-[9px] text-zinc-500 uppercase tracking-widest block font-bold leading-none select-none">
+                              C — Make changes, commit, and push directly to main
+                            </span>
+                            <div className="flex items-center justify-between bg-black px-4 py-3 rounded-xl border border-zinc-900 font-mono text-xs">
+                              <span className="text-pink-400 select-text truncate">
+                                git push origin main
+                              </span>
+                              <button
+                                onClick={() => copyToClipboard('git push origin main')}
+                                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-200 text-[10px] px-2 py-1 border border-zinc-800 rounded bg-zinc-900/80 leading-none transition duration-200 select-none shrink-0"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 3: Verify contribution */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
+                              devStatus.hasPR ? 'bg-emerald-400 text-black shadow-emerald-400/20' : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                            }`}>
+                              {devStatus.hasPR ? '✓' : '3'}
+                            </span>
+                            Step 3: Open Pull Request to Sandbox Repo
+                          </h5>
+                          {devStatus.hasPR && (
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5 shadow-inner animate-pulse">
+                              PR Active
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="bg-[#070709] border border-zinc-850 p-5 rounded-2xl space-y-4 shadow-inner">
+                          <p className="text-zinc-400 text-xs leading-relaxed font-medium">
+                            Once your sandbox code modification is pushed, open a Pull Request comparing your fork's <span className="font-mono text-zinc-200">main</span> branch to the organization's <span className="font-mono text-zinc-200">main</span> branch. 
+                          </p>
+
+                          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                            {/* Open PR Page on GitHub (Targeting comparison) */}
+                            <a
+                              href={`https://github.com/${selectedSandboxRepo.sandboxRepo}/compare/main...${githubUsername}:main`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 py-3.5 px-5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-black font-black text-xs tracking-wider uppercase rounded-xl transition-all duration-300 text-center shadow-lg shadow-emerald-500/5 hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] flex items-center justify-center gap-2 active:scale-[0.98]"
+                            >
+                              Open PR Comparison Page
+                              <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+
+                            {/* Verify Status Action */}
+                            <button
+                              onClick={checkLiveDeveloperStatus}
+                              disabled={checkingStatus}
+                              className={`py-3.5 px-6 border border-zinc-800 hover:border-zinc-700 bg-[#0d0d11] hover:bg-zinc-900 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-zinc-100 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-inner active:scale-[0.98] ${
+                                checkingStatus ? 'opacity-60 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {checkingStatus ? (
+                                <div className="w-3.5 h-3.5 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 12H18.21" />
+                                </svg>
+                              )}
+                              {checkingStatus ? 'Checking API...' : 'Verify PR Status'}
+                            </button>
+                          </div>
+
+                          {/* Live PR details block */}
+                          {devStatus.hasPR && devStatus.prDetails && (
+                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-2xl p-5 flex flex-col gap-3 animate-scale-up shadow-inner relative overflow-hidden">
+                              <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-500/3 blur-2xl rounded-full pointer-events-none"></div>
+                              <div className="flex items-center justify-between relative z-10">
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                  Pull request active
+                                </span>
+                                <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 px-2 py-0.5 border border-emerald-500/20 rounded shadow-sm">
+                                  {devStatus.prDetails.state}
+                                </span>
+                              </div>
+                              <h6 className="font-extrabold text-zinc-100 text-sm truncate relative z-10">
+                                {devStatus.prDetails.title}
+                              </h6>
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-zinc-500 border-t border-zinc-900/60 pt-3 relative z-10">
+                                <span>PR #{devStatus.prDetails.number} • Created {new Date(devStatus.prDetails.createdAt).toLocaleDateString()}</span>
+                                <a
+                                  href={devStatus.prDetails.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-400 hover:text-emerald-300 font-bold transition flex items-center gap-1"
+                                >
+                                  Inspect PR
+                                  <svg className="w-3.5 h-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Step 4: AI Review Report */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-bold text-zinc-100 flex items-center gap-2.5">
+                            <span className={`w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-black transition-colors shadow-inner ${
+                              aiReview ? (aiReview.verdict === 'pass' ? 'bg-emerald-400 text-black' : aiReview.verdict === 'high_risk' ? 'bg-red-500 text-white' : 'bg-amber-500 text-black') : 'bg-zinc-900 border border-zinc-800 text-zinc-400'
+                            }`}>
+                              {aiReview ? (aiReview.verdict === 'pass' ? '✓' : aiReview.verdict === 'high_risk' ? '!' : '~') : '4'}
+                            </span>
+                            Step 4: AI Review Report
+                          </h5>
+                          {aiReview && (
+                            <span className={`text-[9px] font-black uppercase border px-2 py-0.5 rounded shadow-inner ${
+                              aiReview.verdict === 'pass' ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
+                              : aiReview.verdict === 'high_risk' ? 'border-red-500/30 bg-red-500/5 text-red-400'
+                              : 'border-amber-500/30 bg-amber-500/5 text-amber-400 animate-pulse'
+                            }`}>
+                              {aiReview.verdict === 'pass' ? '🟢 PASS' : aiReview.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-5 space-y-4 shadow-inner">
+                          {!devStatus.hasPR ? (
+                            <p className="text-zinc-500 text-xs font-medium">Open a Pull Request first (Step 3) to trigger the AI review pipeline.</p>
+                          ) : devReviewStatus === 'verifying' ? (
+                            <div className="space-y-4">
+                              {/* Live Progress Bar */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs font-semibold">
+                                  <span className="font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                                    Verification Pipeline
+                                  </span>
+                                  <span className="text-emerald-400 font-black tracking-wider animate-pulse">
+                                    {activeReviewProgress}%
+                                  </span>
+                                </div>
+                                <div className="h-2.5 bg-[#050507] border border-zinc-900 rounded-full overflow-hidden shadow-inner">
+                                  <div
+                                    className="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 animate-pulse"
+                                    style={{ width: `${activeReviewProgress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+
+                              {/* Live Terminal Logs */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5 leading-none">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 shrink-0 shadow-inner"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 shrink-0 shadow-inner"></span>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 shrink-0 shadow-inner"></span>
+                                    review-pipeline stdout
+                                  </span>
+                                  <span className="text-[9px] font-black tracking-widest text-zinc-500 uppercase leading-none font-mono">
+                                    tty0
+                                  </span>
+                                </div>
+                                <div
+                                  ref={devTerminalRef}
+                                  className="w-full bg-[#040406]/98 rounded-2xl p-5 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-left max-h-[200px] min-h-[140px] overflow-y-auto custom-scrollbar relative flex flex-col justify-start select-text"
+                                >
+                                  <div className="flex-1 flex flex-col">
+                                    {activeReviewLogs.map((log, idx) => (
+                                      <div key={idx}>{formatTerminalLog(log)}</div>
+                                    ))}
+                                    <div className="py-1 flex items-center gap-1 select-none font-mono text-xs text-zinc-500">
+                                      <span>&gt;_</span>
+                                      <span className="w-1.5 h-3.5 bg-emerald-500/80 animate-pulse inline-block"></span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <p className="text-[10px] text-zinc-500 text-center font-medium">
+                                Running deterministic checks and AI analysis on your PR. This usually takes 30-60 seconds.
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={fetchAIReview}
+                                  disabled={loadingReview}
+                                  className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-lg shadow-violet-500/10 hover:shadow-violet-500/25 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                  {loadingReview ? (
+                                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Fetching Review...</>
+                                  ) : (
+                                    <>
+                                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                      </svg>
+                                      Load AI Review
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+
+                              {aiReview && (
+                                <div className="space-y-4 animate-fade-in">
+                                  <button
+                                    onClick={() => handleOpenComparison(selectedSandboxRepo.id, aiReview, `PR #${aiReview.prNumber}`)}
+                                    className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-400 border border-amber-500/30 hover:border-amber-500/50 shadow-md hover:scale-[1.01] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mb-2"
+                                  >
+                                    📊 View AI Review Report
+                                  </button>
+                                  {/* Score & Requirement Match */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-zinc-900/60 rounded-xl p-3 border border-zinc-800/60">
+                                      <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Score</div>
+                                      <div className="text-2xl font-black text-zinc-100">{aiReview.score}<span className="text-sm font-bold text-zinc-500">/100</span></div>
+                                      <div className="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
+                                        <div className={`h-full rounded-full ${
+                                          aiReview.score >= 75 ? 'bg-emerald-500' : aiReview.score >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                                        }`} style={{ width: `${aiReview.score}%` }} />
+                                      </div>
+                                    </div>
+                                    <div className="bg-zinc-900/60 rounded-xl p-3 border border-zinc-800/60">
+                                      <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Req Match</div>
+                                      <div className="text-2xl font-black text-zinc-100">{Math.round(aiReview.requirementMatch * 100)}<span className="text-sm font-bold text-zinc-500">%</span></div>
+                                      <div className="h-1.5 bg-zinc-800 rounded-full mt-2 overflow-hidden">
+                                        <div className={`h-full rounded-full ${
+                                          aiReview.requirementMatch >= 0.8 ? 'bg-emerald-500' : aiReview.requirementMatch >= 0.5 ? 'bg-amber-500' : 'bg-red-500'
+                                        }`} style={{ width: `${aiReview.requirementMatch * 100}%` }} />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Summary */}
+                                  <div className="bg-zinc-900/40 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-800/40">
+                                    <div className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">AI Summary</div>
+                                    {aiReview.summary}
+                                  </div>
+
+                                  {/* Strengths */}
+                                  {aiReview.strengths.length > 0 && (
+                                    <div>
+                                      <button onClick={() => toggleSection('strengths')} className="w-full flex items-center justify-between text-xs font-black text-emerald-400 uppercase tracking-wider py-1 cursor-pointer">
+                                        <span>✅ Strengths ({aiReview.strengths.length})</span>
+                                        <span>{reviewExpandedSections.strengths ? '▲' : '▼'}</span>
+                                      </button>
+                                      {reviewExpandedSections.strengths && (
+                                        <div className="mt-2 space-y-1.5">
+                                          {aiReview.strengths.map((s, i) => (
+                                            <div key={i} className="flex items-start gap-2 text-[10px] text-zinc-300">
+                                              <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
+                                              {s}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Issues */}
+                                  {aiReview.issues.length > 0 && (
+                                    <div>
+                                      <button onClick={() => toggleSection('issues')} className="w-full flex items-center justify-between text-xs font-black text-amber-400 uppercase tracking-wider py-1 cursor-pointer">
+                                        <span>⚠️ Active Issues ({aiReview.issues.length})</span>
+                                        <span>{reviewExpandedSections.issues ? '▲' : '▼'}</span>
+                                      </button>
+                                      {reviewExpandedSections.issues && (
+                                        <div className="mt-2 space-y-2">
+                                          {aiReview.issues.map((issue, i) => (
+                                            <div key={i} className={`p-3 rounded-xl border text-[10px] leading-relaxed ${
+                                              issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/25 bg-red-500/5 text-red-300'
+                                              : issue.severity === 'medium' ? 'border-amber-500/25 bg-amber-500/5 text-amber-300'
+                                              : 'border-zinc-800 bg-zinc-900/40 text-zinc-400'
+                                            }`}>
+                                              <div className="flex items-center justify-between font-black mb-1">
+                                                <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                                {issue.status && (
+                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                                    issue.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30 shadow-[0_0_5px_rgba(139,92,246,0.1)]' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                                                  }`}>
+                                                    {issue.status}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <div>{issue.message}</div>
+                                              {issue.suggestion && <div className="mt-1 text-zinc-500 italic">→ {issue.suggestion}</div>}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Risks */}
+                                  {aiReview.risks.length > 0 && (
+                                    <div>
+                                      <button onClick={() => toggleSection('risks')} className="w-full flex items-center justify-between text-xs font-black text-red-400 uppercase tracking-wider py-1 cursor-pointer">
+                                        <span>🔴 Active Security Risks ({aiReview.risks.length})</span>
+                                        <span>{reviewExpandedSections.risks ? '▲' : '▼'}</span>
+                                      </button>
+                                      {reviewExpandedSections.risks && (
+                                        <div className="mt-2 space-y-2">
+                                          {aiReview.risks.map((risk, i) => (
+                                            <div key={i} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[10px] text-red-300">
+                                              <div className="flex items-center justify-between font-black mb-1">
+                                                <span>[{risk.severity.toUpperCase()}] {risk.category}</span>
+                                                {risk.status && (
+                                                  <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded leading-none shrink-0 ${
+                                                    risk.status === 'new' ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30 shadow-[0_0_5px_rgba(139,92,246,0.1)]' : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                                                  }`}>
+                                                    {risk.status}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {risk.message}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Resolved Issues & Risks */}
+                                  {((aiReview.resolvedIssues && aiReview.resolvedIssues.length > 0) || 
+                                    (aiReview.resolvedRisks && aiReview.resolvedRisks.length > 0)) && (
+                                    <div>
+                                      <button onClick={() => toggleSection('resolved')} className="w-full flex items-center justify-between text-xs font-black text-emerald-400 uppercase tracking-wider py-1 cursor-pointer animate-pulse-slow">
+                                        <span>🟢 Corrected Items ({
+                                          (aiReview.resolvedIssues?.length || 0) + (aiReview.resolvedRisks?.length || 0)
+                                        })</span>
+                                        <span>{reviewExpandedSections.resolved ? '▲' : '▼'}</span>
+                                      </button>
+                                      {reviewExpandedSections.resolved && (
+                                        <div className="mt-2 space-y-2">
+                                          {aiReview.resolvedIssues?.map((issue, i) => (
+                                            <div key={`resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
+                                              <div className="font-black mb-1 flex items-center gap-1.5">
+                                                <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                                <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                              </div>
+                                              <div className="line-through text-zinc-500">{issue.message}</div>
+                                              {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {issue.resolution}</div>}
+                                            </div>
+                                          ))}
+                                          {aiReview.resolvedRisks?.map((risk, i) => (
+                                            <div key={`resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[10px] text-emerald-300 leading-relaxed shadow-inner">
+                                              <div className="font-black mb-1 flex items-center gap-1.5">
+                                                <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                                <span>[{risk.severity.toUpperCase()}] Category: {risk.category}</span>
+                                              </div>
+                                              <div className="line-through text-zinc-500">{risk.message}</div>
+                                              {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ Fixed: {risk.resolution}</div>}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Unauthorized edits */}
+                                  {aiReview.unauthorizedEdits.length > 0 && (
+                                    <div>
+                                      <button onClick={() => toggleSection('unauthorized')} className="w-full flex items-center justify-between text-xs font-black text-red-500 uppercase tracking-wider py-1 cursor-pointer">
+                                        <span>🚫 Unauthorized Edits ({aiReview.unauthorizedEdits.length})</span>
+                                        <span>{reviewExpandedSections.unauthorized ? '▲' : '▼'}</span>
+                                      </button>
+                                      {reviewExpandedSections.unauthorized && (
+                                        <div className="mt-2 space-y-1">
+                                          {aiReview.unauthorizedEdits.map((f, i) => (
+                                            <div key={i} className="font-mono text-[10px] text-red-400 bg-red-500/5 border border-red-500/15 px-3 py-1.5 rounded-lg">
+                                              🚫 {f}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-zinc-900/10 border border-zinc-800/80 border-dashed rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-md h-full min-h-[400px] shadow-inner">
+                    <svg className="w-12 h-12 text-zinc-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <h4 className="font-bold text-zinc-400 text-sm tracking-wide">No sandbox repo selected</h4>
+                    <p className="text-zinc-500 text-xs max-w-xs leading-relaxed font-medium">
+                      Select an available sandbox repository from the left panel to initialize your workspace fork and push main branch changes.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
+      {/* Closed main and footer layout */}
+
+      {/* ===== PR Comparison Modal ===== */}
+      {comparisonModalOpen && comparisonPRReview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setComparisonModalOpen(false) }}>
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+
+          {/* Modal */}
+          <div className="relative z-10 w-full max-w-4xl bg-[#0a0a0f] border border-zinc-800/85 rounded-3xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] font-sans">
+            {/* Modal Header */}
+            <div className="flex flex-col px-7 pt-7 pb-4 border-b border-zinc-900 gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1 font-mono">AI Review Report</div>
+                  <h3 className="text-xl font-black text-zinc-105 truncate max-w-[500px]">{comparisonTitle}</h3>
+                </div>
+                <button onClick={() => setComparisonModalOpen(false)} className="text-zinc-500 hover:text-zinc-300 border border-zinc-800 hover:border-zinc-600 w-9 h-9 rounded-xl flex items-center justify-center transition cursor-pointer">
+                  ✕
+                </button>
+              </div>
+
+              {/* Tab Selector */}
+              <div className="flex gap-2 border-b border-zinc-900/60 pb-1 mt-1">
+                <button
+                  onClick={() => setComparisonTab('overview')}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                    comparisonTab === 'overview'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                  }`}
+                >
+                  📊 Score & Summary
+                </button>
+                <button
+                  onClick={() => setComparisonTab('issues')}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                    comparisonTab === 'issues'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/25'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                  }`}
+                >
+                  ⚠️ Issues ({comparisonPRReview.issues?.length || 0})
+                </button>
+                <button
+                  onClick={() => setComparisonTab('risks')}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                    comparisonTab === 'risks'
+                      ? 'bg-red-500/10 text-red-400 border border-red-500/25'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                  }`}
+                >
+                  🔴 Security Risks ({comparisonPRReview.risks?.length || 0})
+                </button>
+                <button
+                  onClick={() => setComparisonTab('deterministic')}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition cursor-pointer ${
+                    comparisonTab === 'deterministic'
+                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/25'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                  }`}
+                >
+                  🔍 Deterministic
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                <div className="space-y-6 text-left">
+                  {/* Tab Contents: Overview */}
+                  {comparisonTab === 'overview' && (
+                    <div className="space-y-6 animate-fade-in">
+                      {/* Verdict Badge */}
+                      <div className="flex items-center gap-3">
+                        <div className={`text-sm font-black px-4 py-2 rounded-xl border inline-flex items-center gap-2 ${
+                          comparisonPRReview.verdict === 'pass' ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                          : comparisonPRReview.verdict === 'high_risk' ? 'border-red-500/40 bg-red-500/10 text-red-400'
+                          : 'border-amber-500/40 bg-amber-500/10 text-amber-400'
+                        }`}>
+                          {comparisonPRReview.verdict === 'pass' ? '🟢 PASS' : comparisonPRReview.verdict === 'high_risk' ? '🔴 HIGH RISK' : '🟡 NEEDS CHANGES'}
+                        </div>
+                      </div>
+
+                      {/* Metric Cards */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Score Metric Card */}
+                        <div className="bg-[#050508]/60 rounded-2xl p-5 border border-zinc-880/80 flex flex-col justify-between gap-4">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">AI Verification Score</div>
+                          <div className="flex flex-col">
+                            <span className="text-3xl font-black text-zinc-50 font-mono">{comparisonPRReview.score}/100</span>
+                          </div>
+                          <div className="space-y-2 pt-1">
+                            <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
+                              <div
+                                className={`h-full rounded-full transition-all duration-700 ${
+                                  comparisonPRReview.score >= 75 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                                  comparisonPRReview.score >= 50 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
+                                  'bg-gradient-to-r from-red-600 to-rose-500'
+                                }`}
+                                style={{ width: `${comparisonPRReview.score}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Req Match Card */}
+                        <div className="bg-[#050508]/60 rounded-2xl p-5 border border-zinc-800/80 flex flex-col justify-between gap-4">
+                          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-mono">Task Requirements Match</div>
+                          <div className="flex flex-col">
+                            <span className="text-3xl font-black text-zinc-50 font-mono">{Math.round(comparisonPRReview.requirementMatch * 100)}%</span>
+                          </div>
+                          <div className="space-y-2 pt-1">
+                            <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-900">
+                              <div
+                                className={`h-full rounded-full transition-all duration-700 ${
+                                  comparisonPRReview.requirementMatch >= 0.8 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                                  comparisonPRReview.requirementMatch >= 0.5 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
+                                  'bg-gradient-to-r from-red-600 to-rose-500'
+                                }`}
+                                style={{ width: `${comparisonPRReview.requirementMatch * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AI Review Summary */}
+                      <div className="bg-emerald-500/3 rounded-2xl p-5 border border-emerald-500/10 text-xs leading-relaxed text-zinc-300">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-2.5 font-mono">AI Review Summary</div>
+                        {comparisonPRReview.summary}
+                      </div>
+
+                      {/* Strengths */}
+                      {comparisonPRReview.strengths && comparisonPRReview.strengths.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono">✅ Strengths ({comparisonPRReview.strengths.length})</div>
+                          <div className="space-y-1.5 pl-1">
+                            {comparisonPRReview.strengths.map((s: string, i: number) => (
+                              <div key={i} className="flex items-start gap-2.5 text-[11px] text-zinc-300">
+                                <span className="text-emerald-500 shrink-0 mt-0.5">•</span>
+                                <span>{s}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Stats Summary Grid */}
+                      <div className="bg-[#050508]/20 border border-zinc-850 rounded-2xl p-5 space-y-3">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-zinc-450 font-mono border-b border-zinc-900 pb-2">
+                          Review Findings Summary
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
+                            <div className="text-xl font-black text-zinc-100 font-mono">{comparisonPRReview.score}/100</div>
+                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Verification Score</div>
+                          </div>
+                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
+                            <div className="text-xl font-black text-emerald-400 font-mono">{Math.round(comparisonPRReview.requirementMatch * 100)}%</div>
+                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Requirements Match</div>
+                          </div>
+                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
+                            <div className="text-xl font-black text-amber-500 font-mono">{comparisonPRReview.issues?.length || 0}</div>
+                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Issues Found</div>
+                          </div>
+                          <div className="p-3 bg-zinc-900/40 rounded-xl border border-zinc-900">
+                            <div className="text-xl font-black text-red-500 font-mono">{comparisonPRReview.risks?.length || 0}</div>
+                            <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide">Security Risks</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Contents: Issues */}
+                  {comparisonTab === 'issues' && (
+                    <div className="space-y-6 animate-fade-in">
+                      {/* All Issues */}
+                      <div className="space-y-3">
+                        <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          Issues Found ({comparisonPRReview.issues?.length || 0})
+                        </div>
+                        {(!comparisonPRReview.issues || comparisonPRReview.issues.length === 0) ? (
+                          <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-550 font-bold uppercase tracking-wider">
+                            No issues found — clean code! Excellent work.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {comparisonPRReview.issues.map((issue: any, i: number) => (
+                              <div key={`issue-${i}`} className={`p-4 rounded-2xl border text-[11px] leading-relaxed ${
+                                issue.severity === 'critical' || issue.severity === 'high' ? 'border-red-500/20 bg-red-500/5 text-red-300'
+                                : issue.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
+                                : 'border-zinc-900 bg-zinc-950/40 text-zinc-400'
+                              }`}>
+                                <div className="flex items-center justify-between font-black mb-1.5 font-mono">
+                                  <span>[{issue.severity.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                  <span className={`text-[8px] px-1.5 py-0.5 rounded leading-none shrink-0 font-black tracking-wide ${
+                                    issue.severity === 'critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                    issue.severity === 'high' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                                    issue.severity === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                    'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                                  }`}>{issue.severity.toUpperCase()}</span>
+                                </div>
+                                <div className="text-zinc-300 mt-1">{issue.message}</div>
+                                {issue.suggestion && (
+                                  <div className="mt-2 text-zinc-500 italic bg-[#030305] p-2 rounded-lg border border-zinc-900/60 text-xs">
+                                    <span className="font-bold font-mono not-italic text-zinc-400 mr-1">Fix Suggestion:</span>
+                                    {issue.suggestion}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Unauthorized File Edits */}
+                      {comparisonPRReview.unauthorizedEdits && comparisonPRReview.unauthorizedEdits.length > 0 && (
+                        <div className="space-y-3 pt-2">
+                          <div className="text-[10px] font-black text-red-500 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                            Unauthorized File Edits ({comparisonPRReview.unauthorizedEdits.length})
+                          </div>
+                          <div className="space-y-2">
+                            {comparisonPRReview.unauthorizedEdits.map((file: string, i: number) => (
+                              <div key={`unauth-${i}`} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-[11px] text-red-300 font-mono">
+                                🚫 {file}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tab Contents: Security Risks */}
+                  {comparisonTab === 'risks' && (
+                    <div className="space-y-6 animate-fade-in">
+                      {/* All Security Risks */}
+                      <div className="space-y-3">
+                        <div className="text-[10px] font-black text-red-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                          Security Risks ({comparisonPRReview.risks?.length || 0})
+                        </div>
+                        {(!comparisonPRReview.risks || comparisonPRReview.risks.length === 0) ? (
+                          <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-550 font-bold uppercase tracking-wider">
+                            No security risks detected. Code is clean.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {comparisonPRReview.risks.map((risk: any, i: number) => (
+                              <div key={`risk-${i}`} className={`p-4 rounded-2xl border text-[11px] leading-relaxed ${
+                                risk.severity === 'high' ? 'border-red-500/25 bg-red-500/5 text-red-300'
+                                : risk.severity === 'medium' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300'
+                                : 'border-zinc-900 bg-zinc-950/40 text-zinc-400'
+                              }`}>
+                                <div className="flex items-center justify-between font-black mb-1.5 font-mono">
+                                  <span>[{risk.severity.toUpperCase()}] {risk.category.toUpperCase()}</span>
+                                  <span className={`text-[8px] px-1.5 py-0.5 rounded leading-none shrink-0 font-black tracking-wide ${
+                                    risk.severity === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                    risk.severity === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                    'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                                  }`}>{risk.severity.toUpperCase()}</span>
+                                </div>
+                                <div className="text-zinc-300 font-sans mt-1">{risk.message}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab Contents: Deterministic Comparison */}
+                  {comparisonTab === 'deterministic' && (
+                    <div className="space-y-6 animate-fade-in">
+                      {/* Deterministic Report HTML */}
+                      {comparisonPRReview.reportHtml ? (
+                        <div className="space-y-4">
+                          <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            Deterministic Review Report
+                          </div>
+                          <div
+                            className="bg-[#050508]/60 border border-zinc-800/80 rounded-2xl p-5 text-xs text-zinc-300 leading-relaxed overflow-auto max-h-[300px] custom-scrollbar prose prose-invert prose-xs"
+                            dangerouslySetInnerHTML={{ __html: comparisonPRReview.reportHtml }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                          No deterministic report HTML available for this PR.
+                        </div>
+                      )}
+
+                      {/* Deterministic Test Category Results */}
+                      {comparisonPRReview.results && Object.keys(comparisonPRReview.results).length > 0 && (
+                        <div className="space-y-3">
+                          <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            Test Category Results ({Object.keys(comparisonPRReview.results).length} categories)
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {Object.entries(comparisonPRReview.results).map(([category, result]: [string, any]) => {
+                              const statusColor = result.status === 'pass'
+                                ? 'border-emerald-500/25 bg-emerald-500/5 text-emerald-400'
+                                : result.status === 'fail'
+                                ? 'border-red-500/25 bg-red-500/5 text-red-400'
+                                : result.status === 'warn'
+                                ? 'border-amber-500/25 bg-amber-500/5 text-amber-400'
+                                : 'border-zinc-800 bg-zinc-900/40 text-zinc-400'
+                              return (
+                                <div key={category} className={`p-3.5 rounded-xl border ${statusColor} text-[11px]`}>
+                                  <div className="flex items-center justify-between font-black mb-1">
+                                    <span className="uppercase tracking-wider text-[10px]">
+                                      {category.replace(/([A-Z])/g, ' $1').trim()}
+                                    </span>
+                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                                      result.status === 'pass' ? 'bg-emerald-500/15 border-emerald-500/25' :
+                                      result.status === 'fail' ? 'bg-red-500/15 border-red-500/25' :
+                                      result.status === 'warn' ? 'bg-amber-500/15 border-amber-500/25' :
+                                      'bg-zinc-800 border-zinc-700'
+                                    }`}>
+                                      {result.status?.toUpperCase() || 'SKIP'}
+                                    </span>
+                                  </div>
+                                  {result.issuesCount > 0 && (
+                                    <div className="text-zinc-400 text-[10px] mt-0.5">
+                                      {result.issuesCount} issue(s) found
+                                    </div>
+                                  )}
+                                  {result.durationMs && (
+                                    <div className="text-zinc-500 text-[9px] mt-0.5 font-mono">
+                                      Duration: {result.durationMs}ms
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Baseline Comparison Results */}
+                      {comparisonPRReview.comparison && Object.keys(comparisonPRReview.comparison).length > 0 && (
+                        <div className="space-y-3">
+                          <div className="text-[10px] font-black text-violet-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-violet-400"></span>
+                            Baseline ↔ PR Comparison
+                          </div>
+                          <div className="space-y-2">
+                            {Object.entries(comparisonPRReview.comparison).map(([category, diff]: [string, any]) => {
+                              const improved = diff.baselineIssues > diff.prIssues
+                              const worsened = diff.prIssues > diff.baselineIssues
+                              const same = diff.baselineIssues === diff.prIssues
+                              return (
+                                <div key={category} className={`p-3 rounded-xl border text-[11px] ${
+                                  improved ? 'border-emerald-500/20 bg-emerald-500/5'
+                                  : worsened ? 'border-red-500/20 bg-red-500/5'
+                                  : 'border-zinc-800/60 bg-zinc-900/30'
+                                }`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-zinc-200 uppercase tracking-wider text-[10px]">
+                                      {category.replace(/([A-Z])/g, ' $1').trim()}
+                                    </span>
+                                    <div className="flex items-center gap-3 text-[10px] font-mono">
+                                      <span className="text-zinc-500">Baseline: <span className="text-zinc-300 font-bold">{diff.baselineIssues ?? '—'}</span></span>
+                                      <span className={improved ? 'text-emerald-400' : worsened ? 'text-red-400' : 'text-zinc-500'}>→</span>
+                                      <span className="text-zinc-500">PR: <span className={`font-bold ${improved ? 'text-emerald-400' : worsened ? 'text-red-400' : 'text-zinc-300'}`}>{diff.prIssues ?? '—'}</span></span>
+                                      {improved && <span className="text-emerald-400 font-black">↓ IMPROVED</span>}
+                                      {worsened && <span className="text-red-400 font-black">↑ REGRESSION</span>}
+                                      {same && <span className="text-zinc-500 font-bold">= SAME</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resolved Issues from Deterministic comparison */}
+                      {comparisonPRReview.resolvedIssues && comparisonPRReview.resolvedIssues.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            Resolved Issues ({comparisonPRReview.resolvedIssues.length})
+                          </div>
+                          <div className="space-y-2">
+                            {comparisonPRReview.resolvedIssues.map((issue: any, i: number) => (
+                              <div key={`det-resolved-issue-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-300 leading-relaxed">
+                                <div className="font-black mb-1 flex items-center gap-1.5">
+                                  <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                  <span>[{issue.severity?.toUpperCase()}] {issue.file}{issue.line ? `:${issue.line}` : ''}</span>
+                                </div>
+                                <div className="line-through text-zinc-500">{issue.message}</div>
+                                {issue.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ {issue.resolution}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resolved Risks from Deterministic comparison */}
+                      {comparisonPRReview.resolvedRisks && comparisonPRReview.resolvedRisks.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="text-[10px] font-black text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            Resolved Security Risks ({comparisonPRReview.resolvedRisks.length})
+                          </div>
+                          <div className="space-y-2">
+                            {comparisonPRReview.resolvedRisks.map((risk: any, i: number) => (
+                              <div key={`det-resolved-risk-${i}`} className="p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-300 leading-relaxed">
+                                <div className="font-black mb-1 flex items-center gap-1.5">
+                                  <span className="bg-emerald-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black leading-none">FIXED</span>
+                                  <span>[{risk.severity?.toUpperCase()}] {risk.category}</span>
+                                </div>
+                                <div className="line-through text-zinc-500">{risk.message}</div>
+                                {risk.resolution && <div className="mt-1 text-emerald-400 font-medium italic">→ {risk.resolution}</div>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Empty state */}
+                      {!comparisonPRReview.reportHtml && (!comparisonPRReview.results || Object.keys(comparisonPRReview.results).length === 0) && (
+                        <div className="py-8 text-center border border-zinc-900 bg-zinc-950/20 rounded-2xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                          No deterministic review data available yet. The review pipeline may still be processing.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-7 py-5 border-t border-zinc-900">
+              <button
+                onClick={() => setComparisonModalOpen(false)}
+                className="w-full py-3 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 text-zinc-400 hover:text-zinc-200 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                Close Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
+      {/* Baseline Report Display Overlay */}
+      {selectedBaselineReport && (
+        <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-6 md:p-12 animate-fade-in">
+          <div className="w-full max-w-5xl h-[85vh] bg-[#040406] border border-zinc-800 rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)] flex flex-col justify-between animate-scale-up">
+            {/* Title bar */}
+            <div className="flex items-center justify-between border-b border-zinc-900 pb-4 mb-4 select-none">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-amber-500/85"></span>
+                <span className="text-xs font-black uppercase tracking-widest text-zinc-400 font-mono ml-2">
+                  Baseline Snapshot Report — Commit {selectedBaselineReport.commitSha.substring(0, 7)}
+                </span>
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-md tracking-wider ml-3 font-mono">
+                  {selectedBaselineReport.techStack?.language} {selectedBaselineReport.techStack?.packageManager ? `(${selectedBaselineReport.techStack.packageManager})` : ''} {selectedBaselineReport.techStack?.frontend ? `+ ${selectedBaselineReport.techStack.frontend}` : ''}
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  setSelectedBaselineReport(null)
+                  setSelectedBaselineCategoryLog(null)
+                }}
+                className="text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 px-3 py-1.5 rounded-xl text-xs font-bold font-mono tracking-wider uppercase transition cursor-pointer"
+              >
+                Close Report
+              </button>
+            </div>
+
+            {/* Report Content */}
+            <div className="flex-1 w-full overflow-y-auto custom-scrollbar select-text text-left mb-4 pr-1.5 space-y-6">
+              {/* Overview grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1.5">Tech Stack Details</span>
+                  <div className="space-y-1">
+                    <div className="text-zinc-200 font-extrabold text-sm flex items-center gap-1.5">
+                      <span>{selectedBaselineReport.techStack?.language || 'Unknown'}</span>
+                      {selectedBaselineReport.techStack?.packageManager && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                          {selectedBaselineReport.techStack.packageManager}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-zinc-400 font-semibold text-[10px] space-y-0.5">
+                      {selectedBaselineReport.techStack?.frontend && (
+                        <div>Frontend: <span className="text-zinc-300 font-bold">{selectedBaselineReport.techStack.frontend}</span></div>
+                      )}
+                      {selectedBaselineReport.techStack?.backend && (
+                        <div>Backend: <span className="text-zinc-300 font-bold">{selectedBaselineReport.techStack.backend}</span></div>
+                      )}
+                      {!selectedBaselineReport.techStack?.frontend && !selectedBaselineReport.techStack?.backend && (
+                        <div className="text-zinc-500 italic">
+                          {selectedBaselineReport.techStack?.isStaticSite ? 'Static HTML/CSS Site' : 'Core Scripting / CLI'}
+                        </div>
+                      )}
+                      {selectedBaselineReport.techStack?.testFramework && (
+                        <div className="text-emerald-400/90 text-[9px] mt-1 font-mono">
+                          Runner: {selectedBaselineReport.techStack.testFramework}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Commit SHA</span>
+                  <span className="text-amber-400 font-mono font-bold text-sm block truncate">
+                    {selectedBaselineReport.commitSha}
+                  </span>
+                  <span className="text-zinc-500 font-medium text-[10px]">
+                    Branch: {selectedBaselineReport.branch}
+                  </span>
+                </div>
+
+                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Issues Count</span>
+                  <span className={`font-extrabold text-sm block ${
+                    (() => {
+                      if (!selectedBaselineReport.results) return 0
+                      const count = Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat.issuesCount || 0), 0)
+                      return count > 0 ? 'text-red-400' : 'text-emerald-400'
+                    })()
+                  }`}>
+                    {(() => {
+                      if (!selectedBaselineReport.results) return 0
+                      return Object.values(selectedBaselineReport.results).reduce((acc: number, cat: any) => acc + (cat.issuesCount || 0), 0)
+                    })()} Issues
+                  </span>
+                  <span className="text-zinc-500 font-medium text-[10px]">
+                    across 12 categories
+                  </span>
+                </div>
+
+                <div className="bg-[#070709] border border-zinc-850 rounded-2xl p-4 shadow-inner">
+                  <span className="text-zinc-500 block text-[9px] font-black uppercase tracking-widest mb-1">Snapshot Generated</span>
+                  <span className="text-zinc-200 font-extrabold text-sm block truncate">
+                    {new Date(selectedBaselineReport.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                  <span className="text-zinc-500 font-medium text-[10px] block truncate">
+                    {new Date(selectedBaselineReport.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Core 12-Category Grid */}
+              {selectedBaselineReport.results && (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Left list: category select */}
+                  <div className="md:col-span-1 space-y-2 max-h-[48vh] overflow-y-auto pr-1.5 custom-scrollbar">
+                    {Object.keys(selectedBaselineReport.results).map(catName => {
+                      const res = selectedBaselineReport.results[catName];
+                      if (!res) return null;
+                      
+                      const isSelected = selectedBaselineCategoryLog === catName;
+                      let badgeColor = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
+                      if (res.status === 'fail') badgeColor = 'border-red-500/20 bg-red-500/5 text-red-400';
+                      else if (res.status === 'warn') badgeColor = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
+
+                      return (
+                        <button
+                          key={catName}
+                          onClick={() => setSelectedBaselineCategoryLog(catName)}
+                          className={`w-full text-left p-3.5 rounded-2xl border transition-all duration-300 flex flex-col gap-1 relative overflow-hidden group/cat-btn ${
+                            isSelected
+                              ? 'bg-amber-500/5 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.02)]'
+                              : 'bg-[#070709]/60 border-zinc-850 hover:border-zinc-700/80 hover:bg-[#0d0d11]/80'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3 w-full">
+                            <span className="font-extrabold text-[11px] uppercase tracking-wider text-zinc-200 group-hover/cat-btn:text-amber-400 transition-colors">
+                              {catName.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor} shrink-0`}>
+                              {res.status.toUpperCase()}
+                            </span>
+                          </div>
+                          {res.issuesCount !== undefined && (
+                            <div className="text-[10px] text-zinc-500 font-semibold">
+                              {res.issuesCount} issue(s) detected
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right panel: raw category logs/output */}
+                  <div className="md:col-span-2 flex flex-col gap-3 h-[48vh] justify-between">
+                    {selectedBaselineCategoryLog && selectedBaselineReport.results[selectedBaselineCategoryLog] ? (
+                      <div className="flex flex-col gap-3.5 h-full">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="font-black uppercase tracking-widest text-zinc-400 font-mono">
+                            STDOUT: {selectedBaselineCategoryLog.replace(/([A-Z])/g, ' $1').trim()}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const categoryRes = selectedBaselineReport.results[selectedBaselineCategoryLog!];
+                              const output = categoryRes ? (categoryRes.logs || categoryRes.output || '') : '';
+                              navigator.clipboard.writeText(output);
+                              alert(`Stdout for ${selectedBaselineCategoryLog} copied!`);
+                            }}
+                            className="text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-wider text-[9px] border border-zinc-850 px-2.5 py-1 rounded bg-[#060608] hover:bg-zinc-900 cursor-pointer"
+                          >
+                            Copy output
+                          </button>
+                        </div>
+                        
+                        <div className="flex-1 w-full bg-[#040406]/98 rounded-2xl p-5 border border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] font-mono text-left overflow-auto custom-scrollbar select-text text-xs md:text-sm text-zinc-300 whitespace-pre">
+                          {selectedBaselineReport.results[selectedBaselineCategoryLog].logs || selectedBaselineReport.results[selectedBaselineCategoryLog].output || 'No logs available.'}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border border-zinc-850 border-dashed rounded-3xl p-12 text-center flex flex-col items-center justify-center gap-2.5 backdrop-blur-md h-full shadow-inner">
+                        <svg className="w-10 h-10 text-zinc-650 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                        </svg>
+                        <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Category Selected</h4>
+                        <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
+                          Select one of the 12 deterministic test categories on the left to review the raw system outputs and issues found.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Gemini AI Diagnostic Report Card */}
+              {selectedBaselineReport.aiSummary && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400 font-mono flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></span>
+                      Gemini AI Baseline Diagnostic
+                    </span>
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                      selectedBaselineReport.aiSummary.overallHealth === 'healthy'
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                        : selectedBaselineReport.aiSummary.overallHealth === 'critical'
+                        ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                        : 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                    }`}>
+                      {selectedBaselineReport.aiSummary.overallHealth?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* AI Overview Card */}
+                  <div className="bg-gradient-to-br from-violet-500/5 via-[#070709] to-cyan-500/5 border border-violet-500/15 rounded-2xl p-5 space-y-4 relative overflow-hidden">
+                    <div className="absolute right-0 top-0 w-40 h-40 bg-violet-500/5 blur-[60px] rounded-full pointer-events-none"></div>
+                    
+                    {/* Health Badge + Model */}
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black shadow-inner ${
+                          selectedBaselineReport.aiSummary.overallHealth === 'healthy'
+                            ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400'
+                            : selectedBaselineReport.aiSummary.overallHealth === 'critical'
+                            ? 'bg-red-500/10 border border-red-500/25 text-red-400'
+                            : 'bg-amber-500/10 border border-amber-500/25 text-amber-400'
+                        }`}>
+                          {selectedBaselineReport.aiSummary.overallHealth === 'healthy' ? '✓' : selectedBaselineReport.aiSummary.overallHealth === 'critical' ? '!' : '~'}
+                        </div>
+                        <div>
+                          <div className="text-sm font-black text-zinc-100">Repository Health Assessment</div>
+                          <div className="text-[10px] text-zinc-500 font-semibold">
+                            Model: <span className="text-violet-400 font-mono">{selectedBaselineReport.aiSummary.model || 'gemini'}</span>
+                            {selectedBaselineReport.aiSummary.analyzedAt && (
+                              <> · {new Date(selectedBaselineReport.aiSummary.analyzedAt).toLocaleString()}</>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Summary */}
+                    <div className="bg-[#040406]/80 rounded-xl p-4 text-xs text-zinc-300 leading-relaxed border border-zinc-900/60 relative z-10">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-violet-400 mb-2 font-mono">AI Analysis Summary</div>
+                      {selectedBaselineReport.aiSummary.summary}
+                    </div>
+
+                    {/* Per-Category AI Diagnostics */}
+                    {selectedBaselineReport.aiSummary.categoryDiagnostics && selectedBaselineReport.aiSummary.categoryDiagnostics.length > 0 && (
+                      <div className="space-y-2.5 relative z-10">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 font-mono">
+                          Category Analysis ({selectedBaselineReport.aiSummary.categoryDiagnostics.length})
+                        </div>
+                        <div className="space-y-2 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
+                          {selectedBaselineReport.aiSummary.categoryDiagnostics.map((diag: any, idx: number) => {
+                            const statusColor = diag.adjustedStatus === 'pass'
+                              ? 'border-emerald-500/20 bg-emerald-500/5'
+                              : diag.adjustedStatus === 'fail'
+                              ? 'border-red-500/20 bg-red-500/5'
+                              : diag.adjustedStatus === 'warn'
+                              ? 'border-amber-500/20 bg-amber-500/5'
+                              : 'border-zinc-800/60 bg-zinc-900/30'
+                            return (
+                              <div key={idx} className={`p-3.5 rounded-xl border ${statusColor} text-[11px]`}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-black text-zinc-200 uppercase tracking-wider text-[10px]">
+                                    {diag.category?.replace(/([A-Z])/g, ' $1').trim()}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {diag.isFalsePositive && (
+                                      <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                                        FALSE POSITIVE
+                                      </span>
+                                    )}
+                                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                                      diag.adjustedStatus === 'pass' ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' :
+                                      diag.adjustedStatus === 'fail' ? 'bg-red-500/15 border-red-500/25 text-red-400' :
+                                      diag.adjustedStatus === 'warn' ? 'bg-amber-500/15 border-amber-500/25 text-amber-400' :
+                                      'bg-zinc-800 border-zinc-700 text-zinc-400'
+                                    }`}>
+                                      {diag.adjustedStatus?.toUpperCase() || 'SKIP'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-zinc-300 leading-relaxed">{diag.rootCause}</div>
+                                {diag.isFalsePositive && diag.falsePositiveReason && (
+                                  <div className="mt-1.5 text-amber-400/80 text-[10px] italic bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                                    ⚠️ {diag.falsePositiveReason}
+                                  </div>
+                                )}
+                                {diag.suggestedFix && (
+                                  <div className="mt-1.5 text-cyan-400/80 text-[10px] bg-cyan-500/5 p-2 rounded-lg border border-cyan-500/10">
+                                    💡 <span className="font-bold">Suggested Fix:</span> {diag.suggestedFix}
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer buttons */}
+            <div className="border-t border-zinc-900 pt-4 flex gap-3 select-none">
+              <button
+                onClick={copyAllBaselineLogs}
+                className="flex-1 py-3.5 rounded-2xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900/30 text-zinc-300 hover:text-zinc-100 text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+              >
+                Copy All Logs to Clipboard
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedBaselineReport(null)
+                  setSelectedBaselineCategoryLog(null)
+                }}
+                className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 cursor-pointer"
+              >
+                Close Report View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+

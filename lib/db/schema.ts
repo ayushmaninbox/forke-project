@@ -298,4 +298,114 @@ export const blogs = pgTable('blogs', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// ─── Sandbox Owners (GitHub users who import repos) ───────────────────────────
 
+export const sandboxOwners = pgTable('sandbox_owners', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubId: integer('github_id').notNull().unique(),
+  username: text('username').notNull(),
+  accessToken: text('access_token').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Sandbox Repos (Mirrors of owner repos managed by Forke) ──────────────────
+
+export const sandboxRepos = pgTable('sandbox_repos', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ownerId: uuid('owner_id')
+    .references(() => sandboxOwners.id, { onDelete: 'cascade' })
+    .notNull(),
+  sourceRepo: text('source_repo').notNull(),       // e.g. "owner/original-repo"
+  sandboxRepo: text('sandbox_repo').notNull(),      // e.g. "forke-sandbox/owner-repo-mirror"
+  // Task metadata — filled in via Configure Task form
+  taskTitle: text('task_title'),
+  taskDescription: text('task_description'),
+  frontendStack: text('frontend_stack'),
+  backendStack: text('backend_stack'),
+  allowedPaths: text('allowed_paths'),              // Comma/newline-separated glob patterns
+  restrictedPaths: text('restricted_paths'),        // Comma/newline-separated glob patterns
+  acceptanceCriteria: text('acceptance_criteria'),
+  verificationStatus: text('verification_status').default('verifying').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Developer Forks (Developers who fork sandbox repos) ──────────────────────
+
+export const developerForks = pgTable('developer_forks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubUsername: text('github_username').notNull(),
+  sandboxRepo: text('sandbox_repo').notNull(),
+  forkUrl: text('fork_url').notNull(),
+  prUrl: text('pr_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Sandbox Developers (GitHub users who do tasks) ───────────────────────────
+
+export const sandboxDevelopers = pgTable('sandbox_developers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubId: integer('github_id').notNull().unique(),
+  username: text('username').notNull(),
+  accessToken: text('access_token').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Baseline Snapshots (Deterministic health check of base branch) ───────────
+
+export const baselineSnapshots = pgTable('baseline_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sandboxRepoId: uuid('sandbox_repo_id')
+    .references(() => sandboxRepos.id, { onDelete: 'cascade' })
+    .notNull(),
+  branch: text('branch').notNull(),
+  commitSha: text('commit_sha').notNull(),
+  techStack: text('tech_stack'),      // JSON string of DetectedStack
+  results: text('results'),           // JSON string of 12 deterministic test results
+  aiSummary: text('ai_summary'),      // JSON string of Gemini baseline diagnostic
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Review Results (Deterministic PR review with baseline comparison) ─────────
+
+export const reviewResults = pgTable('review_results', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  prNumber: integer('pr_number').notNull(),
+  sandboxRepoId: uuid('sandbox_repo_id')
+    .references(() => sandboxRepos.id, { onDelete: 'cascade' })
+    .notNull(),
+  commitSha: text('commit_sha').notNull(),
+  baselineSnapshotId: uuid('baseline_snapshot_id')
+    .references(() => baselineSnapshots.id, { onDelete: 'set null' }),
+  results: text('results').notNull(),       // JSON of PR deterministic test results
+  comparison: text('comparison').notNull(), // JSON comparison diff
+  verdict: text('verdict').notNull(),       // 'pass', 'warn', 'fail'
+  reportHtml: text('report_html'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── AI Reviews (Gemini/Claude structured code review) ────────────────────────
+
+export const aiReviews = pgTable('ai_reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  developerForkId: uuid('developer_fork_id')
+    .references(() => developerForks.id, { onDelete: 'cascade' }),
+  sandboxRepoId: uuid('sandbox_repo_id')
+    .references(() => sandboxRepos.id, { onDelete: 'cascade' }),
+  prNumber: integer('pr_number'),
+  verdict: text('verdict').notNull(),             // 'pass', 'needs_changes', 'high_risk'
+  score: integer('score').notNull(),               // 0 to 100
+  requirementMatch: text('requirement_match').notNull(),
+  summary: text('summary').notNull(),
+  strengths: text('strengths'),                    // JSON array string
+  issues: text('issues'),                          // JSON array string
+  risks: text('risks'),                            // JSON array string
+  unauthorizedEdits: text('unauthorized_edits'),   // JSON array string
+  resolvedIssues: text('resolved_issues'),         // JSON array string
+  resolvedRisks: text('resolved_risks'),           // JSON array string
+  // Layer 4 risk scoring
+  riskScore: integer('risk_score'),                // 0-100 composite risk score
+  riskRouting: text('risk_routing'),               // 'auto_approve', 'owner_review', 'reviewer_queue'
+  model: text('model'),                            // Which AI model was used
+  tokensUsed: integer('tokens_used'),              // Token usage tracking
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})

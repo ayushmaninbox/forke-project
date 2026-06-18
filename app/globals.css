@@ -171,6 +171,14 @@ img {
     border: 1px solid rgba(255, 122, 0, 0.2);
   }
 
+  .glass-card {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.01), 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
   .theme-ember .glass {
     background: rgba(18, 18, 20, 0.6);
     backdrop-filter: blur(16px);
@@ -184,6 +192,15 @@ img {
     border: 1px solid rgba(255, 122, 0, 0.15);
     box-shadow: inset 0 1px 0 rgba(255, 122, 0, 0.05), 0 8px 32px rgba(255, 122, 0, 0.05);
   }
+
+  .theme-ember .glass-card {
+    background: rgba(10, 10, 12, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.01), 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
 
   .text-glow {
     text-shadow: 0 0 20px rgba(255, 122, 0, 0.4);
