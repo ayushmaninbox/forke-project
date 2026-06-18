@@ -49,6 +49,7 @@ import { instrumentSerif } from '@/app/fonts'
 
 export interface BlogEditorValue {
   title: string
+  authorName: string
   coverImage: string | null
   content: unknown
   contentHtml: string
@@ -56,6 +57,7 @@ export interface BlogEditorValue {
 
 interface BlogEditorProps {
   initialTitle?: string
+  initialAuthorName?: string
   initialCoverImage?: string | null
   initialContent?: unknown
   /** Called (debounced by parent if desired) whenever content changes. */
@@ -69,12 +71,14 @@ export interface BlogEditorHandle {
 
 export default function BlogEditor({
   initialTitle = '',
+  initialAuthorName = '',
   initialCoverImage = null,
   initialContent,
   onChange,
   onImageUpload,
 }: BlogEditorProps) {
   const [title, setTitle] = useState(initialTitle)
+  const [authorName, setAuthorName] = useState(initialAuthorName)
   const [coverImage, setCoverImage] = useState<string | null>(initialCoverImage)
 
   // Embed-insert prompt (paste a video / tweet / any link).
@@ -147,16 +151,17 @@ export default function BlogEditor({
   const [linkValue, setLinkValue] = useState('')
 
   const emitChange = useCallback(
-    (nextTitle = title, nextCover = coverImage) => {
+    (nextTitle = title, nextCover = coverImage, nextAuthor = authorName) => {
       if (!editor || !onChange) return
       onChange({
         title: nextTitle,
+        authorName: nextAuthor,
         coverImage: nextCover,
         content: editor.getJSON(),
         contentHtml: editor.getHTML(),
       })
     },
-    [editor, onChange, title, coverImage]
+    [editor, onChange, title, coverImage, authorName]
   )
 
   useEffect(() => {
@@ -338,6 +343,20 @@ export default function BlogEditor({
           'mb-4 w-full resize-none overflow-hidden bg-transparent text-4xl leading-tight text-white outline-none placeholder:text-white/25 sm:text-5xl'
         )}
       />
+
+      {/* ── Author byline ─────────────────────────────────────────── */}
+      <div className="mb-8 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+        <span className="shrink-0">By</span>
+        <input
+          value={authorName}
+          onChange={(e) => {
+            setAuthorName(e.target.value)
+            emitChange(title, coverImage, e.target.value)
+          }}
+          placeholder="The Forke Team"
+          className="w-full max-w-xs bg-transparent text-white outline-none placeholder:text-white/25"
+        />
+      </div>
 
       {/* ── Bubble menu (inline formatting on selection) ──────────── */}
       <BubbleMenu

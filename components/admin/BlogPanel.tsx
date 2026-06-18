@@ -494,10 +494,11 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [initial, setInitial] = useState<{
     title: string
+    authorName: string
     coverImage: string | null
     content: unknown
     contentHtml: string | null
-  } | null>(id === null ? { title: '', coverImage: null, content: undefined, contentHtml: null } : null)
+  } | null>(id === null ? { title: '', authorName: '', coverImage: null, content: undefined, contentHtml: null } : null)
 
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<Date | null>(null)
@@ -524,6 +525,7 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
       if (res.success) {
         setInitial({
           title: res.data.title === 'Untitled' ? '' : res.data.title,
+          authorName: res.data.authorName ?? '',
           coverImage: res.data.coverImage,
           content: res.data.content ?? undefined,
           contentHtml: res.data.contentHtml ?? null,
@@ -556,6 +558,7 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
     try {
       const payload = {
         title: v.title,
+        authorName: v.authorName,
         excerpt: deriveExcerpt(v.contentHtml),
         coverImage: v.coverImage,
         content: v.content,
@@ -766,6 +769,7 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
         ) : (
           <BlogEditor
             initialTitle={initial.title}
+            initialAuthorName={initial.authorName}
             initialCoverImage={initial.coverImage}
             initialContent={initial.content}
             onChange={handleEditorChange}

@@ -261,6 +261,7 @@ async function sweepOrphanedImages() {
 
 export interface BlogInput {
   title: string
+  authorName?: string | null
   excerpt?: string | null
   coverImage?: string | null
   content?: unknown          // Tiptap JSON
@@ -347,7 +348,7 @@ export async function createBlog(input: BlogInput) {
     .insert(blogs)
     .values({
       authorId: admin?.id ?? null,
-      authorName: admin?.name ?? null,
+      authorName: input.authorName?.trim() || admin?.name || null,
       title,
       slug,
       excerpt: input.excerpt?.trim() || null,
@@ -386,6 +387,11 @@ export async function updateBlog(id: string, input: BlogInput) {
     .set({
       title,
       slug,
+      // Only overwrite the byline when one was supplied — an empty field must
+      // not clobber an existing author name.
+      ...(input.authorName !== undefined
+        ? { authorName: input.authorName?.trim() || null }
+        : {}),
       excerpt: input.excerpt?.trim() || null,
       coverImage: newCover,
       content: input.content ?? null,
