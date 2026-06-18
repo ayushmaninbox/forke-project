@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getPublishedBlogSlugs } from '@/lib/blog-actions'
+import { ALL_ARTICLES } from '@/app/(marketing)/docs/content'
 
 // Regenerate so newly published posts appear without a redeploy.
 export const dynamic = 'force-dynamic'
@@ -18,14 +19,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }[] = [
     { path: '', priority: 1.0, changeFrequency: 'daily' },
     { path: '/whats-forke', priority: 0.9, changeFrequency: 'weekly' },
+    { path: '/docs', priority: 0.9, changeFrequency: 'weekly' },
     { path: '/levels', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/blogs', priority: 0.8, changeFrequency: 'daily' },
     { path: '/changelog', priority: 0.6, changeFrequency: 'daily' },
+    { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/signin', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/waitlist', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
+    { path: '/refund', priority: 0.3, changeFrequency: 'monthly' },
   ]
 
   const staticEntries: MetadataRoute.Sitemap = entries.map(
@@ -36,6 +40,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority,
     })
   )
+
+  // Every docs article, keyed by its slug.
+  const docsEntries: MetadataRoute.Sitemap = ALL_ARTICLES.map((a) => ({
+    url: `${baseUrl}/docs/${a.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }))
 
   // Append every published blog post, keyed by its title-derived slug.
   let postEntries: MetadataRoute.Sitemap = []
@@ -51,5 +63,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // If the DB is briefly unreachable, still return the static sitemap.
   }
 
-  return [...staticEntries, ...postEntries]
+  return [...staticEntries, ...docsEntries, ...postEntries]
 }

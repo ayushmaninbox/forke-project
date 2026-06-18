@@ -28,6 +28,7 @@ export default function Footer() {
         { name: 'whats-forke', href: '/whats-forke' },
         ...(!showWaitlisterView ? [{ name: 'bounties', href: '/tasks' }] : []),
         { name: 'levels', href: '/levels' },
+        { name: 'docs', href: '/docs' },
         { name: 'changelog', href: '/changelog' },
       ],
     },
