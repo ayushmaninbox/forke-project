@@ -3,7 +3,7 @@
 import { db } from './db'
 import { users, owners, subscribers, admins, developers, accounts } from './db/schema'
 import { eq, and, desc, sql } from 'drizzle-orm'
-import { sendBroadcastEmail, sendAdminInvitation, sendOwnerApprovedEmail, sendOwnerDeclinedEmail, sendOwnerBannedEmail, sendDeveloperBannedEmail } from './email'
+import { sendAdminInvitation, sendOwnerApprovedEmail, sendOwnerDeclinedEmail, sendOwnerBannedEmail, sendDeveloperBannedEmail } from './email'
 import { isAdminAuthenticated, getCurrentAdmin } from './admin-actions'
 import { logAudit } from './actions/audit-actions'
 import { revalidatePath } from 'next/cache'

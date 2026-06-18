@@ -155,6 +155,8 @@ function emailShell(opts: {
   footerLabel: string
   /** Optional extra <style> injected into <head> (progressive-enhancement only). */
   headStyle?: string
+  /** Optional HTML appended in the footer (e.g. an unsubscribe line for broadcasts). */
+  footerExtra?: string
 }): string {
   const bannerRow = opts.banner
     ? `<tr><td align="center" style="padding:0;line-height:0;font-size:0;">
@@ -225,6 +227,7 @@ function emailShell(opts: {
                 <p style="font-family:${BRAND.mono};font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.22em;color:rgba(255,255,255,0.20);margin:22px 0 0 0;">
                   &copy; 2026 Forke &nbsp;&middot;&nbsp; ${opts.footerLabel}
                 </p>
+                ${opts.footerExtra ?? ''}
               </td>
             </tr>
 
@@ -265,17 +268,21 @@ function resolveBaseUrl(): string {
  * Posts an email through Resend. Fail-soft: logs and returns false, never throws,
  * so a Resend outage can never block the underlying action.
  */
-async function sendResendEmail(
+/**
+ * Low-level single send. Returns a structured result so callers can tell a
+ * transient failure (429 / 5xx — worth retrying) from a permanent one.
+ */
+async function sendResendEmailResult(
   toEmail: string,
   subject: string,
   html: string,
   label: string,
   fromEmail?: string
-): Promise<boolean> {
+): Promise<{ ok: boolean; retryable: boolean; retryAfterMs?: number }> {
   const apiKey = resolveResendApiKey()
   if (!apiKey) {
     console.warn(`⚠️ RESEND_API_KEY is not configured. Skipping ${label} email.`)
-    return false
+    return { ok: false, retryable: false }
   }
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -294,15 +301,33 @@ async function sendResendEmail(
     })
     if (!res.ok) {
       const errText = await res.text()
-      console.error(`Failed to send ${label} email via Resend:`, errText)
-      return false
+      console.error(`Failed to send ${label} email via Resend (${res.status}):`, errText)
+      // 429 (rate limit) and 5xx are transient — safe to retry.
+      const retryable = res.status === 429 || res.status >= 500
+      const retryHeader = res.headers.get('retry-after')
+      const retryAfterMs = retryHeader ? Number(retryHeader) * 1000 : undefined
+      return { ok: false, retryable, retryAfterMs }
     }
-    return true
+    return { ok: true, retryable: false }
   } catch (error) {
     console.error(`Error dispatching ${label} email:`, error)
-    return false
+    // Network errors are transient too.
+    return { ok: false, retryable: true }
   }
 }
+
+async function sendResendEmail(
+  toEmail: string,
+  subject: string,
+  html: string,
+  label: string,
+  fromEmail?: string
+): Promise<boolean> {
+  const { ok } = await sendResendEmailResult(toEmail, subject, html, label, fromEmail)
+  return ok
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 // ----------------------------------------------------------------------------
 // Email builders — exported so the /email preview page can render them too.
@@ -426,6 +451,12 @@ export interface BlogEmailData {
   readingMinutes?: number | null
   publishedAt?: Date | string | null
   url: string
+  /**
+   * When true, append an unsubscribe footer. Resend's Broadcasts API REQUIRES an
+   * unsubscribe link and substitutes the {{{RESEND_UNSUBSCRIBE_URL}}} token at
+   * send time. Off for the preview page / any 1:1 use.
+   */
+  unsubscribe?: boolean
 }
 
 function formatBlogDate(value: Date | string | null | undefined): string | null {
@@ -486,11 +517,20 @@ export function buildBlogEmail(data: BlogEmailData): string {
     @keyframes forkeRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   `
 
+  // Broadcasts require an unsubscribe link; Resend swaps the token at send time.
+  const footerExtra = data.unsubscribe
+    ? `<p style="font-family:${BRAND.sans};font-size:11px;line-height:1.6;color:${BRAND.textFaint};margin:14px 0 0 0;">
+         You're receiving this because you subscribed to Forke updates.
+         <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${BRAND.textMuted};text-decoration:underline;">Unsubscribe</a>.
+       </p>`
+    : ''
+
   return emailShell({
     title: data.title,
     preheader: data.excerpt?.trim() || `New on the Forke blog: ${data.title}`,
     footerLabel: 'New Blog Post',
     headStyle,
+    footerExtra,
     bodyHtml: `
       <div class="fx fx-1" style="margin:0 0 22px 0;">${cover}</div>
       <div class="fx fx-2" style="font-family:${BRAND.mono};font-size:11px;letter-spacing:0.04em;color:rgba(255,255,255,0.40);margin:0 0 14px 0;">${metaParts}</div>
@@ -520,42 +560,93 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
   )
 }
 
-export async function sendBroadcastEmail(
-  toEmails: string[],
-  subject: string,
-  htmlContent: string
-): Promise<{ success: boolean; sentCount: number }> {
-  const apiKey = resolveResendApiKey()
-  if (!apiKey) {
-    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping broadcast email.')
-    return { success: false, sentCount: 0 }
-  }
+// ----------------------------------------------------------------------------
+// Resend Broadcasts API — for BULK subscriber sends (e.g. blog announcements).
+// Unlike the per-recipient /emails endpoint (metered against the daily quota),
+// a broadcast goes to a whole audience in one operation, shows up under the
+// "Broadcasts" tab, and is the right tool for newsletters. Subscribers live in
+// our Postgres `subscribers` table — NOT in Resend — so before sending we sync
+// the DB emails into a Resend audience as contacts.
+// ----------------------------------------------------------------------------
 
-  let sentCount = 0
-  for (const email of toEmails) {
-    const ok = await sendResendEmail(
-      email,
-      subject,
-      htmlContent,
-      'broadcast',
-      'Forke Updates <updates@forke.space>'
-    )
-    if (ok) sentCount++
-  }
+const RESEND_API = 'https://api.resend.com'
 
-  return { success: sentCount > 0, sentCount }
+function resolveAudienceId(): string {
+  let id = process.env.RESEND_AUDIENCE_ID || ''
+  if (id.startsWith('"') && id.endsWith('"')) id = id.slice(1, -1)
+  if (id.startsWith("'") && id.endsWith("'")) id = id.slice(1, -1)
+  return id.trim()
+}
+
+async function resendFetch(path: string, init: RequestInit, apiKey: string) {
+  return fetch(`${RESEND_API}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      ...(init.headers || {}),
+    },
+  })
+}
+
+/** Ensure an audience exists; returns its id. Uses RESEND_AUDIENCE_ID if set. */
+async function ensureAudience(apiKey: string): Promise<string | null> {
+  const configured = resolveAudienceId()
+  if (configured) return configured
+  // No id configured — create a default audience so the flow still works.
+  try {
+    const res = await resendFetch('/audiences', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Forke Subscribers' }),
+    }, apiKey)
+    if (!res.ok) {
+      console.error('Failed to create Resend audience:', await res.text())
+      return null
+    }
+    const json = (await res.json()) as { id?: string }
+    console.warn(`Created Resend audience ${json.id}. Set RESEND_AUDIENCE_ID=${json.id} to reuse it.`)
+    return json.id ?? null
+  } catch (err) {
+    console.error('Error creating Resend audience:', err)
+    return null
+  }
 }
 
 /**
- * Fan a new-blog announcement out to every subscriber. Builds the branded blog
- * email once, resolves the absolute post URL, then sends per-recipient via
- * Resend. Fully fail-soft: a missing API key or a Resend hiccup logs and returns
- * a zero count — it must never block or throw into the blog-publish action.
+ * Sync DB subscriber emails into a Resend audience as contacts. Idempotent:
+ * Resend treats re-adding an existing contact as a no-op (we ignore 409/already
+ * exists). Paced lightly to be polite to the API.
+ */
+async function syncContactsToAudience(audienceId: string, emails: string[], apiKey: string): Promise<number> {
+  let synced = 0
+  for (const email of emails) {
+    try {
+      const res = await resendFetch(`/audiences/${audienceId}/contacts`, {
+        method: 'POST',
+        body: JSON.stringify({ email, unsubscribed: false }),
+      }, apiKey)
+      // 200/201 = created; 409/422 = already a contact — both are fine.
+      if (res.ok || res.status === 409 || res.status === 422) synced++
+      else console.warn(`Contact sync for ${email} returned ${res.status}:`, await res.text())
+    } catch (err) {
+      console.warn(`Contact sync threw for ${email}:`, err)
+    }
+    await sleep(120)
+  }
+  return synced
+}
+
+/**
+ * Announce a newly-published blog to every subscriber via Resend's Broadcasts
+ * API (one audience send — does NOT burn the per-recipient daily quota). Fully
+ * fail-soft: a missing key/audience or a Resend hiccup logs and returns a zero
+ * result; it must never block or throw into the blog-publish action.
  *
  * The DB import is lazy so this module stays importable in non-DB contexts
  * (e.g. the email preview page renders builders without ever touching Postgres).
  */
 export async function sendBlogPublishedBroadcast(blog: {
+  id?: string
   title: string
   slug: string
   excerpt?: string | null
@@ -563,28 +654,38 @@ export async function sendBlogPublishedBroadcast(blog: {
   authorName?: string | null
   readingMinutes?: number | null
   publishedAt?: Date | string | null
-}): Promise<{ success: boolean; sentCount: number }> {
+}): Promise<{ success: boolean; sentCount: number; broadcastId?: string }> {
   const apiKey = resolveResendApiKey()
   if (!apiKey) {
     console.warn('⚠️ RESEND_API_KEY is not configured. Skipping blog broadcast.')
     return { success: false, sentCount: 0 }
   }
 
-  // Resolve recipients.
-  let emails: string[] = []
+  // Resolve recipients from our DB (de-duplicated, case-insensitive).
+  const emails: string[] = []
   try {
     const { db } = await import('./db')
     const { subscribers } = await import('./db/schema')
     const rows = await db.select({ email: subscribers.email }).from(subscribers)
-    emails = rows.map((r) => r.email).filter(Boolean)
+    const seen = new Set<string>()
+    for (const r of rows) {
+      const e = r.email?.trim()
+      if (!e) continue
+      const key = e.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      emails.push(e)
+    }
   } catch (err) {
     console.error('Failed to load subscribers for blog broadcast:', err)
     return { success: false, sentCount: 0 }
   }
+  if (emails.length === 0) return { success: true, sentCount: 0 }
 
-  if (emails.length === 0) {
-    return { success: true, sentCount: 0 }
-  }
+  // 1) Ensure an audience and 2) sync our subscribers into it as contacts.
+  const audienceId = await ensureAudience(apiKey)
+  if (!audienceId) return { success: false, sentCount: 0 }
+  const synced = await syncContactsToAudience(audienceId, emails, apiKey)
 
   const url = `${resolveBaseUrl()}/blogs/${blog.slug}`
   const html = buildBlogEmail({
@@ -595,16 +696,46 @@ export async function sendBlogPublishedBroadcast(blog: {
     readingMinutes: blog.readingMinutes,
     publishedAt: blog.publishedAt,
     url,
+    unsubscribe: true, // Broadcasts API requires an unsubscribe link.
   })
   const subject = `New on the Forke blog: ${blog.title}`
 
-  let sentCount = 0
-  for (const email of emails) {
-    const ok = await sendResendEmail(email, subject, html, 'blog broadcast', 'Forke Blog <blog@forke.space>')
-    if (ok) sentCount++
-  }
+  try {
+    // 3) Create the broadcast against the audience.
+    const createRes = await resendFetch('/broadcasts', {
+      method: 'POST',
+      body: JSON.stringify({
+        audience_id: audienceId,
+        from: 'Forke Blog <blog@forke.space>',
+        reply_to: 'support@forke.space',
+        subject,
+        html,
+        name: `Blog: ${blog.title}`,
+      }),
+    }, apiKey)
+    if (!createRes.ok) {
+      console.error('Failed to create Resend broadcast:', await createRes.text())
+      return { success: false, sentCount: 0 }
+    }
+    const broadcast = (await createRes.json()) as { id: string }
+    const broadcastId = broadcast.id
 
-  return { success: sentCount > 0, sentCount }
+    // 4) Send it now.
+    const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }, apiKey)
+    if (!sendRes.ok) {
+      console.error('Failed to send Resend broadcast:', await sendRes.text())
+      return { success: false, sentCount: 0, broadcastId }
+    }
+
+    console.log(`Blog broadcast sent to audience ${audienceId} (${synced} contacts).`)
+    return { success: true, sentCount: synced, broadcastId }
+  } catch (err) {
+    console.error('Error dispatching blog broadcast:', err)
+    return { success: false, sentCount: 0 }
+  }
 }
 
 export async function sendAdminInvitation(

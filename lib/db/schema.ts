@@ -7,6 +7,7 @@ import {
   pgEnum,
   boolean,
   jsonb,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 export const userRoleEnum = pgEnum('user_role', ['developer', 'owner'])
@@ -298,6 +299,22 @@ export const blogs = pgTable('blogs', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-
+/**
+ * Per-recipient log of blog "published" emails actually sent. Lets a broadcast
+ * (or a retry/re-send) skip anyone who already received a given post, so partial
+ * failures can be safely re-run without duplicating delivery.
+ */
+export const blogEmailSends = pgTable(
+  'blog_email_sends',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    blogId: uuid('blog_id')
+      .notNull()
+      .references(() => blogs.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    sentAt: timestamp('sent_at').defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex('blog_email_sends_blog_email_uq').on(t.blogId, t.email)]
+)
 
 

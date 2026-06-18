@@ -22,6 +22,7 @@ async function ensureAdmin() {
  * outage or a subscriber-query error must not roll back or block a publish.
  */
 async function announceBlogToSubscribers(blog: {
+  id?: string
   title: string
   slug: string
   excerpt?: string | null
@@ -31,12 +32,12 @@ async function announceBlogToSubscribers(blog: {
   publishedAt?: Date | null
 }) {
   try {
-    const { sentCount } = await sendBlogPublishedBroadcast(blog)
+    const { sentCount, broadcastId } = await sendBlogPublishedBroadcast(blog)
     await logAudit({
       category: 'system',
       action: 'blog.broadcast_sent',
       target: blog.title,
-      metadata: { sentCount },
+      metadata: { sentCount, broadcastId },
     })
   } catch (err) {
     console.error('Failed to broadcast new blog to subscribers:', err)
@@ -414,6 +415,7 @@ export async function setBlogStatus(id: string, status: 'draft' | 'published') {
   await ensureAdmin()
   const row = await db
     .select({
+      id: blogs.id,
       title: blogs.title,
       slug: blogs.slug,
       excerpt: blogs.excerpt,
@@ -522,6 +524,7 @@ export async function bulkSetBlogStatus(ids: string[], status: 'draft' | 'publis
     status === 'published'
       ? await db
           .select({
+            id: blogs.id,
             title: blogs.title,
             slug: blogs.slug,
             excerpt: blogs.excerpt,

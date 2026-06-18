@@ -280,7 +280,16 @@ CREATE TABLE "blogs" (
 	CONSTRAINT "blogs_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
+CREATE TABLE "blog_email_sends" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"blog_id" uuid NOT NULL,
+	"email" text NOT NULL,
+	"sent_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "blogs" ADD CONSTRAINT "blogs_author_id_admins_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "blog_email_sends" ADD CONSTRAINT "blog_email_sends_blog_id_blogs_id_fk" FOREIGN KEY ("blog_id") REFERENCES "public"."blogs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "blog_email_sends_blog_email_uq" ON "blog_email_sends" USING btree ("blog_id","email");--> statement-breakpoint
 ALTER TABLE "blogs" ENABLE ROW LEVEL SECURITY;
 
 
