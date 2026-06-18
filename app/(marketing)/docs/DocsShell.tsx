@@ -9,7 +9,7 @@ import React, {
 } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ChevronDown, Search, BookText, X, ArrowLeft } from 'lucide-react'
+import { ChevronDown, Search, Menu, X, ArrowLeft } from 'lucide-react'
 import { SECTIONS } from './content'
 import { cn } from '@/lib/utils/cn'
 import CopyPageButton from './CopyPageButton'
@@ -334,11 +334,11 @@ export default function DocsShell({
               className="rounded-lg p-1.5 text-white/60 hover:bg-white/[0.06] lg:hidden"
               aria-label="Open menu"
             >
-              <BookText className="h-5 w-5" />
+              <Menu className="h-5 w-5" />
             </button>
 
-            {/* Breadcrumb */}
-            <nav className="flex min-w-0 items-center gap-2 text-[13px]">
+            {/* Breadcrumb - Desktop */}
+            <nav className="hidden lg:flex min-w-0 items-center gap-2 text-[13px]">
               <Link
                 href="/docs"
                 className="shrink-0 text-white/45 transition-colors hover:text-white"
@@ -361,6 +361,15 @@ export default function DocsShell({
                 </React.Fragment>
               ))}
             </nav>
+
+            {/* Active Heading - Mobile */}
+            <div className="flex lg:hidden min-w-0 items-center text-[14px] font-semibold text-white truncate">
+              {breadcrumb && breadcrumb.length > 0 ? (
+                breadcrumb[breadcrumb.length - 1].label
+              ) : (
+                "Docs"
+              )}
+            </div>
 
             {/* Right cluster */}
             <div className="ml-auto flex items-center gap-2.5">

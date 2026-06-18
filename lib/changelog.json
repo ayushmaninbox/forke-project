@@ -4,6 +4,14 @@
     "label": "jun 18, 2026",
     "entries": [
       {
+        "shortHash": "b03633a",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-18T14:37:02+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Replace logo image with forke* branding text in docs sidebar"
+      },
+      {
         "shortHash": "961e104",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-18T14:35:50+05:30",
