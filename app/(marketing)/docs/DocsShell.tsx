@@ -305,24 +305,35 @@ export default function DocsShell({
       </aside>
 
       {/* Sidebar — mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      <div
+        className={cn(
+          "fixed inset-0 z-50 lg:hidden transition-all duration-300 ease-in-out",
+          mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
+        )}
+      >
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out",
+            mobileOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setMobileOpen(false)}
+        />
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 w-72 border-r border-white/[0.08] bg-[#070708] transition-transform duration-300 ease-out",
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <button
             onClick={() => setMobileOpen(false)}
-          />
-          <div className="absolute inset-y-0 left-0 w-72 border-r border-white/[0.08] bg-[#070708]">
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-5 z-10 rounded-lg p-1.5 text-white/50 hover:bg-white/[0.06]"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <Sidebar onNavigate={() => setMobileOpen(false)} inputId="docs-search-mobile" />
-          </div>
+            className="absolute right-3 top-5 z-10 rounded-lg p-1.5 text-white/50 hover:bg-white/[0.06]"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <Sidebar onNavigate={() => setMobileOpen(false)} inputId="docs-search-mobile" />
         </div>
-      )}
+      </div>
 
       <div className="lg:pl-72">
         {/* Top bar — fixed across the content column; the page scrolls beneath it */}
