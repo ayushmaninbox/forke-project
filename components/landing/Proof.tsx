@@ -146,6 +146,14 @@ export default function Proof({ n = '004' }: { n?: string }) {
       (ctx) => {
         const { isPhone } = ctx.conditions as { isPhone: boolean }
 
+        // If the mockup image hasn't finished loading, the laptop's height (and
+        // thus the pin start/end) is measured wrong, which shows up as a jump.
+        // Re-measure once it loads.
+        const img = screenRef.current
+        if (img && !img.complete) {
+          img.addEventListener('load', () => ScrollTrigger.refresh(), { once: true })
+        }
+
         gsap.fromTo(
           lidRef.current,
           // Start more closed (deeper tilt) for a stronger "opening" payoff.
@@ -159,9 +167,11 @@ export default function Proof({ n = '004' }: { n?: string }) {
             scrollTrigger: {
               trigger: pinRef.current,
               start: 'center center',
-              // Pin only long enough to finish the open, then release — a brief pause
-              // to "watch it open", after which the rest of the page continues.
-              end: isPhone ? '+=18%' : '+=30%',
+              // Short, fixed pin distance: the laptop sticks, opens over a small
+              // scroll, then releases immediately — no long empty "dead scroll"
+              // gap below it. A fixed px distance (not a % of viewport) keeps the
+              // open feeling snappy and identical regardless of screen height.
+              end: isPhone ? '+=140' : '+=240',
               pin: pinRef.current,
               pinSpacing: true,
               // The section uses overflow-hidden, which breaks position:fixed pinning;

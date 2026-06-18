@@ -126,7 +126,7 @@ export default function Hero() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-dvh flex items-start lg:items-center">
+    <section ref={containerRef} className="relative pt-32 pb-14 overflow-hidden bg-bg min-h-svh lg:min-h-dvh flex items-start lg:items-center">
       {/* Grain overlay — fixed, pointer-events-none, GPU-safe */}
       <div
         className="pointer-events-none absolute inset-0 z-[2] opacity-[0.025]"
