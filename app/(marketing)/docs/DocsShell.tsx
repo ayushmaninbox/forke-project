@@ -8,7 +8,6 @@ import React, {
   useSyncExternalStore,
 } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { ChevronDown, Search, BookText, X, ArrowLeft } from 'lucide-react'
 import { SECTIONS } from './content'
@@ -111,16 +110,9 @@ function Sidebar({
           href="/"
           onClick={onNavigate}
           aria-label="Forke home"
-          className="shrink-0 transition-opacity hover:opacity-80"
+          className="shrink-0 transition-opacity hover:opacity-80 text-xl font-semibold tracking-[-0.04em] text-white"
         >
-          <Image
-            src="/forke-assets/forke_logo.png"
-            alt="Forke"
-            width={36}
-            height={36}
-            className="h-[36px] w-[36px] object-contain"
-            priority
-          />
+          forke<span className="text-accent">*</span>
         </Link>
         <span aria-hidden className="h-5 w-px bg-white/[0.12]" />
         <Link
