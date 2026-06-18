@@ -64,162 +64,140 @@ export default function Navbar() {
     <nav className="fixed left-0 right-0 top-6 z-50 px-4 transition-all duration-300">
       <div className="w-full max-w-7xl mx-auto min-[1920px]:max-w-[1920px]">
         <div className={cn(
-          "flex justify-between items-center h-16 sm:h-[4.25rem] px-4 sm:px-7 rounded-full border transition-all duration-300",
-          isScrolled
+          "overflow-hidden border transition-all duration-300",
+          isScrolled || isMobileMenuOpen
              ? "border-white/[0.12] bg-black/[0.5] backdrop-blur-3xl shadow-[0_12px_40px_rgba(0,0,0,0.6)]"
-             : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+             : "border-white/[0.08] bg-black/[0.25] backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+          isMobileMenuOpen ? "rounded-[28px]" : "rounded-[28px] lg:rounded-full"
         )}>
-
-          <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
-            <div className="absolute -top-[20px] sm:-top-[26px] -left-3 sm:-left-4 w-[120px] sm:w-[150px] h-[72px] sm:h-[92px] z-20 pointer-events-none">
-              <Image
-                src="/forke-assets/nav_peeking_forky.png"
-                alt="Forke Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <div className="w-[100px] sm:w-[130px] h-[40px] " /> {/* Spacer for the absolute mascot */}
-            <span className="text-2xl sm:text-[1.75rem] font-semibold tracking-[-0.04em] text-white -ml-4 sm:-ml-6 relative z-10">
-              forke<span className="text-accent">*</span>
-            </span>
-          </Link>
-
-          {/* Center: Navigation Links */}
-          <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="group/link font-mono text-[12.5px] lowercase text-white/55 hover:text-white transition-colors"
-              >
-                <span className="text-accent/0 group-hover/link:text-accent/80 transition-colors">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
-              </Link>
-            ))}
-          </div>
-          
-          {/* Right: CTA Section */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {showWaitlisterView ? (
-              <Button 
-                variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                onClick={() => router.push('/')}
-              >
-                Coming Soon
-              </Button>
-            ) : isLoggedIn ? (
-              <Button 
-                variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                onClick={() => router.push('/dashboard')}
-              >
-                Dashboard
-              </Button>
-            ) : (
-              <Button 
-                variant="primary" 
-                className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                onClick={() => router.push('/register')}
-              >
-                Get Started
-              </Button>
-            )}
-
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden flex items-center">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="text-white p-2 hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <svg 
-                  className="w-6 h-6" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>      {/* Mobile Menu — full-screen overlay with centered navigation */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[200] lg:hidden">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-2xl" />
-          
-          {/* Content */}
-          <div className="relative z-10 flex flex-col h-full px-6 py-8 animate-in fade-in duration-300">
-            {/* Header — logo + close */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          {/* Main header row (always visible) */}
+          <div className="flex justify-between items-center h-16 sm:h-[4.25rem] px-4 sm:px-7">
+            <Link href="/" className="flex items-center gap-2 group shrink-0 relative pt-2">
+              <div className="absolute -top-[20px] sm:-top-[26px] -left-3 sm:-left-4 w-[120px] sm:w-[150px] h-[72px] sm:h-[92px] z-20 pointer-events-none">
                 <Image
                   src="/forke-assets/nav_peeking_forky.png"
-                  alt="Forke"
-                  width={60}
-                  height={36}
+                  alt="Forke Logo"
+                  fill
                   className="object-contain"
                 />
-                <span className="text-xl font-semibold tracking-[-0.04em] text-white">
-                  forke<span className="text-accent">*</span>
-                </span>
               </div>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/5 transition-colors border border-white/10"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+              <div className="w-[100px] sm:w-[130px] h-[40px] " /> {/* Spacer for the absolute mascot */}
+              <span className="text-2xl sm:text-[1.75rem] font-semibold tracking-[-0.04em] text-white -ml-4 sm:-ml-6 relative z-10">
+                forke<span className="text-accent">*</span>
+              </span>
+            </Link>
 
-            {/* Navigation links — centered vertically */}
-            <div className="flex-1 flex flex-col items-start justify-center gap-2 -mt-8">
-              {navLinks.map((link, i) => (
+            {/* Center: Navigation Links */}
+            <div className="hidden lg:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+              {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="group flex items-center gap-4 py-3 transition-colors active:bg-white/[0.04] w-full rounded-xl px-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  style={{ animationDelay: `${i * 60}ms` }}
+                  className="group/link font-mono text-[12.5px] lowercase text-white/55 hover:text-white transition-colors"
                 >
-                  <span className="font-mono text-[11px] text-accent/50 tabular-nums w-5">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="text-[22px] font-light tracking-[-0.02em] text-white/80 transition-colors group-hover:text-white group-active:text-accent">
-                    {link.name}
-                  </span>
+                  <span className="text-accent/0 group-hover/link:text-accent/80 transition-colors">/</span>{link.name.replace(/[?'’]/g, '').replace(/\s+/g, '-').toLowerCase()}
                 </Link>
               ))}
             </div>
-
-            {/* Bottom CTA */}
-            <div className="pt-4 border-t border-white/[0.06] space-y-3">
+            
+            {/* Right: CTA Section */}
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {showWaitlisterView ? (
-                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}>
+                <Button 
+                  variant="primary" 
+                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
+                  onClick={() => router.push('/')}
+                >
                   Coming Soon
                 </Button>
               ) : isLoggedIn ? (
-                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}>
+                <Button 
+                  variant="primary" 
+                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
+                  onClick={() => router.push('/dashboard')}
+                >
                   Dashboard
                 </Button>
               ) : (
-                <Button variant="primary" className="w-full h-12 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none" onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}>
+                <Button 
+                  variant="primary" 
+                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
+                  onClick={() => router.push('/register')}
+                >
                   Get Started
                 </Button>
               )}
-              <p className="text-center font-mono text-[10px] tracking-wide text-white/20">
-                {'//'} prove skill by shipping
-              </p>
+
+              {/* Mobile Menu Button */}
+              <div className="lg:hidden flex items-center">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="relative w-10 h-10 flex flex-col items-center justify-center gap-[5px] rounded-lg hover:bg-white/5 transition-colors"
+                  aria-label="Menu"
+                >
+                  <span
+                    className={`block h-[1.5px] w-5 bg-white transition-all duration-300 ${isMobileMenuOpen ? 'translate-y-[6.5px] rotate-45' : ''}`}
+                  />
+                  <span
+                    className={`block h-[1.5px] w-5 bg-white transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}
+                  />
+                  <span
+                    className={`block h-[1.5px] w-5 bg-white transition-all duration-300 ${isMobileMenuOpen ? '-translate-y-[6.5px] -rotate-45' : ''}`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile menu expanded content (Design 5: Capsule Expand) */}
+          <div className={cn(
+            "lg:hidden grid transition-all duration-300",
+            isMobileMenuOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          )}>
+            <div className="overflow-hidden">
+              <div className="px-5 pb-5 pt-2 flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="block rounded-xl px-3 py-2.5 text-[15px] text-white/70 hover:bg-white/[0.05] hover:text-white transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                <div className="px-1 pt-2">
+                  {showWaitlisterView ? (
+                    <Button 
+                      variant="primary" 
+                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
+                      onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}
+                    >
+                      Coming Soon
+                    </Button>
+                  ) : isLoggedIn ? (
+                    <Button 
+                      variant="primary" 
+                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
+                      onClick={() => { setIsMobileMenuOpen(false); router.push('/dashboard'); }}
+                    >
+                      Dashboard
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="primary" 
+                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
+                      onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}
+                    >
+                      Get Started
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   )
 }
