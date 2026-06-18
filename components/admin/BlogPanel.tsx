@@ -557,7 +557,11 @@ function BlogEditorView({ id, onBack }: { id: string | null; onBack: () => void 
         authorName: v.authorName,
         excerpt: deriveExcerpt(v.contentHtml),
         coverImage: v.coverImage,
-        content: v.content,
+        // Serialize the Tiptap JSON to a string before it crosses the server-
+        // action boundary. Passing the raw object is lossy in the prod build —
+        // node attrs (heading level, image src, embed type) get dropped — so we
+        // stringify here and JSON.parse it back in the action (normalizeContent).
+        content: JSON.stringify(v.content ?? null),
         contentHtml: v.contentHtml,
       }
       let savedId: string

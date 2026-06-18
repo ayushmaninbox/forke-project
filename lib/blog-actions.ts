@@ -265,8 +265,36 @@ export interface BlogInput {
   authorName?: string | null
   excerpt?: string | null
   coverImage?: string | null
-  content?: unknown          // Tiptap JSON
+  content?: unknown          // Tiptap JSON — sent as a JSON *string* (see normalizeContent)
   contentHtml?: string | null
+}
+
+/**
+ * Normalize the incoming `content` into a plain Tiptap JSON object.
+ *
+ * The editor sends `content` as a JSON **string** on purpose: passing the raw
+ * Tiptap object across the React Server Component boundary is lossy — node
+ * `attrs` (heading `level`, image `src`, embed `embedType`/`embedSrc`, …) get
+ * silently dropped in the prod build, corrupting the stored document while the
+ * HTML snapshot still looks fine. A string round-trips losslessly, so we parse
+ * it back here. We still accept a plain object for backward compatibility.
+ */
+function normalizeContent(content: unknown): unknown {
+  if (content == null) return null
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content)
+    } catch {
+      return null
+    }
+  }
+  // Already an object (legacy callers / server-side use): deep-clone to a plain
+  // object so any client-reference wrappers are stripped before we persist it.
+  try {
+    return JSON.parse(JSON.stringify(content))
+  } catch {
+    return null
+  }
 }
 
 // ── reads ─────────────────────────────────────────────────────────────────
@@ -344,6 +372,7 @@ export async function createBlog(input: BlogInput) {
   const admin = await getCurrentAdmin()
   const title = input.title?.trim() || 'Untitled'
   const slug = await uniqueSlug(slugify(title))
+  const content = normalizeContent(input.content)
 
   const [created] = await db
     .insert(blogs)
@@ -354,10 +383,10 @@ export async function createBlog(input: BlogInput) {
       slug,
       excerpt: input.excerpt?.trim() || null,
       coverImage: input.coverImage?.trim() || null,
-      content: input.content ?? null,
+      content,
       contentHtml: input.contentHtml ?? null,
       status: 'draft',
-      readingMinutes: estimateReadingMinutes(input.content),
+      readingMinutes: estimateReadingMinutes(content),
     })
     .returning({ id: blogs.id, slug: blogs.slug })
 
@@ -383,6 +412,7 @@ export async function updateBlog(id: string, input: BlogInput) {
       : existing[0].slug
 
   const newCover = input.coverImage?.trim() || null
+  const content = normalizeContent(input.content)
   await db
     .update(blogs)
     .set({
@@ -395,9 +425,9 @@ export async function updateBlog(id: string, input: BlogInput) {
         : {}),
       excerpt: input.excerpt?.trim() || null,
       coverImage: newCover,
-      content: input.content ?? null,
+      content,
       contentHtml: input.contentHtml ?? null,
-      readingMinutes: estimateReadingMinutes(input.content),
+      readingMinutes: estimateReadingMinutes(content),
       updatedAt: new Date(),
     })
     .where(eq(blogs.id, id))
