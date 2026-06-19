@@ -4,8 +4,9 @@ import type { Metadata } from 'next'
 import { ArrowLeft, Clock } from 'lucide-react'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
-import { getPublishedBlogBySlug } from '@/lib/blog-actions'
+import { getPublishedBlogBySlug, getPublishedBlogs } from '@/lib/blog-actions'
 import { instrumentSerif } from '@/app/fonts'
+import RelatedArticles, { type RelatedCard } from './RelatedArticles'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,21 @@ export default async function BlogPostPage({ params }: Params) {
   const { slug } = await params
   const post = await getPublishedBlogBySlug(slug)
   if (!post) notFound()
+
+  // Recent posts for the "You may also like these" section — exclude the
+  // current post and cap at three (already ordered newest-first).
+  const related: RelatedCard[] = (await getPublishedBlogs())
+    .filter((p) => p.slug !== post.slug)
+    .slice(0, 3)
+    .map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      coverImage: p.coverImage,
+      authorName: p.authorName,
+      readingMinutes: p.readingMinutes,
+      publishedAt: p.publishedAt ? p.publishedAt.toISOString() : null,
+    }))
 
   return (
     <div className="min-h-screen bg-bg text-white">
@@ -87,6 +103,7 @@ export default async function BlogPostPage({ params }: Params) {
           />
         </article>
       </main>
+      <RelatedArticles posts={related} />
       <Footer />
     </div>
   )
