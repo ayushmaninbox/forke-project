@@ -282,7 +282,7 @@ export default function PublicProfileView({
     // Dashboard: card pinned full-height on the left, only the bento scrolls.
     return (
       <div className="flex flex-col lg:flex-row gap-5 h-full min-h-0 max-w-7xl mx-auto w-full min-[1920px]:max-w-[1920px]">
-        <div className="hidden md:block w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
+        <div className="w-full lg:w-[440px] lg:shrink-0 lg:h-full">{cardCol}</div>
         <div className="flex-grow min-w-0 lg:h-full lg:overflow-y-auto space-y-4 pb-6 pr-1">{bento}</div>
         {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
       </div>
@@ -294,7 +294,7 @@ export default function PublicProfileView({
   // scrolled, the row ends and the card scrolls away with it, revealing the footer.
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_1fr] gap-5 items-start w-full">
-      <div className="hidden md:block w-full lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
+      <div className="w-full lg:sticky lg:top-28 lg:h-[calc(100vh-9rem)]">{cardCol}</div>
       <div className="w-full space-y-4 min-w-0 lg:h-[calc(100vh-9rem)] lg:overflow-y-auto pr-1 pb-4">{bento}</div>
       {shareOpen && <ShareModal shareUrl={shareUrl} onClose={() => setShareOpen(false)} />}
     </div>

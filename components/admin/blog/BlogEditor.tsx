@@ -89,6 +89,10 @@ export default function BlogEditor({
   const [coverPromptOpen, setCoverPromptOpen] = useState(false)
   const [coverUrl, setCoverUrl] = useState('')
 
+  // Body-image prompt — same upload-or-link choice as the cover chooser.
+  const [imagePromptOpen, setImagePromptOpen] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+
   // Hidden file inputs drive image uploads; picked files open the cropper first.
   const bodyFileRef = useRef<HTMLInputElement>(null)
   const coverFileRef = useRef<HTMLInputElement>(null)
@@ -98,8 +102,11 @@ export default function BlogEditor({
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
+  // Open the chooser (upload or paste a link) rather than jumping straight to
+  // the file dialog — mirrors how the cover image is added.
   const openImagePicker = useCallback(() => {
-    bodyFileRef.current?.click()
+    setImageUrl('')
+    setImagePromptOpen(true)
   }, [])
 
   const openEmbedPrompt = useCallback(() => {
@@ -215,6 +222,15 @@ export default function BlogEditor({
       setUploading(false)
       setUploadProgress(0)
     }
+  }
+
+  // Insert a pasted image link into the body, then close the chooser.
+  const insertImageLink = () => {
+    const url = imageUrl.trim()
+    setImagePromptOpen(false)
+    if (!url || !editor) return
+    if (onImageUpload) onImageUpload(url)
+    editor.chain().focus().setImage({ src: url }).run()
   }
 
   const insertEmbed = async () => {
@@ -538,6 +554,67 @@ export default function BlogEditor({
                 <button
                   type="button"
                   onClick={() => setCoverPromptOpen(false)}
+                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/[0.05]"
+                >
+                  Use link
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Body image chooser: upload (croppable) OR paste a link ──── */}
+      {imagePromptOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setImagePromptOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[#0b0b0e] p-5 shadow-2xl shadow-black/60"
+          >
+            <h3 className="mb-1 text-sm font-medium text-white">Add image</h3>
+            <p className="mb-4 text-xs text-[var(--color-text-muted)]">
+              Upload an image (you can crop it) or paste an image link.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setImagePromptOpen(false)
+                bodyFileRef.current?.click()
+              }}
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
+            >
+              <ImagePlus className="h-4 w-4" /> Upload from device
+            </button>
+            <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-wider text-white/30">
+              <span className="h-px flex-grow bg-[var(--color-border)]" /> or paste a link{' '}
+              <span className="h-px flex-grow bg-[var(--color-border)]" />
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                insertImageLink()
+              }}
+            >
+              <input
+                autoFocus
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://…/image.jpg"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-white/[0.02] px-3 py-2 text-sm text-white outline-none transition-colors focus:border-accent/40 placeholder:text-white/25"
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImagePromptOpen(false)}
                   className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-muted)] transition-colors hover:text-white"
                 >
                   Cancel
