@@ -32,8 +32,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/forke-assets/og-image.jpg',
-        width: 1672,
-        height: 942,
+        width: 1200,
+        height: 630,
         alt: 'Forke — The Developer Marketplace',
       },
     ],

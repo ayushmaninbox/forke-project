@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "d8f14f2",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T14:13:15+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Update Open Graph metadata with new banner image"
+      },
+      {
         "shortHash": "ea1d891",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T13:41:50+05:30",
