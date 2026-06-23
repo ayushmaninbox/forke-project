@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     siteName: 'Forke',
     images: [
       {
-        url: '/forke-assets/email-banners/main-banner.png',
-        width: 1200,
-        height: 630,
+        url: '/forke-assets/og-image.jpg',
+        width: 1672,
+        height: 942,
         alt: 'Forke — The Developer Marketplace',
       },
     ],
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'Forke — Ship Real Work, Get Paid',
     description: 'The micro-task marketplace for developers. Complete bounties and level up your engineering career.',
     creator: '@forkedotdev',
-    images: ['/forke-assets/email-banners/main-banner.png'],
+    images: ['/forke-assets/og-image.jpg'],
   },
 
   manifest: '/site.webmanifest',

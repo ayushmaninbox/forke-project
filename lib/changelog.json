@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "ea1d891",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T13:41:50+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Restrict registration and sign-in access via waitlist lock and update CTAs and sitemap accordingly"
+      },
+      {
         "shortHash": "2a39610",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T13:26:10+05:30",
