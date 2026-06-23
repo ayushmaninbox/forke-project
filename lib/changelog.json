@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "9cca4d9",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T16:05:25+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Update email banners and social media assets"
+      },
+      {
         "shortHash": "89ad071",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T14:16:27+05:30",

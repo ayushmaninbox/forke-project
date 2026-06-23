@@ -161,10 +161,13 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
                   {post.title}
                 </h2>
                 {post.excerpt && (
-                  <p className="mt-2 line-clamp-2 flex-grow text-sm leading-relaxed text-[var(--color-text-muted)]">
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
                     {post.excerpt}
                   </p>
                 )}
+                {/* Spacer pushes the footer down without stretching the clamped
+                    excerpt, so the … always lands at the true end of line 2. */}
+                <div className="flex-grow" />
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/[0.05] pt-3.5">
                   <span className="truncate text-[11.5px] text-white/40">{post.authorName}</span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/25 transition-all group-hover:translate-x-0.5 group-hover:text-accent" />

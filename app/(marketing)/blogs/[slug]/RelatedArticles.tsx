@@ -84,10 +84,13 @@ export default function RelatedArticles({ posts }: { posts: RelatedCard[] }) {
                   {post.title}
                 </h3>
                 {post.excerpt && (
-                  <p className="mt-2 line-clamp-2 flex-grow text-sm leading-relaxed text-[var(--color-text-muted)]">
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
                     {post.excerpt}
                   </p>
                 )}
+                {/* Spacer keeps the byline at the card bottom without stretching
+                    the clamped excerpt, so the … lands cleanly at line 2's end. */}
+                <div className="flex-grow" />
                 {post.authorName && (
                   <div className="mt-4 border-t border-white/[0.05] pt-3.5">
                     <span className="truncate text-[11.5px] text-white/40">
