@@ -1,4 +1,10 @@
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { isWaitlistEnabled } from '@/lib/db/settings'
+
+// The waitlist only exists while the lock is on. Once an admin turns the
+// waitlist off, the site is fully open and this route should no longer resolve.
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Join the Waitlist',
@@ -19,6 +25,10 @@ export const metadata: Metadata = {
   },
 }
 
-export default function WaitlistLayout({ children }: { children: React.ReactNode }) {
+export default async function WaitlistLayout({ children }: { children: React.ReactNode }) {
+  // Lock off → no waitlist. Render the standard not-found page at this URL.
+  if (!(await isWaitlistEnabled())) {
+    notFound()
+  }
   return <>{children}</>
 }

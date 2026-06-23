@@ -1,32 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 
 export default function Footer() {
-  const [hasSiteAccess, setHasSiteAccess] = useState(false)
-  const [waitlistActive, setWaitlistActive] = useState(true)
-
-  useEffect(() => {
-    const getCookie = (name: string): string | null => {
-      if (typeof document === 'undefined') return null
-      const value = `; ${document.cookie}`
-      const parts = value.split(`; ${name}=`)
-      if (parts.length === 2) return parts.pop()?.split(';').shift() || null
-      return null
-    }
-
-    setHasSiteAccess(getCookie('site_access_public') === 'true')
-    setWaitlistActive(getCookie('waitlist_active') === 'true')
-  }, [])
-
-  const showWaitlisterView = waitlistActive && !hasSiteAccess
 
   const columns: { heading: string; links: { name: string; href: string; external?: boolean }[] }[] = [
     {
       heading: 'product',
       links: [
         { name: 'whats-forke', href: '/whats-forke' },
-        ...(!showWaitlisterView ? [{ name: 'bounties', href: '/tasks' }] : []),
         { name: 'levels', href: '/levels' },
         { name: 'docs', href: '/docs' },
         { name: 'changelog', href: '/changelog' },

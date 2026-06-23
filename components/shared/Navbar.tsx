@@ -47,14 +47,8 @@ export default function Navbar() {
 
   const showWaitlisterView = waitlistActive && !hasSiteAccess
 
-  const navLinks = showWaitlisterView ? [
+  const navLinks = [
     { name: "What's Forke?", href: '/whats-forke' },
-    { name: 'Levels', href: '/levels' },
-    { name: 'Blogs', href: '/blogs' },
-    { name: 'Contact Us', href: '/contact' },
-  ] : [
-    { name: "What's Forke?", href: '/whats-forke' },
-    { name: 'Bounties', href: '/bounties' },
     { name: 'Levels', href: '/levels' },
     { name: 'Blogs', href: '/blogs' },
     { name: 'Contact Us', href: '/contact' },
@@ -105,10 +99,10 @@ export default function Navbar() {
               {showWaitlisterView ? (
                 <Button 
                   variant="primary" 
-                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                  onClick={() => router.push('/')}
+                  className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors"
+                  onClick={() => router.push('/waitlist')}
                 >
-                  Coming Soon
+                  Join the waitlist
                 </Button>
               ) : isLoggedIn ? (
                 <Button 
@@ -170,10 +164,10 @@ export default function Navbar() {
                   {showWaitlisterView ? (
                     <Button 
                       variant="primary" 
-                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
-                      onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}
+                      className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors"
+                      onClick={() => { setIsMobileMenuOpen(false); router.push('/waitlist'); }}
                     >
-                      Coming Soon
+                      Join the waitlist
                     </Button>
                   ) : isLoggedIn ? (
                     <Button 

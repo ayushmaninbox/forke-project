@@ -141,14 +141,12 @@ export default function CTA() {
               <Button
                 size="lg"
                 className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
-                onClick={() => router.push(showWaitlisterView ? '/' : '/register')}
+                onClick={() => router.push(showWaitlisterView ? '/waitlist' : '/register')}
               >
-                {showWaitlisterView ? 'Coming Soon' : 'Join the movement'}
-                {!showWaitlisterView && (
-                  <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
-                    <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
-                  </span>
-                )}
+                {showWaitlisterView ? 'Join the waitlist' : 'Join the movement'}
+                <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
+                  <ArrowRight className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
+                </span>
               </Button>
             </div>
           </div>
@@ -190,13 +188,13 @@ export default function CTA() {
                 className="h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none opacity-0 active:scale-[0.98] transition-transform mx-auto md:mx-0"
                 onClick={() => {
                   if (showWaitlisterView) {
-                    router.push('/')
+                    router.push('/waitlist')
                   } else {
                     router.push('/register')
                   }
                 }}
               >
-                {showWaitlisterView ? 'Coming soon' : <>Start earning <ArrowRight className="w-4 h-4" /></>}
+                {showWaitlisterView ? <>Join the waitlist <ArrowRight className="w-4 h-4" /></> : <>Start earning <ArrowRight className="w-4 h-4" /></>}
               </Button>
             </div>
 

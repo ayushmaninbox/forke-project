@@ -90,10 +90,10 @@ export default function Verdict({ n = '003', flush = false }: { n?: string; flus
             ))}
           </ul>
           <Link
-            href={showWaitlisterView ? '/' : '/register'}
+            href={showWaitlisterView ? '/waitlist' : '/register'}
             className="group mt-9 inline-flex items-center gap-2 text-[14.5px] font-medium text-white/75 transition-colors hover:text-white"
           >
-            {showWaitlisterView ? 'Coming soon' : 'Post your first task'}
+            {showWaitlisterView ? 'Join the waitlist' : 'Post your first task'}
             <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" />
           </Link>
         </Reveal>

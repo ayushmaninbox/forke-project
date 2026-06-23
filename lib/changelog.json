@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-06-23",
+    "label": "jun 23, 2026",
+    "entries": [
+      {
+        "shortHash": "8a6d0e1",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T12:42:09+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add inline image previews in buckets, optimize blog grid pagination, and implement swipeable related articles carousel"
+      }
+    ]
+  },
+  {
     "date": "2026-06-19",
     "label": "jun 19, 2026",
     "entries": [

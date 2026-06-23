@@ -86,22 +86,6 @@ async function fetchWaitlistStatus(origin: string): Promise<boolean> {
   }
 }
 
-function isPublicProfilePath(pathname: string): boolean {
-  if (pathname.includes('.') || pathname.startsWith('/_next') || pathname.startsWith('/uploads')) {
-    return false
-  }
-  const segments = pathname.split('/').filter(Boolean)
-  if (segments.length !== 1) return false
-  
-  const reservedNames = [
-    'waitlist', 'checkout', 'admin', 'api', 'signin', 'register', 'onboarding',
-    'dashboard', 'profile', 'tasks', 'submissions', 'earnings', 'settings',
-    'analytics', 'developers', 'escrow', 'messages', 'notifications', 'post-task',
-    'support', 'auth-error', 'whats-forke', 'levels', 'contact', 'terms', 'privacy', 'refund', 'blogs', 'changelog', 'docs'
-  ]
-  return !reservedNames.includes(segments[0])
-}
-
 export default auth(async (req) => {
   const pathname = req.nextUrl.pathname
 
@@ -156,67 +140,43 @@ export default auth(async (req) => {
     if (attribution && !TRACKING_PARAMS.some((p) => req.nextUrl.searchParams.has(p))) {
       setAttributionCookie(res, attribution)
     }
-    if (!pathname.startsWith('/_next') && !pathname.startsWith('/api') && pathname !== '/favicon.ico') {
+    // Public, indexable surfaces (blogs/docs/changelog) must stay cacheable so
+    // crawlers don't treat them as no-store. Everything else is per-visitor
+    // (gated/auth-aware) and must not be cached.
+    const isIndexableSurface =
+      pathname === '/blogs' ||
+      pathname.startsWith('/blogs/') ||
+      pathname === '/docs' ||
+      pathname.startsWith('/docs/') ||
+      pathname === '/changelog'
+    if (
+      !pathname.startsWith('/_next') &&
+      !pathname.startsWith('/api') &&
+      pathname !== '/favicon.ico' &&
+      !isIndexableSurface
+    ) {
       res.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
     }
     return res
   }
 
   // ===== WAITLIST GATE =====
-  const isWaitlistAllowed =
-    pathname === '/waitlist' ||
-    pathname === '/checkout' ||
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/api/waitlist') ||
-    pathname.startsWith('/api/checkout') ||
-    pathname.startsWith('/api/auth') ||
-    pathname.endsWith('/opengraph-image') ||
-    // The blog is a public, indexable surface — readable even during the
-    // waitlist gate so posts can be shared and crawled.
-    pathname === '/blogs' ||
-    pathname.startsWith('/blogs/') ||
-    // The changelog is public for the same reason — proof of shipping velocity.
-    pathname === '/changelog' ||
-    // Docs are a public, indexable surface — readable during the waitlist gate
-    // so the product can be understood and the pages can be crawled/shared.
-    pathname === '/docs' ||
-    pathname.startsWith('/docs/') ||
-    isPublicProfilePath(pathname)
-
-  // If waitlist is active and the user doesn't have site_access
-  if (waitlistEnabled && !siteAccess && !isWaitlistAllowed) {
-    if (waitlistJoined) {
-      // Waitlisters can view marketing/policy pages
-      const isMarketingPage =
-        pathname === '/' ||
-        pathname === '/whats-forke' ||
-        pathname === '/levels' ||
-        pathname === '/contact' ||
-        pathname === '/terms' ||
-        pathname === '/privacy' ||
-        pathname === '/refund'
-
-      if (!isMarketingPage) {
-        // Redirect dashboard and real site pages to landing page
-        const redirectUrl = new URL('/', req.nextUrl.origin)
-        redirectUrl.search = req.nextUrl.search
-        return withCookies(NextResponse.redirect(redirectUrl))
-      }
-    } else {
-      // Redirect users who haven't joined to waitlist
-      const redirectUrl = new URL('/waitlist', req.nextUrl.origin)
-      redirectUrl.search = req.nextUrl.search
-      return withCookies(NextResponse.redirect(redirectUrl))
-    }
-  }
-
-  // If user HAS access (or waitlist is disabled, or already joined) and tries to visit /waitlist, redirect them to /
-  if (pathname === '/waitlist') {
-    if (!waitlistEnabled || siteAccess || waitlistJoined) {
-      const redirectUrl = new URL('/', req.nextUrl.origin)
-      redirectUrl.search = req.nextUrl.search
-      return withCookies(NextResponse.redirect(redirectUrl))
-    }
+  // New model: the waitlist no longer locks visitors OUT of public pages.
+  // Whether the lock is on or off, every public/marketing surface (landing,
+  // blogs, docs, levels, profiles, etc.) renders normally — CTAs read "Join the
+  // waitlist" while the lock is on (driven by the waitlist_active cookie below).
+  // Real app pages stay protected by the auth gate further down. So there is no
+  // waitlist redirect for public pages anymore.
+  //
+  // The only waitlist-aware redirect left is the /waitlist page itself:
+  //  - lock ON + already joined / has access  -> bounce home (nothing to do here)
+  //  - lock OFF                                -> the route renders a 404 (handled
+  //    in app/waitlist/layout.tsx via notFound(); we don't redirect here so the
+  //    not-found UI shows the real URL).
+  if (pathname === '/waitlist' && waitlistEnabled && (siteAccess || waitlistJoined)) {
+    const redirectUrl = new URL('/', req.nextUrl.origin)
+    redirectUrl.search = req.nextUrl.search
+    return withCookies(NextResponse.redirect(redirectUrl))
   }
 
   // ===== EXISTING AUTH LOGIC =====

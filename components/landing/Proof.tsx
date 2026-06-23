@@ -204,10 +204,10 @@ export default function Proof({ n = '004' }: { n?: string }) {
               don&apos;t read claims. They read receipts.
             </p>
             <Link
-              href={showWaitlisterView ? '/' : '/register'}
+              href={showWaitlisterView ? '/waitlist' : '/register'}
               className="group mt-6 inline-flex items-center gap-2 text-[14.5px] font-medium text-white/75 transition-colors hover:text-white"
             >
-              {showWaitlisterView ? 'Coming soon' : 'Claim your username'}
+              {showWaitlisterView ? 'Join the waitlist' : 'Claim your username'}
               <ArrowRight className="h-4 w-4 text-accent transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
