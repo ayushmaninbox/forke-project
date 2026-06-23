@@ -4,6 +4,7 @@ import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
 import { Crosses, Rails } from '@/components/landing/primitives'
 import { getChangelog, getCommitCount, type ChangeKind } from '@/lib/changelog'
+import { isWaitlistEnabled } from '@/lib/db/settings'
 import ChangelogList from './ChangelogList'
 
 export const metadata: Metadata = {
@@ -21,9 +22,11 @@ export const metadata: Metadata = {
 // Re-read git history at most every 10 minutes.
 export const revalidate = 600
 
-export default function ChangelogPage() {
+export default async function ChangelogPage() {
   const days = getChangelog()
   const commitCount = getCommitCount()
+  // While the lock is on, /register 404s — point the CTA at the waitlist instead.
+  const ctaHref = (await isWaitlistEnabled()) ? '/waitlist' : '/register'
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -83,10 +86,10 @@ export default function ChangelogPage() {
             </p>
           </div>
           <Link
-            href="/register"
+            href={ctaHref}
             className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight transition-colors"
           >
-            Start earning →
+            {ctaHref === '/waitlist' ? 'Join the waitlist →' : 'Start earning →'}
           </Link>
         </div>
       </section>

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
+import { useWaitlisterView } from '@/components/landing/useWaitlisterView'
 import { Button } from '@/components/ui/Button'
 import DotField from '@/components/shared/DotField'
 import { Eyebrow } from '@/components/landing/primitives'
@@ -135,6 +136,10 @@ function renderMark(status: 'yes' | 'no' | 'partial', highlight: boolean) {
 
 export default function WhatsForkePage() {
   const router = useRouter()
+  const showWaitlisterView = useWaitlisterView()
+  // Route the primary CTA to the waitlist while the lock is on (sign-up is
+  // closed and /register 404s then); otherwise send people to register.
+  const primaryCtaHref = showWaitlisterView ? '/waitlist' : '/register'
   const pageContainerRef = useRef<HTMLDivElement>(null)
 
   useGSAP(() => {
@@ -439,9 +444,9 @@ export default function WhatsForkePage() {
               <Button
                 size="lg"
                 className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push(primaryCtaHref)}
               >
-                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                {showWaitlisterView ? 'Join the waitlist' : 'Join the movement'} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </div>
           </div>
@@ -467,9 +472,9 @@ export default function WhatsForkePage() {
               <Button
                 size="lg"
                 className="group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors flex items-center justify-center"
-                onClick={() => router.push('/register')}
+                onClick={() => router.push(primaryCtaHref)}
               >
-                Join the movement <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                {showWaitlisterView ? 'Join the waitlist' : 'Join the movement'} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Button>
             </div>
           </div>

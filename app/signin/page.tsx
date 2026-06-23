@@ -1,5 +1,11 @@
 import { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import SignInContent from '@/components/auth/SignInContent'
+import { isWaitlistEnabled } from '@/lib/db/settings'
+
+// While the waitlist lock is on, sign-in is closed — this route 404s. Once the
+// lock is lifted (site fully open), sign-in works normally.
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Sign In',
@@ -12,6 +18,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  if (await isWaitlistEnabled()) {
+    notFound()
+  }
   return <SignInContent />
 }

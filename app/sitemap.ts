@@ -25,21 +25,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/blogs', priority: 0.8, changeFrequency: 'daily' },
     { path: '/changelog', priority: 0.6, changeFrequency: 'daily' },
     { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
-    { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
-    { path: '/signin', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
     { path: '/refund', priority: 0.3, changeFrequency: 'monthly' },
   ]
 
-  // /waitlist only exists while the lock is on (the route 404s once the waitlist
-  // is disabled), so only advertise it in the sitemap when it's actually live.
+  // These routes flip with the waitlist lock, so only list whichever ones are
+  // actually live to avoid advertising URLs that 404:
+  //  - lock ON  → /waitlist exists; /register and /signin 404
+  //  - lock OFF → /register and /signin exist; /waitlist 404s
   try {
     if (await isWaitlistEnabled()) {
       entries.push({ path: '/waitlist', priority: 0.5, changeFrequency: 'monthly' })
+    } else {
+      entries.push({ path: '/register', priority: 0.7, changeFrequency: 'monthly' })
+      entries.push({ path: '/signin', priority: 0.5, changeFrequency: 'monthly' })
     }
   } catch {
-    // If the setting is briefly unreadable, omit /waitlist rather than risk
+    // If the setting is briefly unreadable, omit all three rather than risk
     // listing a URL that may 404.
   }
 

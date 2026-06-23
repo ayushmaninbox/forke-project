@@ -10,6 +10,7 @@ import React, {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ChevronDown, Search, Menu, X, ArrowLeft } from 'lucide-react'
+import { useWaitlisterView } from '@/components/landing/useWaitlisterView'
 import { SECTIONS } from './content'
 import { cn } from '@/lib/utils/cn'
 import CopyPageButton from './CopyPageButton'
@@ -283,6 +284,8 @@ export default function DocsShell({
   children: React.ReactNode
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  // While the lock is on, /register 404s — send the signed-out CTA to /waitlist.
+  const showWaitlisterView = useWaitlisterView()
 
   // Cmd/Ctrl+K focuses the docs search.
   useEffect(() => {
@@ -397,10 +400,10 @@ export default function DocsShell({
                 </Link>
               ) : (
                 <Link
-                  href="/register"
+                  href={showWaitlisterView ? '/waitlist' : '/register'}
                   className="rounded-lg bg-white px-3.5 py-1.5 text-[13px] font-semibold tracking-tight text-[#0a0a0a] transition-colors hover:bg-white/90"
                 >
-                  Sign up
+                  {showWaitlisterView ? 'Join waitlist' : 'Sign up'}
                 </Link>
               )}
             </div>

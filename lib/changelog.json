@@ -4,6 +4,22 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "2a39610",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T13:26:10+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Conditionally include waitlist in sitemap based on database setting"
+      },
+      {
+        "shortHash": "e091034",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T13:16:26+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement waitlist access control and update call-to-action buttons to redirect to the new waitlist route."
+      },
+      {
         "shortHash": "8a6d0e1",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T12:42:09+05:30",
