@@ -30,6 +30,7 @@ import {
   Plus,
   Folder,
   ChevronRight,
+  ChevronDown,
   ShieldAlert,
   FolderPlus,
   BarChart3,
@@ -79,6 +80,13 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
   
   // Selection logic for bulk actions
   const [selectedKeys, setSelectedKeys] = useState<string[]>([])
+
+  // Inline image preview accordion — only one row open at a time (FAQ-style).
+  const [expandedKey, setExpandedKey] = useState<string | null>(null)
+
+  function toggleExpanded(key: string) {
+    setExpandedKey(prev => (prev === key ? null : key))
+  }
 
   // Folder creation modal state
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false)
@@ -178,9 +186,10 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
     }
   }, [activeSubTab])
 
-  // Reset checkboxes when changing prefixes/folders
+  // Reset checkboxes and any open image preview when changing prefixes/folders
   useEffect(() => {
     setSelectedKeys([])
+    setExpandedKey(null)
   }, [currentPrefix])
 
   // Handle configuration form submission
@@ -452,6 +461,12 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
         }
       }
     }
+
+    // Always show files newest-first (latest modified at the top); folders stay
+    // grouped above the files.
+    filesList.sort(
+      (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+    )
 
     return [
       ...Array.from(foldersMap.values()),
@@ -750,8 +765,13 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] font-mono">
                   {filteredItems.length > 0 ? (
-                    filteredItems.map(item => (
-                      <tr key={item.key} className="hover:bg-white/[0.01] transition-colors group">
+                    filteredItems.map(item => {
+                      const itemContentType = (item as any).contentType as string | undefined
+                      const isImage = !item.isFolder && !!itemContentType && itemContentType.startsWith('image/')
+                      const isExpanded = expandedKey === item.key
+                      return (
+                      <React.Fragment key={item.key}>
+                      <tr className="hover:bg-white/[0.01] transition-colors group">
                         
                         <td className="px-4 py-3">
                           <input 
@@ -814,15 +834,26 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                                 {copiedKey === item.key ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                               </button>
                               
-                              <a
-                                href={(item as any).url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center"
-                                title="Open file in new tab"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
+                              {isImage ? (
+                                <button
+                                  onClick={() => toggleExpanded(item.key)}
+                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                                  title={isExpanded ? 'Hide preview' : 'Show preview'}
+                                  aria-expanded={isExpanded}
+                                >
+                                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                              ) : (
+                                <a
+                                  href={(item as any).url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                                  title="Open file in new tab"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
 
                               <button
                                 onClick={() => handleDeleteFile(item.key)}
@@ -846,7 +877,34 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                         </td>
 
                       </tr>
-                    ))
+
+                      {/* Inline image preview — expands downward, one open at a time */}
+                      {isImage && isExpanded && (
+                        <tr className="bg-black/20">
+                          <td colSpan={7} className="px-4 py-4">
+                            <div className="flex flex-col items-center gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={(item as any).url}
+                                alt={item.name}
+                                className="max-h-80 max-w-full rounded-lg border border-white/[0.08] object-contain bg-black/30"
+                              />
+                              <a
+                                href={(item as any).url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-sans text-white/40 hover:text-white transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                Open original in new tab
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
+                      )
+                    })
                   ) : (
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center text-white/30 font-sans">

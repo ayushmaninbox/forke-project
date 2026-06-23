@@ -56,12 +56,16 @@ export default function RelatedArticles({ posts }: { posts: RelatedCard[] }) {
           </h2>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/*
+          Mobile + tablet: horizontal swipe carousel (scroll-snap, edge-peeking
+          next card). lg and up: the original 3-col grid — desktop is untouched.
+        */}
+        <div className="mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:grid lg:snap-none lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:pb-0">
           {posts.map((post) => (
             <Link
               key={post.slug}
               href={`/blogs/${post.slug}`}
-              className="group flex flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/[0.018] transition-colors hover:border-white/20"
+              className="group flex w-[82%] shrink-0 snap-start flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-white/[0.018] transition-colors hover:border-white/20 sm:w-[48%] lg:w-auto lg:shrink"
             >
               <div className="aspect-[16/9] w-full overflow-hidden bg-white/[0.02]">
                 <CoverImage post={post} />

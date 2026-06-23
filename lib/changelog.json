@@ -4,6 +4,14 @@
     "label": "jun 19, 2026",
     "entries": [
       {
+        "shortHash": "8a31725",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-19T13:42:50+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add RelatedArticles component to blog post pages"
+      },
+      {
         "shortHash": "132c412",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-19T10:39:28+05:30",

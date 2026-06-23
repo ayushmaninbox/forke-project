@@ -51,10 +51,20 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
   const [perPage, setPerPage] = useState(9)
   const [page, setPage] = useState(1)
   const [mounted, setMounted] = useState(false)
+  // Desktop pulls the newest post out as a full-width feature. On mobile we skip
+  // that treatment so it reads as a normal card and the grid is just 5/page.
+  const [isDesktop, setIsDesktop] = useState(true)
 
   useEffect(() => {
     setMounted(true)
-    const apply = () => setPerPage(window.matchMedia('(min-width: 1024px)').matches ? 9 : 5)
+    const apply = () => {
+      const desktop = window.matchMedia('(min-width: 1024px)').matches
+      // Tablet = the sm breakpoint and up, but below desktop (2-col grid).
+      const tablet = window.matchMedia('(min-width: 640px)').matches && !desktop
+      setIsDesktop(desktop)
+      // Desktop (3-col): 9 per page. Tablet (2-col): 6 per page. Mobile: 5.
+      setPerPage(desktop ? 9 : tablet ? 6 : 5)
+    }
     apply()
     window.addEventListener('resize', apply)
     return () => window.removeEventListener('resize', apply)
@@ -71,16 +81,20 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
     )
   }
 
+  // Desktop: newest post becomes the feature, the remainder fills the grid.
+  // Mobile: no feature — every post (including the newest) flows into the grid.
   const [featured, ...rest] = posts
-  const totalPages = Math.max(1, Math.ceil(rest.length / perPage))
+  const showFeatured = isDesktop
+  const gridPosts = showFeatured ? rest : posts
+  const totalPages = Math.max(1, Math.ceil(gridPosts.length / perPage))
   const safePage = Math.min(page, totalPages)
   const start = (safePage - 1) * perPage
-  const visible = rest.slice(start, start + perPage)
+  const visible = gridPosts.slice(start, start + perPage)
 
   return (
     <div>
-      {/* ── Featured story — only on page one ──────────────────────────────── */}
-      {safePage === 1 && (
+      {/* ── Featured story — desktop only, page one only ───────────────────── */}
+      {showFeatured && safePage === 1 && (
         <Link
           href={`/blogs/${featured.slug}`}
           className="group mb-14 grid overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015] transition-colors hover:border-white/20 lg:grid-cols-[1.2fr_1fr]"

@@ -591,6 +591,36 @@ html, body {
   pointer-events: none;
 }
 
+/* Images rendered in the public reader (from serialized content HTML).
+   The editor NodeView (ResizableImage) renders rounding + alignment via React
+   wrappers that are NOT part of the serialized <img>, so the public page only
+   gets `<img style="width:Npx" data-align="...">`. These rules reproduce the
+   editor's look: rounded corners, proportional scaling, and alignment. */
+.blog-prose img {
+  display: block;
+  /* Fill the text column by default; an inline `style="width:Npx"` from a
+     resized image overrides this and still scales proportionally via the
+     max-width/height pair below. */
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  /* Default (center) alignment. */
+  margin: 1.5rem auto;
+}
+.blog-prose img[data-align='left'] {
+  margin-left: 0;
+  margin-right: auto;
+}
+.blog-prose img[data-align='right'] {
+  margin-left: auto;
+  margin-right: 0;
+}
+.blog-prose img[data-align='center'] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Embeds rendered in the public reader (from serialized content HTML) */
 .blog-prose .blog-embed {
   margin: 1.5rem 0;
