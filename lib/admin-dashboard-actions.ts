@@ -23,9 +23,9 @@ export async function getPendingOwners() {
     user: users,
     owner: owners
   })
-  .from(users)
-  .innerJoin(owners, eq(users.id, owners.id))
-  .where(eq(users.isApproved, false))
+    .from(users)
+    .innerJoin(owners, eq(users.id, owners.id))
+    .where(eq(users.isApproved, false))
 
   return rows.map((r) => ({
     ...r,
@@ -42,9 +42,9 @@ export async function getApprovedOwners() {
     user: users,
     owner: owners
   })
-  .from(users)
-  .innerJoin(owners, eq(users.id, owners.id))
-  .where(eq(users.isApproved, true))
+    .from(users)
+    .innerJoin(owners, eq(users.id, owners.id))
+    .where(eq(users.isApproved, true))
 
   return rows.map((r) => ({
     ...r,
@@ -166,8 +166,8 @@ export async function toggleDeveloperBan(userId: string, shouldBan: boolean) {
   return { success: true }
 }
 
-import { 
-  isWaitlistEnabled, 
+import {
+  isWaitlistEnabled,
   setWaitlistEnabled,
   getWaitlistBypassPassword,
   setWaitlistBypassPassword
@@ -276,7 +276,7 @@ export async function inviteAdmin(
       inviteExpiresAt,
     })
 
-    const baseUrl = process.env.AUTH_URL || 'https://forke.space'
+    const baseUrl = process.env.AUTH_URL || 'https://www.forke.space'
     const inviteLink = `${baseUrl}/admin/setup?token=${inviteToken}`
 
     const emailSent = await sendAdminInvitation(email.trim().toLowerCase(), name.trim(), inviteLink)

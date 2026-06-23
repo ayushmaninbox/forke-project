@@ -32,7 +32,7 @@ const BRAND = {
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
   serif: "Georgia,'Times New Roman',serif",
   mono: "ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace",
-  baseUrl: 'https://forke.space',
+  baseUrl: 'https://www.forke.space',
 }
 
 // ----------------------------------------------------------------------------
@@ -147,16 +147,55 @@ function emailShell(opts: {
   /** When true, the body cell carries no padding — bodyHtml manages its own edge
    *  spacing and full-bleed dividers (used by the newsletter layout). */
   fullBleedBody?: boolean
+  /** Card max-width in px. Real sends use the email standard (600). The /email
+   *  preview passes a wider value so the email fills the laptop frame. */
+  maxWidth?: number
+  /** Recent blogs to display at the bottom of the email. */
+  recentPosts?: BlogEmailRecent[]
 }): string {
+  const cardW = opts.maxWidth ?? 600
   const bannerRow = opts.banner
     ? `<tr><td align="center" style="padding:0;line-height:0;font-size:0;">
-         <img src="${BRAND.baseUrl}/forke-assets/email-banners/${opts.banner}" alt="Forke" width="600" style="width:100%;max-width:600px;height:auto;display:block;border-bottom:1px solid ${BRAND.hairlineSoft};" />
+         <img src="${BRAND.baseUrl}/forke-assets/email-banners/${opts.banner}" alt="Forke" width="${cardW}" style="width:100%;max-width:${cardW}px;height:auto;display:block;border-bottom:1px solid ${BRAND.hairlineSoft};" />
        </td></tr>`
     : ''
 
   const preheader = opts.preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`
     : ''
+
+  const pad = opts.fullBleedBody ? '36px' : '32px'
+  const recent = (opts.recentPosts || []).slice(0, 3)
+  const recentRows = recent.length
+    ? `
+      <tr><td style="padding:0 ${pad};"><div style="height:1px;background:${BRAND.hairlineSoft};"></div></td></tr>
+      <tr><td style="padding:32px ${pad} 14px ${pad};">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+          <tr>
+            <td style="font-family:${BRAND.sans};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND.textMuted};padding-right:12px;">Latest from the blog</td>
+            <td><div style="width:60px;height:1px;background:${BRAND.hairlineSoft};"></div></td>
+          </tr>
+        </table>
+        ${recent.map((r, i) => blogRecentRow(r, i % 2 === 1)).join('')}
+      </td></tr>`
+    : ''
+
+  const socialsRow = `
+    <tr><td style="padding:18px ${pad} 24px ${pad};border-top:1px solid ${BRAND.hairlineSoft};">
+      <p style="font-family:${BRAND.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${BRAND.textMuted};margin:0 0 14px;">Follow along</p>
+      ${blogSocials()}
+    </td></tr>
+  `
+
+  const combinedStyle = `
+    @media only screen and (max-width: 480px) {
+      .nrow { direction: ltr !important; }
+      .nrow .ncol { display: block !important; width: 100% !important; min-width: 0 !important; }
+      .nrow .nthumb { margin-bottom: 12px !important; }
+      .nrow .ngap { display: none !important; }
+    }
+    ${opts.headStyle || ''}
+  `
 
   return `<!DOCTYPE html>
 <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
@@ -167,7 +206,7 @@ function emailShell(opts: {
     <meta name="supported-color-schemes" content="dark">
     <title>${opts.title}</title>
     <!--[if mso]><style>table,td,a{font-family:Arial,Helvetica,sans-serif !important;}</style><![endif]-->
-    ${opts.headStyle ? `<style>${opts.headStyle}</style>` : ''}
+    <style>${combinedStyle}</style>
   </head>
   <body style="margin:0;padding:0;background:${BRAND.canvas};-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;">
     ${preheader}
@@ -175,7 +214,7 @@ function emailShell(opts: {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.canvas};background-image:radial-gradient(circle at 50% 6%, rgba(255,122,0,0.18) 0%, rgba(5,5,5,0) 52%);">
       <tr>
         <td align="center" style="padding:52px 16px;">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${BRAND.card};border:1px solid rgba(255,122,0,0.16);border-radius:24px;overflow:hidden;box-shadow:0 0 80px rgba(255,122,0,0.07);">
+          <table role="presentation" width="${cardW}" cellpadding="0" cellspacing="0" border="0" style="max-width:${cardW}px;width:100%;background:${BRAND.card};border:1px solid rgba(255,122,0,0.16);border-radius:24px;overflow:hidden;box-shadow:0 0 80px rgba(255,122,0,0.07);">
 
             <!-- Header bar: wordmark + tiny mono tag -->
             <tr>
@@ -198,6 +237,9 @@ function emailShell(opts: {
               </td>
             </tr>
 
+            ${recentRows}
+            ${socialsRow}
+
             <!-- Footer -->
             <tr>
               <td style="padding:24px 32px 30px 32px;border-top:1px solid ${BRAND.hairlineSoft};">
@@ -209,9 +251,6 @@ function emailShell(opts: {
                         The micro-task marketplace for developers.<br>
                         <a href="mailto:support@forke.space" style="color:${BRAND.textMuted};text-decoration:none;">support@forke.space</a>
                       </p>
-                    </td>
-                    <td align="right" style="vertical-align:top;">
-                      <a href="https://www.linkedin.com/company/forke/" style="font-family:${BRAND.mono};font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${BRAND.textMuted};text-decoration:none;">LinkedIn &rarr;</a>
                     </td>
                   </tr>
                 </table>
@@ -249,7 +288,7 @@ function resolveFromEmail(): string {
 }
 
 function resolveBaseUrl(): string {
-  let baseUrl = process.env.AUTH_URL || 'https://forke.space'
+  let baseUrl = process.env.AUTH_URL || 'https://www.forke.space'
   if (baseUrl.startsWith('"') && baseUrl.endsWith('"')) baseUrl = baseUrl.slice(1, -1)
   if (baseUrl.startsWith("'") && baseUrl.endsWith("'")) baseUrl = baseUrl.slice(1, -1)
   return baseUrl.replace(/\/$/, '')
@@ -325,8 +364,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 // Each returns the full HTML string for one message.
 // ----------------------------------------------------------------------------
 
-export function buildWelcomeEmail(): string {
+export function buildWelcomeEmail(recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Welcome to the Forke Waitlist',
     preheader: 'You’re on the list. Prepare your editor — something big is about to drop.',
     banner: 'main-banner.png',
@@ -343,8 +384,10 @@ export function buildWelcomeEmail(): string {
   })
 }
 
-export function buildAdminInvitationEmail(name: string, inviteLink: string): string {
+export function buildAdminInvitationEmail(name: string, inviteLink: string, recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Forke — Administrative Invitation',
     preheader: 'You’ve been invited to the Forke admin console. Set up your account to get started.',
     banner: 'admin-approval.png',
@@ -360,8 +403,10 @@ export function buildAdminInvitationEmail(name: string, inviteLink: string): str
   })
 }
 
-export function buildAccountDeletionScheduledEmail(): string {
+export function buildAccountDeletionScheduledEmail(recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Forke — Account Deletion Scheduled',
     preheader: 'Your account is scheduled for deletion in 30 days. Sign back in to cancel.',
     banner: 'main-banner.png',
@@ -376,8 +421,10 @@ export function buildAccountDeletionScheduledEmail(): string {
   })
 }
 
-export function buildOwnerApprovedEmail(name: string, signInLink: string): string {
+export function buildOwnerApprovedEmail(name: string, signInLink: string, recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Forke — Your Owner Account is Approved',
     preheader: 'Your owner application is approved. Your dashboard is ready.',
     banner: 'owner-approved.png',
@@ -392,9 +439,11 @@ export function buildOwnerApprovedEmail(name: string, signInLink: string): strin
   })
 }
 
-export function buildOwnerDeclinedEmail(name: string, reason: string, applyLink: string): string {
+export function buildOwnerDeclinedEmail(name: string, reason: string, applyLink: string, recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   const safeReason = (reason || '').trim() || 'Your application did not meet our current onboarding criteria.'
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Forke — Owner Application Update',
     preheader: 'An update on your Forke owner application.',
     banner: 'owner-rejected.png',
@@ -411,8 +460,10 @@ export function buildOwnerDeclinedEmail(name: string, reason: string, applyLink:
   })
 }
 
-export function buildBannedEmail(name: string, accountKind: 'owner' | 'developer', reviewLink: string): string {
+export function buildBannedEmail(name: string, accountKind: 'owner' | 'developer', reviewLink: string, recentPosts?: BlogEmailRecent[], maxWidth?: number): string {
   return emailShell({
+    maxWidth,
+    recentPosts,
     title: 'Forke — Account Suspended',
     preheader: 'Your account has been suspended. You can request a review.',
     banner: 'user-ban.png',
@@ -424,6 +475,42 @@ export function buildBannedEmail(name: string, accountKind: 'owner' | 'developer
       ${p('If you believe this was a mistake, submit a request for review below and our team will look into it:')}
       ${buttonPrimary(reviewLink, 'Request a review')}
       ${fallbackLink(reviewLink)}
+    `,
+  })
+}
+
+/**
+ * "Forke is live" announcement — broadcast to the waitlist when the site goes
+ * public to browse (all pages viewable; the product itself still opens in waves).
+ * Mirrors the LinkedIn launch post: open house before the doors open.
+ */
+export function buildSiteLiveEmail(opts?: { unsubscribe?: boolean; maxWidth?: number; recentPosts?: BlogEmailRecent[] }): string {
+  const siteUrl = 'https://www.forke.space/?source=email'
+  const waitlistUrl = 'https://www.forke.space/waitlist?source=email'
+  const footerExtra = opts?.unsubscribe
+    ? `<p style="font-family:${BRAND.sans};font-size:11px;line-height:1.6;color:${BRAND.textFaint};margin:14px 0 0 0;">
+         You're receiving this because you joined the Forke waitlist.
+         <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:${BRAND.textMuted};text-decoration:underline;">Unsubscribe</a>.
+       </p>`
+    : ''
+  return emailShell({
+    maxWidth: opts?.maxWidth,
+    recentPosts: opts?.recentPosts,
+    title: 'Forke is live',
+    preheader: 'The site is live to explore. The product opens in waves — you’re on the list.',
+    banner: 'main-banner.png',
+    footerLabel: 'Launch Announcement',
+    footerExtra,
+    bodyHtml: `
+      ${heading('The site is live.', 'Come look around.')}
+      ${p('Big moment: you can now actually explore Forke. The landing, the blogs, how levels work, what we’re building — all of it is real and public. Go click around.')}
+      ${p('What’s <strong style="color:' + BRAND.textHigh + ';font-weight:600;">not</strong> open yet is the part that matters most: claiming bounties, shipping real work, getting paid. That’s still rolling out in waves — and as a waitlister, you’re first in line.')}
+      ${calloutBox('Think of it as an open house', 'Doors aren’t fully open yet, but you’re welcome to walk through. Read the blogs, see the vision, and we’ll email you the moment your workspace is ready.')}
+      ${buttonPrimary(siteUrl, 'Explore Forke')}
+      ${p('Want to make sure you’re set for early access when functionality goes live? Confirm your spot:', 14)}
+      ${buttonGhost(waitlistUrl, 'Check your waitlist spot')}
+      ${divider(24, 20)}
+      ${p('Questions or feedback? Just reply to this email or reach us at <a href="mailto:support@forke.space" style="color:' + BRAND.accent + ';text-decoration:none;">support@forke.space</a>.', 0)}
     `,
   })
 }
@@ -446,6 +533,8 @@ export interface BlogEmailData {
   url: string
   /** Up to 3 recent posts shown below the featured one, in alternating rows. */
   recentPosts?: BlogEmailRecent[]
+  /** Card max-width override (preview only). Real sends use 600. */
+  maxWidth?: number
   /**
    * When true, append an unsubscribe footer. Resend's Broadcasts API REQUIRES an
    * unsubscribe link and substitutes the {{{RESEND_UNSUBSCRIBE_URL}}} token at
@@ -508,12 +597,18 @@ function blogRecentRow(r: BlogEmailRecent, imgRight: boolean): string {
 
 /** Footer-style social row: Instagram · LinkedIn · GitHub bordered icon tiles. */
 function blogSocials(): string {
-  const tile = (href: string, svg: string) =>
-    `<td style="padding:0 5px;"><a href="${href}" target="_blank" style="display:inline-block;width:42px;height:42px;border:1px solid ${BRAND.hairline};border-radius:11px;background:rgba(255,255,255,0.02);text-align:center;line-height:42px;text-decoration:none;">${svg}</a></td>`
-  const ig = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${BRAND.textMuted}" style="vertical-align:middle;"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85 0 3.2-.01 3.58-.07 4.85-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07-3.2 0-3.58-.01-4.85-.07-3.26-.15-4.77-1.7-4.92-4.92-.06-1.27-.07-1.65-.07-4.85 0-3.2.01-3.58.07-4.85.15-3.23 1.66-4.77 4.92-4.92C8.42 2.17 8.8 2.16 12 2.16zm0 1.95c-3.15 0-3.52.01-4.76.07-2.5.11-3.49 1.12-3.6 3.6-.06 1.24-.07 1.61-.07 4.22 0 2.61.01 2.98.07 4.22.11 2.48 1.1 3.49 3.6 3.6 1.24.06 1.61.07 4.76.07s3.52-.01 4.76-.07c2.5-.11 3.49-1.12 3.6-3.6.06-1.24.07-1.61.07-4.22 0-2.61-.01-2.98-.07-4.22-.11-2.48-1.1-3.49-3.6-3.6-1.24-.06-1.61-.07-4.76-.07zm0 3.32a4.57 4.57 0 100 9.14 4.57 4.57 0 000-9.14zm0 7.54a2.97 2.97 0 110-5.94 2.97 2.97 0 010 5.94zm4.77-7.74a1.07 1.07 0 100 2.14 1.07 1.07 0 000-2.14z"/></svg>`
-  const li = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${BRAND.textMuted}" style="vertical-align:middle;"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.27c-.97 0-1.75-.79-1.75-1.76s.78-1.76 1.75-1.76 1.75.79 1.75 1.76-.78 1.76-1.75 1.76zm13.5 12.27h-3v-5.6c0-3.37-4-3.11-4 0v5.6h-3v-11h3v1.77c1.4-2.59 7-2.78 7 2.48v6.75z"/></svg>`
-  const gh = `<svg width="18" height="18" viewBox="0 0 24 24" fill="${BRAND.textMuted}" style="vertical-align:middle;"><path d="M12 0c-6.63 0-12 5.37-12 12 0 5.3 3.44 9.8 8.21 11.39.6.11.79-.26.79-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.31.76-1.6-2.67-.31-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.31-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.41 1.02.01 2.04.14 3 .41 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.49 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.19.69.8.58 4.77-1.59 8.2-6.09 8.2-11.39 0-6.63-5.37-12-12-12z"/></svg>`
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left"><tr>${tile('https://www.instagram.com/forke.space/', ig)}${tile('https://www.linkedin.com/company/forke/', li)}${tile('https://github.com/forke-org', gh)}</tr></table>`
+  const tile = (href: string, imgSrc: string, alt: string) => {
+    return `<td style="padding:0 5px;"><a href="${href}" target="_blank" style="display:inline-block;width:42px;height:42px;border:1px solid ${BRAND.hairline};border-radius:11px;background:rgba(255,255,255,0.02);text-align:center;line-height:42px;text-decoration:none;"><img src="${imgSrc}" width="18" height="18" alt="${alt}" style="vertical-align:middle;border:0;display:inline-block;" /></a></td>`
+  }
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
+      <tr>
+        ${tile('https://www.instagram.com/forke.space/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/instagram-new.png', 'Instagram')}
+        ${tile('https://www.linkedin.com/company/forke/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/linkedin.png', 'LinkedIn')}
+        ${tile('https://github.com/forke-org', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/github.png', 'GitHub')}
+      </tr>
+    </table>
+  `
 }
 
 /**
@@ -524,23 +619,13 @@ function blogSocials(): string {
 export function buildBlogEmail(data: BlogEmailData): string {
   const dateStr = formatBlogDate(data.publishedAt)
   const minutes = data.readingMinutes && data.readingMinutes > 0 ? data.readingMinutes : 1
-  const recent = (data.recentPosts || []).slice(0, 3)
 
   const metaLine = [dateStr, `${minutes} min read`].filter(Boolean).join(' · ')
   const excerptLine = data.excerpt?.trim()
     ? `<p class="fx fx-3" style="font-family:${BRAND.sans};font-size:15px;line-height:1.7;color:${BRAND.textBody};margin:0 0 12px;">${clampText(data.excerpt, 150)}</p>`
     : ''
 
-  const recentSection = recent.length
-    ? `
-      <tr><td style="padding:0 36px;"><div style="height:1px;background:${BRAND.hairlineSoft};"></div></td></tr>
-      <tr><td style="padding:32px 36px 14px;">
-        <table cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td style="font-family:${BRAND.mono};font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:${BRAND.textMuted};padding-right:12px;">Latest from the blog</td><td><div style="width:60px;height:1px;background:${BRAND.hairlineSoft};"></div></td></tr></table>
-        ${recent.map((r, i) => blogRecentRow(r, i % 2 === 1)).join('')}
-      </td></tr>`
-    : ''
-
-  // Staggered fade-in (Apple Mail) + phone stacking for the latest rows.
+  // Staggered fade-in (Apple Mail) for the featured post.
   const headStyle = `
     @media (prefers-reduced-motion: no-preference) {
       .fx { opacity: 0; animation: forkeFade 0.9s ease-out forwards; }
@@ -551,12 +636,6 @@ export function buildBlogEmail(data: BlogEmailData): string {
     }
     @keyframes forkeFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes forkeRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    @media only screen and (max-width: 480px) {
-      .nrow { direction: ltr !important; }
-      .nrow .ncol { display: block !important; width: 100% !important; min-width: 0 !important; }
-      .nrow .nthumb { margin-bottom: 12px !important; }
-      .nrow .ngap { display: none !important; }
-    }
   `
 
   // Broadcasts require an unsubscribe link; Resend swaps the token at send time.
@@ -568,12 +647,14 @@ export function buildBlogEmail(data: BlogEmailData): string {
     : ''
 
   return emailShell({
+    maxWidth: data.maxWidth,
     title: data.title,
     preheader: data.excerpt?.trim() || `New on the Forke blog: ${data.title}`,
     footerLabel: 'New Blog Post',
     headStyle,
     footerExtra,
     fullBleedBody: true,
+    recentPosts: data.recentPosts,
     bodyHtml: `
       <!-- Featured (Apple-Newsroom) -->
       <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:34px 44px 24px;text-align:center;">
@@ -586,12 +667,6 @@ export function buildBlogEmail(data: BlogEmailData): string {
         <p class="fx fx-3" style="font-family:${BRAND.mono};font-size:11px;color:${BRAND.textFaint};margin:0 0 22px;">${metaLine}</p>
         <div class="fx-cta">${buttonPrimary(data.url, 'Read more')}</div>
       </td></tr>
-      ${recentSection}
-      <!-- Socials -->
-      <tr><td style="padding:18px 36px 24px;border-top:1px solid ${BRAND.hairlineSoft};">
-        <p style="font-family:${BRAND.mono};font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${BRAND.textMuted};margin:0 0 14px;">Follow along</p>
-        ${blogSocials()}
-      </td></tr>
       </table>
     `,
   })
@@ -600,16 +675,6 @@ export function buildBlogEmail(data: BlogEmailData): string {
 // ----------------------------------------------------------------------------
 // Public senders — signatures, subjects, and from-addresses unchanged.
 // ----------------------------------------------------------------------------
-
-export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
-  return sendResendEmail(
-    toEmail,
-    'Welcome to the Forke Waitlist!',
-    buildWelcomeEmail(),
-    'welcome',
-    'Forke Waitlist <waitlist@forke.space>'
-  )
-}
 
 // ----------------------------------------------------------------------------
 // Resend Broadcasts API — for BULK subscriber sends (e.g. blog announcements).
@@ -626,7 +691,9 @@ function resolveAudienceId(): string {
   let id = process.env.RESEND_AUDIENCE_ID || ''
   if (id.startsWith('"') && id.endsWith('"')) id = id.slice(1, -1)
   if (id.startsWith("'") && id.endsWith("'")) id = id.slice(1, -1)
-  return id.trim()
+  id = id.trim()
+  if (id === 'your_resend_audience_id_here') return ''
+  return id
 }
 
 async function resendFetch(path: string, init: RequestInit, apiKey: string) {
@@ -640,10 +707,27 @@ async function resendFetch(path: string, init: RequestInit, apiKey: string) {
   })
 }
 
+async function findAudienceByName(name: string, apiKey: string): Promise<string | null> {
+  try {
+    const res = await resendFetch('/audiences', { method: 'GET' }, apiKey)
+    if (!res.ok) return null
+    const json = (await res.json()) as { data?: { id: string; name: string }[] }
+    const match = json.data?.find((a) => a.name === name)
+    return match?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 /** Ensure an audience exists; returns its id. Uses RESEND_AUDIENCE_ID if set. */
 async function ensureAudience(apiKey: string): Promise<string | null> {
   const configured = resolveAudienceId()
   if (configured) return configured
+
+  // Try to find an existing audience first
+  const existingId = await findAudienceByName('Forke Subscribers', apiKey)
+  if (existingId) return existingId
+
   // No id configured — create a default audience so the flow still works.
   try {
     const res = await resendFetch('/audiences', {
@@ -826,25 +910,149 @@ export async function sendBlogPublishedBroadcast(blog: {
   }
 }
 
+export async function getRecentPostsForEmail(): Promise<BlogEmailRecent[]> {
+  try {
+    const { db } = await import('./db')
+    const { blogs } = await import('./db/schema')
+    const { eq, desc } = await import('drizzle-orm')
+    const rows = await db
+      .select({
+        title: blogs.title,
+        slug: blogs.slug,
+        excerpt: blogs.excerpt,
+        coverImage: blogs.coverImage,
+        readingMinutes: blogs.readingMinutes,
+      })
+      .from(blogs)
+      .where(eq(blogs.status, 'published'))
+      .orderBy(desc(blogs.publishedAt))
+      .limit(3)
+    const baseUrl = resolveBaseUrl()
+    return rows.map((r) => ({
+      title: r.title,
+      excerpt: r.excerpt,
+      coverImage: r.coverImage,
+      readingMinutes: r.readingMinutes,
+      url: `${baseUrl}/blogs/${r.slug}`,
+    }))
+  } catch (err) {
+    console.error('Failed to load recent posts for email:', err)
+    return []
+  }
+}
+
+export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
+  const recentPosts = await getRecentPostsForEmail()
+  return sendResendEmail(
+    toEmail,
+    'Welcome to the Forke Waitlist!',
+    buildWelcomeEmail(recentPosts),
+    'welcome',
+    'Forke Waitlist <waitlist@forke.space>'
+  )
+}
+
+export async function sendSiteLiveBroadcast(): Promise<{ success: boolean; sentCount: number; broadcastId?: string }> {
+  const apiKey = resolveResendApiKey()
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping site-live broadcast.')
+    return { success: false, sentCount: 0 }
+  }
+
+  // Resolve recipients from our DB (de-duplicated, case-insensitive).
+  const emails: string[] = []
+  try {
+    const { db } = await import('./db')
+    const { subscribers } = await import('./db/schema')
+    const rows = await db.select({ email: subscribers.email }).from(subscribers)
+    const seen = new Set<string>()
+    for (const r of rows) {
+      const e = r.email?.trim()
+      if (!e) continue
+      const key = e.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      emails.push(e)
+    }
+  } catch (err) {
+    console.error('Failed to load subscribers for site-live broadcast:', err)
+    return { success: false, sentCount: 0 }
+  }
+  if (emails.length === 0) return { success: true, sentCount: 0 }
+
+  // 1) Ensure an audience and 2) sync our subscribers into it as contacts.
+  const audienceId = await ensureAudience(apiKey)
+  if (!audienceId) return { success: false, sentCount: 0 }
+  const synced = await syncContactsToAudience(audienceId, emails, apiKey)
+
+  // Fetch the 3 recent published blogs to include in the email
+  const recentPosts = await getRecentPostsForEmail()
+
+  const html = buildSiteLiveEmail({
+    unsubscribe: true, // Broadcasts API requires an unsubscribe link.
+    recentPosts,
+  })
+  const subject = 'Forke is live'
+
+  try {
+    // 3) Create the broadcast against the audience.
+    const createRes = await resendFetch('/broadcasts', {
+      method: 'POST',
+      body: JSON.stringify({
+        audience_id: audienceId,
+        from: 'Forke Waitlist <waitlist@forke.space>',
+        reply_to: 'support@forke.space',
+        subject,
+        html,
+        name: 'Forke is Live Broadcast',
+      }),
+    }, apiKey)
+    if (!createRes.ok) {
+      console.error('Failed to create Resend broadcast:', await createRes.text())
+      return { success: false, sentCount: 0 }
+    }
+    const broadcast = (await createRes.json()) as { id: string }
+    const broadcastId = broadcast.id
+
+    // 4) Send it now.
+    const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }, apiKey)
+    if (!sendRes.ok) {
+      console.error('Failed to send Resend broadcast:', await sendRes.text())
+      return { success: false, sentCount: 0, broadcastId }
+    }
+
+    console.log(`Site-live broadcast sent to audience ${audienceId} (${synced} contacts).`)
+    return { success: true, sentCount: synced, broadcastId }
+  } catch (err) {
+    console.error('Error dispatching site-live broadcast:', err)
+    return { success: false, sentCount: 0 }
+  }
+}
+
 export async function sendAdminInvitation(
   toEmail: string,
   name: string,
   inviteLink: string
 ): Promise<boolean> {
+  const recentPosts = await getRecentPostsForEmail()
   return sendResendEmail(
     toEmail,
     'Action Required: Complete your Forke Admin Setup',
-    buildAdminInvitationEmail(name, inviteLink),
+    buildAdminInvitationEmail(name, inviteLink, recentPosts),
     'admin invitation',
     'Forke Onboarding <onboarding@forke.space>'
   )
 }
 
 export async function sendAccountDeletionScheduledEmail(toEmail: string): Promise<boolean> {
+  const recentPosts = await getRecentPostsForEmail()
   return sendResendEmail(
     toEmail,
     'Forke: Your account deletion has been scheduled',
-    buildAccountDeletionScheduledEmail(),
+    buildAccountDeletionScheduledEmail(recentPosts),
     'deletion scheduled',
     'Forke Security <security@forke.space>'
   )
@@ -852,10 +1060,11 @@ export async function sendAccountDeletionScheduledEmail(toEmail: string): Promis
 
 export async function sendOwnerApprovedEmail(toEmail: string, name: string): Promise<boolean> {
   const signInLink = `${resolveBaseUrl()}/signin`
+  const recentPosts = await getRecentPostsForEmail()
   return sendResendEmail(
     toEmail,
     'Your Forke owner account is approved',
-    buildOwnerApprovedEmail(name, signInLink),
+    buildOwnerApprovedEmail(name, signInLink, recentPosts),
     'owner approval',
     'Forke Approvals <approvals@forke.space>'
   )
@@ -863,10 +1072,11 @@ export async function sendOwnerApprovedEmail(toEmail: string, name: string): Pro
 
 export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reason: string): Promise<boolean> {
   const applyLink = `${resolveBaseUrl()}/signin`
+  const recentPosts = await getRecentPostsForEmail()
   return sendResendEmail(
     toEmail,
     'Update on your Forke owner application',
-    buildOwnerDeclinedEmail(name, reason, applyLink),
+    buildOwnerDeclinedEmail(name, reason, applyLink, recentPosts),
     'owner decline',
     'Forke Approvals <approvals@forke.space>'
   )
@@ -874,10 +1084,11 @@ export async function sendOwnerDeclinedEmail(toEmail: string, name: string, reas
 
 async function sendBannedEmail(toEmail: string, name: string, accountKind: 'owner' | 'developer'): Promise<boolean> {
   const reviewLink = `${resolveBaseUrl()}/auth-error?error=AccessDenied`
+  const recentPosts = await getRecentPostsForEmail()
   return sendResendEmail(
     toEmail,
     'Your Forke account has been suspended',
-    buildBannedEmail(name, accountKind, reviewLink),
+    buildBannedEmail(name, accountKind, reviewLink, recentPosts),
     `${accountKind} ban`,
     'Forke Bans <bans@forke.space>'
   )

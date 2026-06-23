@@ -198,14 +198,14 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
   useFrame((state, delta) => {
     if (!fixed.current || !cardRef.current) return
 
-    // Relax band joints toward rest, then redraw the woven strap.
-    ;[j1, j2].forEach((ref) => {
-      if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
-      if (!isHome) {
-        const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
-        ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
-      }
-    })
+      // Relax band joints toward rest, then redraw the woven strap.
+      ;[j1, j2].forEach((ref) => {
+        if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation())
+        if (!isHome) {
+          const clampedDistance = Math.max(0.1, Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())))
+          ref.current.lerped.lerp(ref.current.translation(), delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)))
+        }
+      })
     curve.points[0].copy(j3.current.translation())
     curve.points[1].copy(j2.current.lerped)
     curve.points[2].copy(j1.current.lerped)
@@ -219,7 +219,7 @@ function Band({ minSpeed = 0, maxSpeed = 50, isMobile = false, card, flipRef, qr
     const r = cardRef.current.rotation()
     quat.set(r.x, r.y, r.z, r.w)
     euler.setFromQuaternion(quat, 'YXZ')
-    
+
     if (!isHome) {
       const targetY = flipRef?.current ? Math.PI : 0
       let err = targetY - euler.y
@@ -420,7 +420,7 @@ function CardFront({ card }: { card: LanyardCard }) {
 function CardBack({ card, qrUrl }: { card: LanyardCard; qrUrl?: string }) {
   const profileUrl = qrUrl || (typeof window !== 'undefined'
     ? `${window.location.origin}/${card.username || 'forke'}`
-    : `https://forke.space/${card.username || 'forke'}`)
+    : `https://www.forke.space/${card.username || 'forke'}`)
 
   return (
     <div style={{ width: FACE_W, height: FACE_H, fontFamily: 'var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif' }} className="relative bg-[#0a0a0a] rounded-[28px] overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.6)] select-none flex flex-col">

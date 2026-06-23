@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "8e93e8c",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T17:32:03+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Update email templates with new branding, blog components, and redesigned layout"
+      },
+      {
         "shortHash": "9cca4d9",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T16:05:25+05:30",
