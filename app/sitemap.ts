@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
 import { getPublishedBlogSlugs } from '@/lib/blog-actions'
 import { ALL_ARTICLES } from '@/app/(marketing)/docs/content'
+import { isWaitlistEnabled } from '@/lib/db/settings'
 
 // Regenerate so newly published posts appear without a redeploy.
 export const dynamic = 'force-dynamic'
@@ -26,11 +27,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/register', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/signin', priority: 0.5, changeFrequency: 'monthly' },
-    { path: '/waitlist', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'monthly' },
     { path: '/refund', priority: 0.3, changeFrequency: 'monthly' },
   ]
+
+  // /waitlist only exists while the lock is on (the route 404s once the waitlist
+  // is disabled), so only advertise it in the sitemap when it's actually live.
+  try {
+    if (await isWaitlistEnabled()) {
+      entries.push({ path: '/waitlist', priority: 0.5, changeFrequency: 'monthly' })
+    }
+  } catch {
+    // If the setting is briefly unreadable, omit /waitlist rather than risk
+    // listing a URL that may 404.
+  }
 
   const staticEntries: MetadataRoute.Sitemap = entries.map(
     ({ path, priority, changeFrequency }) => ({
