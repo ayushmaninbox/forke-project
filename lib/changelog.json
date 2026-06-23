@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "89ad071",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T14:16:27+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Update Open Graph image asset"
+      },
+      {
         "shortHash": "d8f14f2",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T14:13:15+05:30",
