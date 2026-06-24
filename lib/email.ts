@@ -603,8 +603,11 @@ function blogSocials(): string {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="left">
       <tr>
-        ${tile('https://www.instagram.com/forke.space/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/instagram-new.png', 'Instagram')}
         ${tile('https://www.linkedin.com/company/forke/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/linkedin.png', 'LinkedIn')}
+        ${tile('https://x.com/forkespace', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/twitterx.png', 'X')}
+        ${tile('https://www.instagram.com/forke.space/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/instagram-new.png', 'Instagram')}
+        ${tile('https://www.threads.com/@forke.space', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/threads.png', 'Threads')}
+        ${tile('https://www.facebook.com/people/Forke/61591130679350/', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/facebook-new.png', 'Facebook')}
         ${tile('https://github.com/forke-org', 'https://img.icons8.com/ios-glyphs/60/a3a3a3/github.png', 'GitHub')}
       </tr>
     </table>

@@ -4,6 +4,14 @@
     "label": "jun 23, 2026",
     "entries": [
       {
+        "shortHash": "5505fad",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-23T18:18:03+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add blog post section to email templates and update base URL to www.forke.space"
+      },
+      {
         "shortHash": "8e93e8c",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-23T17:32:03+05:30",
