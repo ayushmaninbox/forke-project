@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-06-25",
+    "label": "jun 25, 2026",
+    "entries": [
+      {
+        "shortHash": "6545884",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T10:18:43+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement session-based visit tracking and audit logging for conversions"
+      }
+    ]
+  },
+  {
     "date": "2026-06-24",
     "label": "jun 24, 2026",
     "entries": [

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { adminAuditLog, users } from '@/lib/db/schema'
+import { adminAuditLog, users, authEvents } from '@/lib/db/schema'
 import { sql } from 'drizzle-orm'
 import { logAudit } from '@/lib/actions/audit-actions'
 
@@ -26,15 +26,19 @@ export async function GET(request: NextRequest) {
   try {
     // Purge logs older than 7 days
     await db.delete(adminAuditLog).where(sql`created_at < now() - interval '7 days'`)
-    
+
     // Purge accounts scheduled for deletion more than 30 days ago
     await db.delete(users).where(sql`deletion_scheduled_at < now() - interval '30 days'`)
+
+    // Purge auth security log older than 90 days — enforces the IP-retention window
+    // promised in the privacy policy. (page_visits is non-PII analytics and is kept.)
+    await db.delete(authEvents).where(sql`created_at < now() - interval '90 days'`)
 
     // Log the purge action itself in the database
     await logAudit({
       category: 'system',
       action: 'system.logs_purged_cron',
-      target: 'Logs older than 7 days and accounts scheduled for deletion > 30 days ago processed via automated cron'
+      target: 'Audit logs > 7 days, auth events > 90 days, and accounts scheduled for deletion > 30 days ago processed via automated cron'
     })
 
     return NextResponse.json({ success: true, message: 'Audit logs and scheduled account deletions processed successfully' })

@@ -24,10 +24,7 @@ import {
   resetAdminPasswordAction,
   changeAdminPasswordAction,
   logSubscribersExportAction,
-  getSidebarCounts,
-  getClicksOverTime,
-  getClickToConversion,
-  getClickStats
+  getSidebarCounts
 } from '@/lib/admin-dashboard-actions'
 import { getEnquiries } from '@/lib/actions/support-actions'
 import { adminLogout } from '@/lib/admin-actions'
@@ -73,7 +70,8 @@ import {
   Pencil,
   PenSquare,
   Code,
-  HardDrive
+  HardDrive,
+  LineChart
 } from 'lucide-react'
 import DatabaseConsole from '@/components/admin/DatabaseConsole'
 import BlogPanel from '@/components/admin/BlogPanel'
@@ -81,6 +79,7 @@ import DatabaseOverviewPanel from '@/components/admin/DatabaseOverviewPanel'
 import DatabaseMonitoringPanel from '@/components/admin/DatabaseMonitoringPanel'
 import ActivityFeedPanel from '@/components/admin/ActivityFeedPanel'
 import BucketsPanel from '@/components/admin/BucketsPanel'
+import TrackerPanel from '@/components/admin/TrackerPanel'
 import { getActivityLogLiveStatusAction } from '@/lib/actions/audit-actions'
 
 
@@ -95,7 +94,7 @@ export default function AdminDashboard() {
   
   // Navigation states
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'blogs' | 'activity' | 'database' | 'buckets' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
+    'dashboard' | 'owner-approval' | 'developer-ban' | 'enquiries' | 'admins' | 'subscribers' | 'tracker' | 'blogs' | 'activity' | 'database' | 'buckets' | 'db-overview' | 'db-monitoring' | 'sql-editor' | null
   >(null)
   const [usersMenuOpen, setUsersMenuOpen] = useState(true)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -146,7 +145,7 @@ export default function AdminDashboard() {
       const tab = params.get('tab')
       const validTabs = [
         'dashboard', 'owner-approval', 'developer-ban', 'enquiries',
-        'admins', 'subscribers', 'blogs', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor', 'buckets'
+        'admins', 'subscribers', 'tracker', 'blogs', 'activity', 'database', 'db-overview', 'db-monitoring', 'sql-editor', 'buckets'
       ]
       if (tab && validTabs.includes(tab)) {
         setActiveTab(tab as any)
@@ -192,11 +191,6 @@ export default function AdminDashboard() {
   const [developersList, setDevelopersList] = useState<any[]>([])
   const [enquiriesList, setEnquiriesList] = useState<any[]>([])
   const [subscribersList, setSubscribersList] = useState<any[]>([])
-  // In-house click analytics (page_visits) — clicks over time + click→conversion funnel
-  const [clicksSeries, setClicksSeries] = useState<{ day: string; clicks: number }[]>([])
-  const [clickFunnel, setClickFunnel] = useState<{ source: string; clicks: number; conversions: number; rate: number }[]>([])
-  const [clickTotals, setClickTotals] = useState<{ clicks: number; conversions: number; rate: number }>({ clicks: 0, conversions: 0, rate: 0 })
-  const [clickStats, setClickStats] = useState<{ clicks: number; visitors: number }>({ clicks: 0, visitors: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [waitlistEnabled, setWaitlistEnabled] = useState(true)
   const [isTogglingWaitlist, setIsTogglingWaitlist] = useState(false)
@@ -292,18 +286,6 @@ export default function AdminDashboard() {
       if (activeTab === 'dashboard' || activeTab === 'subscribers') {
         const res = await getSubscribers()
         if (res.success) setSubscribersList(res.data || [])
-        // Click analytics live on the subscribers panel alongside signup sources.
-        const [series, funnel, stats] = await Promise.all([
-          getClicksOverTime(30),
-          getClickToConversion(90),
-          getClickStats(30),
-        ])
-        if (series.success) setClicksSeries(series.series)
-        if (funnel.success) {
-          setClickFunnel(funnel.funnel)
-          setClickTotals(funnel.totals)
-        }
-        if (stats.success) setClickStats({ clicks: stats.clicks, visitors: stats.visitors })
       }
       if (activeTab === 'dashboard' || activeTab === 'admins') {
         const res = await getAdmins()
@@ -1148,6 +1130,27 @@ export default function AdminDashboard() {
                   {sidebarCounts.subscribers}
                 </span>
               )}
+            </button>
+
+            {/* Tracker */}
+            <button
+              onClick={() => selectTab('tracker')}
+              className={cn(
+                "w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-colors text-[13px] font-medium text-left relative",
+                sidebarCollapsed && "lg:justify-center lg:px-0",
+                activeTab === 'tracker'
+                  ? 'bg-white/[0.05] text-white'
+                  : 'text-[var(--color-text-muted)] hover:bg-white/[0.03] hover:text-white'
+              )}
+              title={sidebarCollapsed ? "Tracker" : undefined}
+            >
+              <div className="flex items-center gap-2.5">
+                <LineChart className={cn(
+                  `w-[18px] h-[18px] shrink-0 transition-colors`,
+                  activeTab === 'tracker' ? 'text-accent' : 'text-[var(--color-text-muted)]'
+                )} />
+                {!sidebarCollapsed && <span className="animate-in fade-in duration-200">Tracker</span>}
+              </div>
             </button>
 
             {/* Blog */}
@@ -2106,90 +2109,6 @@ export default function AdminDashboard() {
           {activeTab === 'subscribers' && (
             <div className="flex flex-col min-h-0 flex-grow gap-4 overflow-y-auto pr-1">
 
-            {/* ===== CLICK ANALYTICS (in-house, from page_visits) ===== */}
-            {!isLoading && (
-              <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] p-5 shrink-0">
-                <div className="flex items-center justify-between gap-4 mb-4">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-white">Link Clicks & Conversion</h3>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                      Tracked clicks on your <span className="font-mono text-white/70">?source=</span> links and how many turned into signups.
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono text-[var(--color-text-muted)] shrink-0">last 30d</span>
-                </div>
-
-                {/* Headline stats */}
-                <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div className="rounded-lg bg-white/[0.02] border border-[var(--color-border)] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Clicks</p>
-                    <p className="text-xl font-mono text-white mt-1">{clickStats.clicks.toLocaleString()}</p>
-                  </div>
-                  <div className="rounded-lg bg-white/[0.02] border border-[var(--color-border)] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Unique visitors</p>
-                    <p className="text-xl font-mono text-white mt-1">{clickStats.visitors.toLocaleString()}</p>
-                  </div>
-                  <div className="rounded-lg bg-white/[0.02] border border-[var(--color-border)] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)]">Click → signup</p>
-                    <p className="text-xl font-mono text-white mt-1">{clickTotals.rate}%</p>
-                  </div>
-                </div>
-
-                {/* Clicks over time — hand-rolled mini bar chart (no chart lib) */}
-                {clicksSeries.length > 0 ? (
-                  <div className="mb-1">
-                    <div className="flex items-end gap-[3px] h-24">
-                      {(() => {
-                        const max = Math.max(...clicksSeries.map((d) => d.clicks), 1)
-                        return clicksSeries.map((d) => (
-                          <div
-                            key={d.day}
-                            className="flex-1 min-w-[2px] rounded-t bg-accent/60 hover:bg-accent transition-colors"
-                            style={{ height: `${Math.max((d.clicks / max) * 100, 2)}%` }}
-                            title={`${d.day}: ${d.clicks} click${d.clicks === 1 ? '' : 's'}`}
-                          />
-                        ))
-                      })()}
-                    </div>
-                    <div className="flex justify-between mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
-                      <span>{clicksSeries[0]?.day}</span>
-                      <span>{clicksSeries[clicksSeries.length - 1]?.day}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs text-[var(--color-text-muted)] py-6 text-center">
-                    No clicks tracked yet. Share a link like <span className="font-mono text-white/70">forke.space/?source=twitter</span> to start collecting.
-                  </p>
-                )}
-
-                {/* Per-source funnel: clicks → conversions → rate */}
-                {clickFunnel.length > 0 && (
-                  <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
-                    <p className="text-[11px] uppercase tracking-wide text-[var(--color-text-muted)] mb-3">Per-source funnel (90d)</p>
-                    <div className="space-y-2.5">
-                      {(() => {
-                        const maxClicks = Math.max(...clickFunnel.map((f) => f.clicks), 1)
-                        return clickFunnel.map((f) => (
-                          <div key={f.source} className="flex items-center gap-3">
-                            <span className="w-24 shrink-0 text-xs font-mono text-white/70 truncate" title={f.source}>{f.source}</span>
-                            <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden relative">
-                              {/* total clicks bar */}
-                              <div className="h-full rounded-full bg-white/15" style={{ width: `${(f.clicks / maxClicks) * 100}%` }} />
-                              {/* conversions overlay */}
-                              <div className="h-full rounded-full bg-accent/80 absolute top-0 left-0" style={{ width: `${(f.conversions / maxClicks) * 100}%` }} />
-                            </div>
-                            <span className="w-36 shrink-0 text-right text-xs font-mono text-white/80">
-                              {f.conversions}/{f.clicks} <span className="text-[var(--color-text-muted)]">({f.rate}%)</span>
-                            </span>
-                          </div>
-                        ))
-                      })()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Sources breakdown — where signups are coming from */}
             {!isLoading && sourceBreakdown.length > 0 && (
               <div className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] p-5 shrink-0">
@@ -2508,6 +2427,13 @@ export default function AdminDashboard() {
           {activeTab === 'activity' && (
             <div className="flex-grow min-h-0 h-full flex flex-col">
               <ActivityFeedPanel currentAdmin={currentAdmin} />
+            </div>
+          )}
+
+          {/* ==================== TRACKER PANEL ==================== */}
+          {activeTab === 'tracker' && (
+            <div className="flex-grow min-h-0 h-full flex flex-col">
+              <TrackerPanel />
             </div>
           )}
 
