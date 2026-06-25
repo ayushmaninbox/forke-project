@@ -50,26 +50,58 @@ function Card({ title, subtitle, children }: { title: string; subtitle?: string;
   )
 }
 
-/** A simple horizontal-bar list (label · bar · count), the project's existing breakdown idiom. */
-function BarList({ rows, emptyHint }: { rows: { label: string; count: number; title?: string }[]; emptyHint: string }) {
+/** Small "Show all (N) / Show less" toggle, shared by the lists below to cap page size. */
+function ShowMoreToggle({ expanded, total, onToggle }: { expanded: boolean; total: number; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="mt-3 w-full text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white transition-colors py-1.5 rounded-md border border-[var(--color-border)] hover:bg-white/[0.03]"
+    >
+      {expanded ? 'Show less' : `Show all (${total})`}
+    </button>
+  )
+}
+
+/**
+ * A simple horizontal-bar list (label · bar · count). Caps rows at `limit` with a
+ * "Show all" toggle so a long breakdown never blows up the panel height.
+ */
+function BarList({
+  rows,
+  emptyHint,
+  limit = 8,
+}: {
+  rows: { label: string; count: number; title?: string }[]
+  emptyHint: string
+  limit?: number
+}) {
+  const [expanded, setExpanded] = useState(false)
   if (rows.length === 0) {
     return <p className="text-xs text-[var(--color-text-muted)] py-4 text-center">{emptyHint}</p>
   }
   const max = Math.max(...rows.map((r) => r.count), 1)
+  const visible = expanded ? rows : rows.slice(0, limit)
   return (
-    <div className="space-y-2.5">
-      {rows.map((r, i) => (
-        <div key={`${r.label}-${i}`} className="flex items-center gap-3">
-          <span className="w-40 shrink-0 text-xs font-mono text-white/70 truncate" title={r.title || r.label}>{r.label}</span>
-          <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
-            <div className="h-full rounded-full bg-accent/70" style={{ width: `${(r.count / max) * 100}%` }} />
+    <div>
+      <div className="space-y-2.5">
+        {visible.map((r, i) => (
+          <div key={`${r.label}-${i}`} className="flex items-center gap-3">
+            <span className="w-40 shrink-0 text-xs font-mono text-white/70 truncate" title={r.title || r.label}>{r.label}</span>
+            <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
+              <div className="h-full rounded-full bg-accent/70" style={{ width: `${(r.count / max) * 100}%` }} />
+            </div>
+            <span className="w-12 shrink-0 text-right text-xs font-mono text-white/80">{r.count}</span>
           </div>
-          <span className="w-12 shrink-0 text-right text-xs font-mono text-white/80">{r.count}</span>
-        </div>
-      ))}
+        ))}
+      </div>
+      {rows.length > limit && (
+        <ShowMoreToggle expanded={expanded} total={rows.length} onToggle={() => setExpanded((v) => !v)} />
+      )}
     </div>
   )
 }
+
+const RECENT_PAGE_SIZE = 8
 
 export default function TrackerPanel() {
   const [days, setDays] = useState(30)
@@ -78,9 +110,12 @@ export default function TrackerPanel() {
   // All-time signups by source (real conversions, predates the click tracker).
   const [signupSources, setSignupSources] = useState<{ source: string; count: number }[]>([])
   const [signupTotal, setSignupTotal] = useState(0)
+  // Recent-clicks feed pagination (data is already capped to 25 rows server-side).
+  const [recentPage, setRecentPage] = useState(0)
 
   const load = useCallback(async (d: number) => {
     setIsLoading(true)
+    setRecentPage(0) // reset feed paging whenever the range changes
     try {
       const res = await getTrackerData(d)
       setData(res.success ? res.data : EMPTY)
@@ -217,17 +252,36 @@ export default function TrackerPanel() {
             )}
           </Card>
 
-          {/* All-time signups by source — real conversions, predates the click tracker.
-              Shown separately so it's never confused with live click data. */}
+          {/* All-time signups by source — real conversions across the whole history.
+              Shown separately from live clicks so the two are never conflated. */}
           {signupSources.length > 0 && (
             <Card
-              title="All-time signups by source"
-              subtitle={`${signupTotal} total signups across users + subscribers · conversions only (clicks not tracked before this feature)`}
+              title="Signups by source (all-time)"
+              subtitle="Every real signup across users + subscribers, grouped by channel. These are confirmed conversions — click data wasn't recorded before the tracker, so no rate is shown here."
             >
-              <BarList
-                rows={signupSources.map((s) => ({ label: s.source, count: s.count }))}
-                emptyHint="No signups yet."
-              />
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-2xl font-mono text-white">{signupTotal.toLocaleString()}</span>
+                <span className="text-xs text-[var(--color-text-muted)]">total signups · {signupSources.length} channels</span>
+              </div>
+              <div className="space-y-2.5">
+                {(() => {
+                  const max = Math.max(...signupSources.map((s) => s.count), 1)
+                  return signupSources.map((s) => {
+                    const pct = signupTotal > 0 ? Math.round((s.count / signupTotal) * 1000) / 10 : 0
+                    return (
+                      <div key={s.source} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 text-xs font-mono text-white/70 truncate" title={s.source}>{s.source}</span>
+                        <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
+                          <div className="h-full rounded-full bg-accent/70" style={{ width: `${(s.count / max) * 100}%` }} />
+                        </div>
+                        <span className="w-24 shrink-0 text-right text-xs font-mono text-white/80">
+                          {s.count} <span className="text-[var(--color-text-muted)]">({pct}%)</span>
+                        </span>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
             </Card>
           )}
 
@@ -260,19 +314,50 @@ export default function TrackerPanel() {
             </Card>
             <Card title="Recent clicks" subtitle="Live feed — confirms tracking is firing">
               {recent.length > 0 ? (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {recent.map((r, i) => (
-                    <div key={i} className="flex items-center gap-3 text-xs">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.03] border border-[var(--color-border)] font-mono text-white/70 shrink-0">
-                        {r.source}
-                      </span>
-                      <span className="font-mono text-white/50 truncate flex-grow" title={r.referrer || r.landingPath || ''}>
-                        {r.landingPath || '/'}{r.country ? ` · ${r.country.toUpperCase()}` : ''}
-                      </span>
-                      <span className="font-mono text-[var(--color-text-muted)] shrink-0">{timeAgo(r.createdAt)}</span>
-                    </div>
-                  ))}
-                </div>
+                (() => {
+                  const totalPages = Math.ceil(recent.length / RECENT_PAGE_SIZE)
+                  const page = Math.min(recentPage, totalPages - 1)
+                  const start = page * RECENT_PAGE_SIZE
+                  const slice = recent.slice(start, start + RECENT_PAGE_SIZE)
+                  return (
+                    <>
+                      <div className="space-y-2">
+                        {slice.map((r, i) => (
+                          <div key={start + i} className="flex items-center gap-3 text-xs">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.03] border border-[var(--color-border)] font-mono text-white/70 shrink-0">
+                              {r.source}
+                            </span>
+                            <span className="font-mono text-white/50 truncate flex-grow" title={r.referrer || r.landingPath || ''}>
+                              {r.landingPath || '/'}{r.country ? ` · ${r.country.toUpperCase()}` : ''}
+                            </span>
+                            <span className="font-mono text-[var(--color-text-muted)] shrink-0">{timeAgo(r.createdAt)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {totalPages > 1 && (
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--color-border)]">
+                          <button
+                            onClick={() => setRecentPage((p) => Math.max(0, p - 1))}
+                            disabled={page === 0}
+                            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 disabled:hover:text-[var(--color-text-muted)] transition-colors"
+                          >
+                            ← Prev
+                          </button>
+                          <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
+                            {page + 1} / {totalPages} · showing latest {recent.length}
+                          </span>
+                          <button
+                            onClick={() => setRecentPage((p) => Math.min(totalPages - 1, p + 1))}
+                            disabled={page >= totalPages - 1}
+                            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 disabled:hover:text-[var(--color-text-muted)] transition-colors"
+                          >
+                            Next →
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()
               ) : (
                 <p className="text-xs text-[var(--color-text-muted)] py-4 text-center">No clicks recorded yet.</p>
               )}

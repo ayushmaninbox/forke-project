@@ -1,10 +1,12 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import RegisterContent from '@/components/auth/RegisterContent'
 import { isWaitlistEnabled } from '@/lib/db/settings'
 
-// While the waitlist lock is on, sign-up is closed — this route 404s. Once the
-// lock is lifted (site fully open), registration works normally.
+// While the waitlist lock is on, sign-up is closed — this route 404s. EXCEPT for
+// visitors who unlocked the site via /checkout (site_access cookie), so the bypass
+// password actually grants access to register. Once the lock is lifted, it's open to all.
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
@@ -19,7 +21,8 @@ export const metadata: Metadata = {
 }
 
 export default async function RegisterPage() {
-  if (await isWaitlistEnabled()) {
+  const hasSiteAccess = (await cookies()).get('site_access')?.value === 'granted'
+  if (await isWaitlistEnabled() && !hasSiteAccess) {
     notFound()
   }
   return <RegisterContent />

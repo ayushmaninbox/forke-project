@@ -81,8 +81,21 @@ function computeAttribution(req: NextRequest) {
   let externalReferrer: string | undefined
   if (referrerHeader) {
     try {
-      const refHost = new URL(referrerHeader).host
-      if (refHost && refHost !== req.nextUrl.host) externalReferrer = referrerHeader.slice(0, 255)
+      // Normalize hosts (drop "www.") so forke.space and www.forke.space both count as "self".
+      // Behind Vercel, req.nextUrl.host can be an internal deployment host, so we also trust the
+      // forwarded host header and a known production host to reliably recognize self-referrals.
+      const stripWww = (h: string) => h.replace(/^www\./, '').toLowerCase()
+      const refHost = stripWww(new URL(referrerHeader).host)
+      const selfHosts = new Set(
+        [
+          req.nextUrl.host,
+          req.headers.get('x-forwarded-host') || '',
+          'forke.space',
+        ]
+          .filter(Boolean)
+          .map(stripWww),
+      )
+      if (refHost && !selfHosts.has(refHost)) externalReferrer = referrerHeader.slice(0, 255)
     } catch {
       // ignore malformed referrer
     }
