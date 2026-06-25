@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { sendWelcomeEmail } from '@/lib/email'
 import { eq } from 'drizzle-orm'
 import { logAudit } from '@/lib/actions/audit-actions'
-import { readAttributionCookie, normalizeSource } from '@/lib/utils/attribution'
+import { readAttributionCookie, normalizeSource, readSessionId } from '@/lib/utils/attribution'
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
 
     // First-touch cookie is authoritative; the form's ?source= is a fallback for the rare no-cookie case.
     const attribution = await readAttributionCookie()
+    const sessionId = await readSessionId()
     const channel = attribution.source !== 'direct' ? attribution.source : normalizeSource(source)
 
     // Check if subscriber already exists in Drizzle
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
         campaign: attribution.campaign,
         referrer: attribution.referrer,
         landingPage: attribution.landingPage,
+        sessionId, // joins this waitlist conversion back to the originating click
       },
     }).onConflictDoNothing()
 

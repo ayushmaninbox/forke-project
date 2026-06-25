@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 // First-party signals only (UTM params, referrer, landing page) — no IP / device fingerprint.
 
 export const ATTRIBUTION_COOKIE = 'forke_attribution'
+export const SESSION_COOKIE = 'forke_session'
 
 export type Attribution = {
   source: string
@@ -13,6 +14,17 @@ export type Attribution = {
   landingPage?: string
   firstSeenAt?: string
   signupRole?: 'developer' | 'owner'
+  sessionId?: string // forke_session cookie — joins this signup back to the click that produced it
+}
+
+/** Read the forke_session id (set by middleware) so a signup can be tied to its originating click. */
+export async function readSessionId(): Promise<string | undefined> {
+  try {
+    const store = await cookies()
+    return store.get(SESSION_COOKIE)?.value || undefined
+  } catch {
+    return undefined
+  }
 }
 
 /**

@@ -298,4 +298,42 @@ export const blogs = pgTable('blogs', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
+// ===== IN-HOUSE ANALYTICS (free, first-party, no third-party tracker) =====
+//
+// One row per first-touch visit that carried a marketing signal (?source=, utm_*, ?ref=,
+// or an external referrer). Written fire-and-forget from /api/track, which the Edge
+// middleware pings — middleware itself can't use postgres-js, so the Node route does the
+// insert. `sessionId` is a random first-party cookie that lets us later join a visit to the
+// signup it produced (visit -> conversion), without any IP or device fingerprint.
+export const pageVisits = pgTable('page_visits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: text('session_id'),                   // random forke_session cookie (visit<->signup join key)
+  source: text('source').notNull().default('direct'),
+  medium: text('medium'),
+  campaign: text('campaign'),
+  referrer: text('referrer'),                      // external referring URL (truncated)
+  landingPath: text('landing_path'),               // first page they hit
+  country: text('country'),                         // coarse geo only (from edge header), never the IP
+  isBot: boolean('is_bot').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ===== AUTH SECURITY LOG (separate from marketing attribution by design) =====
+//
+// Records sign-in / sign-up events for abuse detection only. We store a salted SHA-256
+// HASH of the IP (never the raw address) plus the resolved country, so we can spot
+// "same IP, many accounts" without holding personal data. Lawful basis: legitimate
+// interest (security / fraud prevention). Disclosed in /privacy. Purge rows > 90 days.
+export const authEvents = pgTable('auth_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  email: text('email'),                            // snapshot, in case the user is later deleted
+  event: text('event').notNull(),                  // 'signin' | 'signup'
+  provider: text('provider'),                      // 'credentials' | 'google' | 'github'
+  ipHash: text('ip_hash'),                         // salted sha256 of the IP — NOT the raw IP
+  country: text('country'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 

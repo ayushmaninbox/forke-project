@@ -63,3 +63,12 @@ Need a quick feature built or a bug squashed, but don't want to hire a full-time
 <p align="center">
   <b>Prove skill by shipping. Your profile is your reputation.</b>
 </p>
+
+---
+
+## 📄 License
+
+This repository is **source-available, not open-source**. The code is public for
+transparency and reference, but **all rights are reserved** — you may read and fork
+it on GitHub, but you may **not** use, deploy, copy, or commercialize it without
+prior written permission. See [LICENSE](./LICENSE) for the full terms.

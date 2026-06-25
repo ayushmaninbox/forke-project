@@ -281,6 +281,39 @@ CREATE TABLE "blogs" (
 );
 --> statement-breakpoint
 ALTER TABLE "blogs" ADD CONSTRAINT "blogs_author_id_admins_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "blogs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "blogs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE TABLE "page_visits" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"session_id" text,
+	"source" text DEFAULT 'direct' NOT NULL,
+	"medium" text,
+	"campaign" text,
+	"referrer" text,
+	"landing_path" text,
+	"country" text,
+	"is_bot" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "auth_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid,
+	"email" text,
+	"event" text NOT NULL,
+	"provider" text,
+	"ip_hash" text,
+	"country" text,
+	"user_agent" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "auth_events" ADD CONSTRAINT "auth_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "page_visits_created_at_idx" ON "page_visits" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "page_visits_source_idx" ON "page_visits" USING btree ("source");--> statement-breakpoint
+CREATE INDEX "page_visits_session_id_idx" ON "page_visits" USING btree ("session_id");--> statement-breakpoint
+CREATE INDEX "auth_events_created_at_idx" ON "auth_events" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "auth_events_ip_hash_idx" ON "auth_events" USING btree ("ip_hash");--> statement-breakpoint
+ALTER TABLE "page_visits" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+ALTER TABLE "auth_events" ENABLE ROW LEVEL SECURITY;
 
 

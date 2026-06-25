@@ -84,7 +84,7 @@ export default function PrivacyPage() {
               <ul className="space-y-2 text-sm text-white/50">
                 {[
                   'Browser type & Operating System',
-                  'IP Address & general geo-location',
+                  'A one-way hashed IP address & general geo-location, kept on sign-in/sign-up for security & fraud prevention only (we do not store your raw IP), purged after 90 days',
                   'Pages visited, time spent, & navigation paths',
                   'Click interactions, transaction logs, & claims history',
                   'Referral source: marketing channel, campaign tags (UTM), & referring website at signup',

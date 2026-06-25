@@ -6,6 +6,45 @@ import type { NextRequest } from 'next/server'
 const { auth } = NextAuth(authConfig)
 
 const ATTRIBUTION_COOKIE = 'forke_attribution'
+const SESSION_COOKIE = 'forke_session'
+
+/** Random first-party id used to join a visit to the signup it later produces. Edge-safe (Web Crypto). */
+function newSessionId(): string {
+  return crypto.randomUUID()
+}
+
+/**
+ * Fire a non-blocking visit-track ping to the Node /api/track route. Edge middleware can't
+ * touch postgres-js, so the Node route does the DB insert. We never await this — a tracking
+ * failure must never slow down or block the page.
+ */
+function trackVisit(
+  origin: string,
+  sessionId: string,
+  attribution: { source: string; medium?: string; campaign?: string; referrer?: string; landingPage?: string },
+  userAgent: string | null,
+) {
+  try {
+    const url = new URL('/api/track', origin)
+    if (url.hostname === 'localhost') url.hostname = '127.0.0.1'
+    void fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(userAgent ? { 'user-agent': userAgent } : {}) },
+      body: JSON.stringify({
+        sessionId,
+        source: attribution.source,
+        medium: attribution.medium,
+        campaign: attribution.campaign,
+        referrer: attribution.referrer,
+        landingPath: attribution.landingPage,
+      }),
+      cache: 'no-store',
+      keepalive: true,
+    }).catch(() => {})
+  } catch {
+    // never throw from tracking
+  }
+}
 
 // Edge-safe copy of normalizeSource (middleware can't import next/headers from the shared util).
 function normalizeSource(raw?: string | null): string {
@@ -122,7 +161,20 @@ export default auth(async (req) => {
     })
     const redirect = NextResponse.redirect(cleanUrl)
     const attribution = computeAttribution(req)
-    if (attribution) setAttributionCookie(redirect, attribution)
+    if (attribution) {
+      setAttributionCookie(redirect, attribution)
+      // Ensure a session id exists, then record the click (non-blocking).
+      let sessionId = req.cookies.get(SESSION_COOKIE)?.value
+      if (!sessionId) {
+        sessionId = newSessionId()
+        redirect.cookies.set(SESSION_COOKIE, sessionId, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 90, // 90 days, matches attribution cookie
+          sameSite: 'lax',
+        })
+      }
+      trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
+    }
     return redirect
   }
 
@@ -139,6 +191,16 @@ export default auth(async (req) => {
     const attribution = computeAttribution(req)
     if (attribution && !TRACKING_PARAMS.some((p) => req.nextUrl.searchParams.has(p))) {
       setAttributionCookie(res, attribution)
+      let sessionId = req.cookies.get(SESSION_COOKIE)?.value
+      if (!sessionId) {
+        sessionId = newSessionId()
+        res.cookies.set(SESSION_COOKIE, sessionId, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 90,
+          sameSite: 'lax',
+        })
+      }
+      trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
     }
     // Public, indexable surfaces (blogs/docs/changelog) must stay cacheable so
     // crawlers don't treat them as no-store. Everything else is per-visitor

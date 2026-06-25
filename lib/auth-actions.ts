@@ -7,7 +7,8 @@ import { users, developers, subscribers } from '@/lib/db/schema'
 import { eq, ilike, or } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { logAudit } from './actions/audit-actions'
-import { readAttributionCookie } from './utils/attribution'
+import { readAttributionCookie, readSessionId } from './utils/attribution'
+import { recordAuthEvent } from './actions/auth-events'
 
 export async function signInWithGoogle(role?: 'developer' | 'owner', redirectTo?: string) {
   const cookieStore = await cookies()
@@ -104,6 +105,7 @@ export async function registerDeveloperWithCredentials(formData: any) {
 
     // First-touch marketing attribution, tagged with the conversion role.
     const attribution = await readAttributionCookie()
+    const sessionId = await readSessionId()
     const userAttribution = {
       source: attribution.source,
       medium: attribution.medium,
@@ -111,6 +113,7 @@ export async function registerDeveloperWithCredentials(formData: any) {
       referrer: attribution.referrer,
       landingPage: attribution.landingPage,
       signupRole: 'developer' as const,
+      sessionId, // joins this conversion back to the originating click in page_visits
     }
 
     const [newUser] = await db.insert(users).values({
@@ -158,6 +161,14 @@ export async function registerDeveloperWithCredentials(formData: any) {
         target: username ? `@${username}` : fullName,
         actorName: fullName,
         actorId: newUser.id,
+      })
+
+      // Security log: hashed IP + country for the new account (abuse detection).
+      await recordAuthEvent({
+        userId: newUser.id,
+        email,
+        event: 'signup',
+        provider: 'credentials',
       })
     }
 

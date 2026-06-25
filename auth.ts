@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { users, accounts, sessions, developers } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { processLoginStreak } from '@/lib/actions/auth-actions'
+import { recordAuthEvent } from '@/lib/actions/auth-events'
 import { authConfig } from './auth.config'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -289,5 +290,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return token
     },
-  }
+  },
+  events: {
+    // Security log only (separate from marketing attribution): records a salted IP HASH
+    // + coarse country on every sign-in / sign-up so we can detect abuse. Best-effort.
+    async signIn({ user, account, isNewUser }) {
+      await recordAuthEvent({
+        userId: (user as any)?.id ?? null,
+        email: user?.email ?? null,
+        event: isNewUser ? 'signup' : 'signin',
+        provider: account?.provider ?? 'credentials',
+      })
+    },
+  },
 })

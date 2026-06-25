@@ -669,3 +669,101 @@ export async function getSidebarCounts() {
   }
 }
 
+// ===== IN-HOUSE CLICK ANALYTICS =====
+// All three read from page_visits (raw clicks) and join to users/subscribers (conversions).
+// They degrade gracefully: if the page_visits table doesn't exist yet (migration not run),
+// they return empty data instead of throwing, so the dashboard still renders.
+
+/** Daily click counts for the last `days` days — drives the clicks-over-time line/bar chart. */
+export async function getClicksOverTime(days = 30) {
+  await ensureAdmin()
+  try {
+    const rows = await db.execute(sql`
+      SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
+             count(*)::int AS clicks
+      FROM public.page_visits
+      WHERE is_bot = false
+        AND created_at >= now() - (${days} || ' days')::interval
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `)
+    const series = (rows as any[]).map((r) => ({ day: r.day as string, clicks: Number(r.clicks) }))
+    return { success: true, series }
+  } catch (error) {
+    console.error('getClicksOverTime failed:', error)
+    return { success: false, series: [] as { day: string; clicks: number }[] }
+  }
+}
+
+/**
+ * Per-source funnel: raw clicks vs. signups that originated from that click (matched on
+ * the forke_session id stored in attribution at conversion time), plus conversion %.
+ * This is the "clicks -> conversion" number the user asked for.
+ */
+export async function getClickToConversion(days = 90) {
+  await ensureAdmin()
+  try {
+    const rows = await db.execute(sql`
+      WITH clicks AS (
+        SELECT source, session_id
+        FROM public.page_visits
+        WHERE is_bot = false
+          AND created_at >= now() - (${days} || ' days')::interval
+      ),
+      -- every session id that later converted (a real user OR a subscriber)
+      converted AS (
+        SELECT attribution->>'sessionId' AS session_id FROM public.users
+        WHERE attribution->>'sessionId' IS NOT NULL
+        UNION
+        SELECT attribution->>'sessionId' AS session_id FROM public.subscribers
+        WHERE attribution->>'sessionId' IS NOT NULL
+      )
+      SELECT c.source,
+             count(*)::int AS clicks,
+             count(DISTINCT conv.session_id)::int AS conversions
+      FROM clicks c
+      LEFT JOIN converted conv ON conv.session_id = c.session_id
+      GROUP BY c.source
+      ORDER BY clicks DESC
+    `)
+    const funnel = (rows as any[]).map((r) => {
+      const clicks = Number(r.clicks)
+      const conversions = Number(r.conversions)
+      return {
+        source: r.source as string,
+        clicks,
+        conversions,
+        rate: clicks > 0 ? Math.round((conversions / clicks) * 1000) / 10 : 0, // % to 1 decimal
+      }
+    })
+    const totals = funnel.reduce(
+      (a, r) => ({ clicks: a.clicks + r.clicks, conversions: a.conversions + r.conversions }),
+      { clicks: 0, conversions: 0 },
+    )
+    const overallRate = totals.clicks > 0 ? Math.round((totals.conversions / totals.clicks) * 1000) / 10 : 0
+    return { success: true, funnel, totals: { ...totals, rate: overallRate } }
+  } catch (error) {
+    console.error('getClickToConversion failed:', error)
+    return { success: false, funnel: [] as any[], totals: { clicks: 0, conversions: 0, rate: 0 } }
+  }
+}
+
+/** Headline tracker stats for the dashboard cards: total clicks + unique visitors in window. */
+export async function getClickStats(days = 30) {
+  await ensureAdmin()
+  try {
+    const rows = await db.execute(sql`
+      SELECT count(*)::int AS clicks,
+             count(DISTINCT session_id)::int AS visitors
+      FROM public.page_visits
+      WHERE is_bot = false
+        AND created_at >= now() - (${days} || ' days')::interval
+    `)
+    const r = (rows as any[])[0] || {}
+    return { success: true, clicks: Number(r.clicks || 0), visitors: Number(r.visitors || 0) }
+  } catch (error) {
+    console.error('getClickStats failed:', error)
+    return { success: false, clicks: 0, visitors: 0 }
+  }
+}
+

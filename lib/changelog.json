@@ -1,5 +1,27 @@
 [
   {
+    "date": "2026-06-24",
+    "label": "jun 24, 2026",
+    "entries": [
+      {
+        "shortHash": "e88a220",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-24T14:57:45+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Update Threads icon to filled variant in email footer"
+      },
+      {
+        "shortHash": "6d385cd",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-24T14:39:34+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Update contact page socials, add GitHub integration, and refresh footer branding assets"
+      }
+    ]
+  },
+  {
     "date": "2026-06-23",
     "label": "jun 23, 2026",
     "entries": [
