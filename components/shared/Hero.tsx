@@ -226,11 +226,13 @@ export default function Hero() {
               }}
             >
                <Image
-                 src="/forke-assets/landing-assets/hero-image-forky.png"
+                 src="/forke-assets/landing-assets/hero-image-forky.webp"
                  alt="Forky Mascot"
                  fill
+                 sizes="(max-width: 1024px) 130vw, 1200px"
                  className="object-contain"
                  priority
+                 fetchPriority="high"
                />
             </div>
 

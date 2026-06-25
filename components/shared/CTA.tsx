@@ -216,9 +216,11 @@ export default function CTA() {
             md:bottom-[-3rem] md:left-auto md:translate-x-0 md:right-2 md:w-[520px] md:max-w-none md:h-[360px]
             lg:bottom-[-4.5rem] lg:right-4 lg:w-[750px] lg:h-[520px]">
             <Image
-              src="/forke-assets/landing-assets/chilling_forky.png"
+              src="/forke-assets/landing-assets/chilling_forky.webp"
               alt="Chilling Forky"
               fill
+              sizes="(max-width: 768px) 420px, (max-width: 1024px) 520px, 750px"
+              loading="lazy"
               className="object-contain object-bottom"
             />
           </div>

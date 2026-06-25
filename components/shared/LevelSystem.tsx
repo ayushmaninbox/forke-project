@@ -26,7 +26,7 @@ const LEVELS = [
     range: '₹200 - ₹500', 
     xpMultiplier: '1.0x XP',
     perks: ['Unlock basic bounties', 'Public profile URL (LVL 3)', 'Team task applications (LVL 5)'],
-    image: '/forke-assets/landing-assets/newcomer_forky.png',
+    image: '/forke-assets/landing-assets/newcomer_forky.webp',
     imgClass: 'scale-[0.98] -translate-y-2'
   },
   { 
@@ -37,7 +37,7 @@ const LEVELS = [
     range: '₹500 - ₹1200', 
     xpMultiplier: '1.2x XP',
     perks: ['Intermediate payout tiers', 'XP streak multipliers (LVL 10)', 'Warm standby queue access'],
-    image: '/forke-assets/landing-assets/apprentice_forky.png',
+    image: '/forke-assets/landing-assets/apprentice_forky.webp',
     imgClass: 'scale-[1.12] -translate-y-1'
   },
   { 
@@ -48,7 +48,7 @@ const LEVELS = [
     range: '₹1200 - ₹3000', 
     xpMultiplier: '1.5x XP',
     perks: ['Priority task queue (LVL 12)', 'Elite bounty eligibility (LVL 15)', 'Reviewer pathway entry'],
-    image: '/forke-assets/landing-assets/builder_forky.png',
+    image: '/forke-assets/landing-assets/builder_forky.webp',
     imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
   { 
@@ -59,7 +59,7 @@ const LEVELS = [
     range: '₹3000 - ₹8000', 
     xpMultiplier: '2.0x XP',
     perks: ['Team lead eligibility (LVL 18)', 'Mentor access (LVL 20)', 'Advanced security clearance'],
-    image: '/forke-assets/landing-assets/expert_forky.png',
+    image: '/forke-assets/landing-assets/expert_forky.webp',
     imgClass: 'scale-[1.05] -translate-y-1.5'
   },
   { 
@@ -70,7 +70,7 @@ const LEVELS = [
     range: '₹8000+', 
     xpMultiplier: '2.5x XP',
     perks: ['Private invite-only projects', 'Prestige reset options', 'Commit Warlord status badge'],
-    image: '/forke-assets/landing-assets/architect_forky.png',
+    image: '/forke-assets/landing-assets/architect_forky.webp',
     imgClass: '[transform:scale(-1,1)] -translate-y-1 translate-x-2'
   },
 ]
@@ -173,7 +173,7 @@ export default function LevelSystem() {
                           {item.xpMultiplier}
                         </span>
                       </div>
-                      <h4 className="text-3xl text-white tracking-[-0.02em] mt-3 font-semibold">{item.label}</h4>
+                      <h3 className="text-3xl text-white tracking-[-0.02em] mt-3 font-semibold">{item.label}</h3>
                       <p className="text-xs font-mono text-white/40 mt-1">{item.title}</p>
                     </div>
 

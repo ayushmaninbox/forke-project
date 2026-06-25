@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Lock, Search } from 'lucide-react'
 import { gsap } from 'gsap'
@@ -20,7 +21,7 @@ if (typeof window !== 'undefined') {
  * whose lid opens as you scroll the section into view. Using a flat PNG instead
  * of the live 3D lanyard keeps the laptop trivially responsive on phone/tablet.
  */
-const MOCKUP_SRC = '/forke-assets/landing-assets/proof-mockup.png'
+const MOCKUP_SRC = '/forke-assets/landing-assets/proof-mockup.webp'
 
 /**
  * A laptop that opens on scroll. The screen (lid) is hinged at its bottom edge
@@ -92,12 +93,15 @@ function LaptopMockup({
               </div>
             </div>
             {/* The captured profile-page mockup */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               ref={screenRef}
               src={MOCKUP_SRC}
               alt="A Forke public profile — verified DEV ID card and shipped-work ledger"
-              className="block w-full select-none"
+              width={1920}
+              height={1055}
+              sizes="(max-width: 768px) 100vw, 900px"
+              loading="lazy"
+              className="block w-full h-auto select-none"
               draggable={false}
             />
           </div>

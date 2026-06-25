@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    // Serve AVIF first (smaller than WebP), fall back to WebP.
+    formats: ['image/avif', 'image/webp'],
+    // Cache optimized images on the CDN for a year so repeat views are free.
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
