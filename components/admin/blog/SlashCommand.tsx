@@ -33,6 +33,7 @@ import {
   Minus,
   Code2,
   ImageIcon,
+  FileImage,
   Type,
   Code,
 } from 'lucide-react'
@@ -49,7 +50,7 @@ export interface SlashItem {
 
 const ICON = 'h-4 w-4'
 
-function buildItems(onImage: () => void, onEmbed: () => void): SlashItem[] {
+function buildItems(onImage: () => void, onEmbed: () => void, onGif: () => void): SlashItem[] {
   return [
     {
       title: 'Text',
@@ -131,6 +132,16 @@ function buildItems(onImage: () => void, onEmbed: () => void): SlashItem[] {
       command: ({ editor, range }) => {
         editor.chain().focus().deleteRange(range).run()
         onImage()
+      },
+    },
+    {
+      title: 'GIF',
+      description: 'Animated, plays on loop',
+      icon: <FileImage className={ICON} />,
+      keywords: ['gif', 'animated', 'animation', 'meme', 'loop'],
+      command: ({ editor, range }) => {
+        editor.chain().focus().deleteRange(range).run()
+        onGif()
       },
     },
     {
@@ -262,7 +273,7 @@ function makePopup() {
   return el
 }
 
-export function createSlashCommand(onImage: () => void, onEmbed: () => void) {
+export function createSlashCommand(onImage: () => void, onEmbed: () => void, onGif: () => void) {
   return Extension.create({
     name: 'slashCommand',
 
@@ -291,7 +302,7 @@ export function createSlashCommand(onImage: () => void, onEmbed: () => void) {
           ...this.options.suggestion,
           items: ({ query }: { query: string }) => {
             const q = query.toLowerCase()
-            return buildItems(onImage, onEmbed).filter(
+            return buildItems(onImage, onEmbed, onGif).filter(
               (item) =>
                 item.title.toLowerCase().includes(q) ||
                 item.keywords.some((k) => k.includes(q))

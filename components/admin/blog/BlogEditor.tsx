@@ -96,6 +96,7 @@ export default function BlogEditor({
   // Hidden file inputs drive image uploads; picked files open the cropper first.
   const bodyFileRef = useRef<HTMLInputElement>(null)
   const coverFileRef = useRef<HTMLInputElement>(null)
+  const gifFileRef = useRef<HTMLInputElement>(null)
 
   // Crop target: which slot the cropped/uploaded image should fill.
   const [cropFile, setCropFile] = useState<{ file: File; target: 'body' | 'cover' } | null>(null)
@@ -112,6 +113,12 @@ export default function BlogEditor({
   const openEmbedPrompt = useCallback(() => {
     setEmbedUrl('')
     setEmbedPromptOpen(true)
+  }, [])
+
+  // GIFs skip the chooser/cropper entirely (cropping would flatten the
+  // animation) — go straight to the GIF-only file dialog, then upload as-is.
+  const openGifPicker = useCallback(() => {
+    gifFileRef.current?.click()
   }, [])
 
   const editor = useEditor({
@@ -142,7 +149,7 @@ export default function BlogEditor({
       // R2 is connected — this fixes images vanishing on save/publish.
       ResizableImage.configure({ inline: false, allowBase64: true }),
       EmbedExtension,
-      createSlashCommand(openImagePicker, openEmbedPrompt),
+      createSlashCommand(openImagePicker, openEmbedPrompt, openGifPicker),
     ],
     content: initialContent ?? '',
     editorProps: {
@@ -200,6 +207,19 @@ export default function BlogEditor({
       return
     }
     setCropFile({ file, target })
+  }
+
+  // Dedicated GIF input (from the "/" GIF block). Always body, never cropped,
+  // so the animation/loop is preserved.
+  const handleGifFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-picking the same file
+    if (!file) return
+    if (file.type !== 'image/gif') {
+      toast('Please choose a GIF file.', 'error')
+      return
+    }
+    void uploadAndPlace(file, 'body', file.name)
   }
 
   // Upload a blob, then insert into the body / set as cover. Shared by the
@@ -352,6 +372,13 @@ export default function BlogEditor({
         accept="image/*"
         className="hidden"
         onChange={(e) => handleImageFile(e, 'cover')}
+      />
+      <input
+        ref={gifFileRef}
+        type="file"
+        accept="image/gif"
+        className="hidden"
+        onChange={handleGifFile}
       />
 
       {/* ── Title ─────────────────────────────────────────────────── */}
