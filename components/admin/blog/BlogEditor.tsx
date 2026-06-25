@@ -180,7 +180,9 @@ export default function BlogEditor({
     }
   }, [editor, emitChange])
 
-  // A picked file opens the cropper first (every upload is croppable).
+  // A picked file opens the cropper first (every upload is croppable) — except
+  // GIFs, which the cropper would flatten to a single static frame (canvas crop
+  // strips animation). GIFs upload verbatim so they keep looping.
   const handleImageFile = (
     e: React.ChangeEvent<HTMLInputElement>,
     target: 'body' | 'cover'
@@ -192,14 +194,22 @@ export default function BlogEditor({
       toast('Please choose an image file.', 'error')
       return
     }
+    if (file.type === 'image/gif') {
+      // Skip the cropper so the animation survives — upload + place as-is.
+      void uploadAndPlace(file, target, file.name)
+      return
+    }
     setCropFile({ file, target })
   }
 
-  // Cropper confirmed → upload the chosen blob, then insert / set as cover.
+  // Upload a blob, then insert into the body / set as cover. Shared by the
+  // cropper (still-image path) and the GIF path (bypasses the cropper).
   // The post stores the returned URL (not the bytes), so autosave stays small.
-  const handleCropConfirm = async (blob: Blob, filename: string) => {
-    const target = cropFile?.target ?? 'body'
-    setCropFile(null)
+  const uploadAndPlace = async (
+    blob: Blob,
+    target: 'body' | 'cover',
+    filename: string
+  ) => {
     if (!editor) return
     setUploading(true)
     setUploadProgress(0)
@@ -222,6 +232,13 @@ export default function BlogEditor({
       setUploading(false)
       setUploadProgress(0)
     }
+  }
+
+  // Cropper confirmed → upload the chosen blob, then insert / set as cover.
+  const handleCropConfirm = (blob: Blob, filename: string) => {
+    const target = cropFile?.target ?? 'body'
+    setCropFile(null)
+    void uploadAndPlace(blob, target, filename)
   }
 
   // Insert a pasted image link into the body, then close the chooser.

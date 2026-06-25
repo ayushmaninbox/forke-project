@@ -4,6 +4,22 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "a6a1ef3",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T14:33:39+05:30",
+        "kind": "perf",
+        "scope": null,
+        "title": "Migrate assets to WebP, optimize image loading with sizes, and configure Next.js image caching headers"
+      },
+      {
+        "shortHash": "544b2f7",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T14:12:57+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add all-time data support and enhance UI typography and text contrast across components"
+      },
+      {
         "shortHash": "38f62d4",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T13:57:04+05:30",
