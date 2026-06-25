@@ -32,13 +32,18 @@ async function announceBlogToSubscribers(blog: {
   publishedAt?: Date | null
 }) {
   try {
-    const { sentCount, broadcastId } = await sendBlogPublishedBroadcast(blog)
+    const { success, sentCount, broadcastId, error } = await sendBlogPublishedBroadcast(blog)
+    // Record the TRUE outcome — a silent "sent" entry on a failed send is what
+    // previously hid a broadcast stuck in Resend's "draft" state.
     await logAudit({
       category: 'system',
-      action: 'blog.broadcast_sent',
+      action: success ? 'blog.broadcast_sent' : 'blog.broadcast_failed',
       target: blog.title,
-      metadata: { sentCount, broadcastId },
+      metadata: { success, sentCount, broadcastId, error },
     })
+    if (!success) {
+      console.error('Blog broadcast did not send:', { broadcastId, error })
+    }
   } catch (err) {
     console.error('Failed to broadcast new blog to subscribers:', err)
   }

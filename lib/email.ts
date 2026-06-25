@@ -792,7 +792,7 @@ export async function sendBlogPublishedBroadcast(blog: {
   authorName?: string | null
   readingMinutes?: number | null
   publishedAt?: Date | string | null
-}): Promise<{ success: boolean; sentCount: number; broadcastId?: string }> {
+}): Promise<{ success: boolean; sentCount: number; broadcastId?: string; error?: string }> {
   const apiKey = resolveResendApiKey()
   if (!apiKey) {
     console.warn('⚠️ RESEND_API_KEY is not configured. Skipping blog broadcast.')
@@ -895,21 +895,41 @@ export async function sendBlogPublishedBroadcast(blog: {
     const broadcast = (await createRes.json()) as { id: string }
     const broadcastId = broadcast.id
 
-    // 4) Send it now.
-    const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    }, apiKey)
-    if (!sendRes.ok) {
-      console.error('Failed to send Resend broadcast:', await sendRes.text())
-      return { success: false, sentCount: 0, broadcastId }
+    // 4) Send it now — with retries.
+    //
+    // Resend can return a transient error if /send is called in the same instant
+    // the broadcast is created (it hasn't finished provisioning yet). On Vercel's
+    // serverless timing this race is easy to hit, and a failed send silently
+    // leaves the broadcast stuck in "draft". So we retry a few times with a short
+    // backoff before giving up, and we KEEP the real error text so the caller can
+    // surface it instead of a generic failure.
+    let lastError = ''
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const sendRes = await resendFetch(`/broadcasts/${broadcastId}/send`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }, apiKey)
+
+      if (sendRes.ok) {
+        console.log(`Blog broadcast sent to audience ${audienceId} (${synced} contacts).`)
+        return { success: true, sentCount: synced, broadcastId }
+      }
+
+      lastError = await sendRes.text()
+      console.error(`Broadcast send attempt ${attempt}/4 failed (${sendRes.status}):`, lastError)
+
+      // 4xx that isn't a 429 is a real, non-transient problem (bad audience,
+      // unverified domain, already sent) — retrying won't help, so stop early.
+      const transient = sendRes.status === 429 || sendRes.status >= 500
+      if (!transient) break
+      await sleep(attempt * 800) // 0.8s, 1.6s, 2.4s backoff
     }
 
-    console.log(`Blog broadcast sent to audience ${audienceId} (${synced} contacts).`)
-    return { success: true, sentCount: synced, broadcastId }
+    console.error('Failed to send Resend broadcast after retries:', lastError)
+    return { success: false, sentCount: 0, broadcastId, error: lastError }
   } catch (err) {
     console.error('Error dispatching blog broadcast:', err)
-    return { success: false, sentCount: 0 }
+    return { success: false, sentCount: 0, error: err instanceof Error ? err.message : String(err) }
   }
 }
 
