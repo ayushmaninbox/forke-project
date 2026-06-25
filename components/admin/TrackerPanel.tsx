@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { MousePointerClick, Users, Target, Globe, FileText, ExternalLink, RefreshCw } from 'lucide-react'
+import { MousePointerClick, Users, Target, FileText, ExternalLink, RefreshCw } from 'lucide-react'
 import { getTrackerData, getSignupSourceBreakdown, type TrackerData } from '@/lib/admin-dashboard-actions'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils/cn'
@@ -318,9 +318,8 @@ export default function TrackerPanel() {
             </Card>
           </div>
 
-          {/* Geo heatmap — full width so the world map has room */}
-          <Card title="Where clicks come from" subtitle="Visitor geography — bubble size & shade scale with click volume">
-            <div className="flex items-center gap-2 mb-3 text-[var(--color-text-muted)]"><Globe className="w-3.5 h-3.5" /></div>
+          {/* Geo — full width: 3D globe + searchable country table */}
+          <Card title="Clicks by country" subtitle="Spin the globe — countries glow by click volume. Search & page the table on the right.">
             <WorldHeatmap data={countries} />
           </Card>
 

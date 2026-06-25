@@ -4,6 +4,14 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "85789a5",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T11:32:32+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add interactive world heatmap and custom hover tooltips to admin dashboard"
+      },
+      {
         "shortHash": "5575b33",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T11:05:34+05:30",
