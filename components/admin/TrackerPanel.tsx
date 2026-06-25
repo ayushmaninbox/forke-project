@@ -5,6 +5,7 @@ import { MousePointerClick, Users, Target, Globe, FileText, ExternalLink, Refres
 import { getTrackerData, getSignupSourceBreakdown, type TrackerData } from '@/lib/admin-dashboard-actions'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils/cn'
+import WorldHeatmap from '@/components/admin/WorldHeatmap'
 
 const RANGES: { label: string; days: number }[] = [
   { label: '7d', days: 7 },
@@ -112,6 +113,8 @@ export default function TrackerPanel() {
   const [signupTotal, setSignupTotal] = useState(0)
   // Recent-clicks feed pagination (data is already capped to 25 rows server-side).
   const [recentPage, setRecentPage] = useState(0)
+  // Instant hover tooltip for the clicks-over-time bars (native title has ~1s delay).
+  const [hoverBar, setHoverBar] = useState<{ day: string; clicks: number; x: number } | null>(null)
 
   const load = useCallback(async (d: number) => {
     setIsLoading(true)
@@ -201,16 +204,28 @@ export default function TrackerPanel() {
           {/* Clicks over time */}
           <Card title="Clicks over time" subtitle={`Daily tracked clicks · last ${days} days`}>
             {series.length > 0 ? (
-              <div>
-                <div className="flex items-end gap-[3px] h-32">
+              <div className="relative">
+                {/* Instant custom tooltip (no native-title delay) */}
+                {hoverBar && (
+                  <div
+                    className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border border-[var(--color-border)] bg-[#111] px-2.5 py-1.5 text-[11px] font-mono text-white shadow-lg"
+                    style={{ left: `${hoverBar.x}%` }}
+                  >
+                    <span className="text-accent">{hoverBar.clicks}</span> click{hoverBar.clicks === 1 ? '' : 's'}
+                    <span className="text-[var(--color-text-muted)]"> · {hoverBar.day}</span>
+                  </div>
+                )}
+                <div className="flex items-end gap-[3px] h-32" onMouseLeave={() => setHoverBar(null)}>
                   {(() => {
                     const max = Math.max(...series.map((d) => d.clicks), 1)
-                    return series.map((d) => (
+                    return series.map((d, i) => (
                       <div
                         key={d.day}
-                        className="flex-1 min-w-[2px] rounded-t bg-accent/60 hover:bg-accent transition-colors"
+                        className="flex-1 min-w-[2px] rounded-t bg-accent/60 hover:bg-accent transition-colors cursor-pointer"
                         style={{ height: `${Math.max((d.clicks / max) * 100, 2)}%` }}
-                        title={`${d.day}: ${d.clicks} click${d.clicks === 1 ? '' : 's'}`}
+                        onMouseEnter={() =>
+                          setHoverBar({ day: d.day, clicks: d.clicks, x: ((i + 0.5) / series.length) * 100 })
+                        }
                       />
                     ))
                   })()}
@@ -303,15 +318,14 @@ export default function TrackerPanel() {
             </Card>
           </div>
 
-          {/* Geo + recent feed */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card title="Top countries" subtitle="Visitor geography (coarse)">
-              <div className="flex items-center gap-2 mb-3 text-[var(--color-text-muted)]"><Globe className="w-3.5 h-3.5" /></div>
-              <BarList
-                rows={countries.map((c) => ({ label: c.country.toUpperCase(), count: c.clicks }))}
-                emptyHint="No geo data yet (needs edge geo headers in production)."
-              />
-            </Card>
+          {/* Geo heatmap — full width so the world map has room */}
+          <Card title="Where clicks come from" subtitle="Visitor geography — bubble size & shade scale with click volume">
+            <div className="flex items-center gap-2 mb-3 text-[var(--color-text-muted)]"><Globe className="w-3.5 h-3.5" /></div>
+            <WorldHeatmap data={countries} />
+          </Card>
+
+          {/* Recent feed */}
+          <div className="grid grid-cols-1 gap-4">
             <Card title="Recent clicks" subtitle="Live feed — confirms tracking is firing">
               {recent.length > 0 ? (
                 (() => {
