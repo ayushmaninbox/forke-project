@@ -17,6 +17,11 @@ function clean(raw: unknown, max: number): string | null {
 
 export async function POST(req: NextRequest) {
   try {
+    const consent = req.cookies.get('forke_cookie_consent')?.value
+    if (consent === 'declined') {
+      return NextResponse.json({ ok: true, skipped: 'consent_declined' })
+    }
+
     const body = await req.json().catch(() => ({}))
 
     const ua = req.headers.get('user-agent')
@@ -24,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Don't write bot rows at all — keeps the table small and the charts human.
     if (isBot) return NextResponse.json({ ok: true, skipped: 'bot' })
+
 
     await db.insert(pageVisits).values({
       sessionId: clean(body.sessionId, 64),

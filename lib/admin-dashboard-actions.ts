@@ -681,7 +681,7 @@ export type TrackerData = {
   funnel: { source: string; clicks: number; conversions: number; rate: number }[]
   landingPages: { path: string; clicks: number }[]
   referrers: { referrer: string; clicks: number }[]
-  countries: { country: string; clicks: number }[]
+  countries: { country: string; clicks: number; conversions: number }[]
   recent: { source: string; landingPath: string | null; referrer: string | null; country: string | null; createdAt: string }[]
 }
 
@@ -735,9 +735,18 @@ export async function getTrackerData(days = 30): Promise<{ success: boolean; dat
         GROUP BY 1 ORDER BY clicks DESC LIMIT 10
       `),
       db.execute(sql`
-        SELECT COALESCE(NULLIF(country, ''), 'unknown') AS country, count(*)::int AS clicks
-        FROM public.page_visits WHERE is_bot = false AND ${windowSql}
-        GROUP BY 1 ORDER BY clicks DESC LIMIT 10
+        WITH conv AS (
+          SELECT attribution->>'sessionId' AS sid FROM public.users WHERE attribution->>'sessionId' IS NOT NULL
+          UNION
+          SELECT attribution->>'sessionId' AS sid FROM public.subscribers WHERE attribution->>'sessionId' IS NOT NULL
+        )
+        SELECT COALESCE(NULLIF(pv.country, ''), 'unknown') AS country,
+               count(*)::int AS clicks,
+               count(DISTINCT conv.sid)::int AS conversions
+        FROM public.page_visits pv
+        LEFT JOIN conv ON conv.sid = pv.session_id
+        WHERE pv.is_bot = false AND pv.created_at >= now() - (${days} || ' days')::interval
+        GROUP BY 1 ORDER BY clicks DESC LIMIT 20
       `),
       db.execute(sql`
         SELECT source, landing_path, referrer, country, created_at
@@ -765,7 +774,7 @@ export async function getTrackerData(days = 30): Promise<{ success: boolean; dat
       funnel,
       landingPages: (landingRows as any[]).map((r) => ({ path: r.path as string, clicks: Number(r.clicks) })),
       referrers: (referrerRows as any[]).map((r) => ({ referrer: r.referrer as string, clicks: Number(r.clicks) })),
-      countries: (countryRows as any[]).map((r) => ({ country: r.country as string, clicks: Number(r.clicks) })),
+      countries: (countryRows as any[]).map((r) => ({ country: r.country as string, clicks: Number(r.clicks), conversions: Number(r.conversions) })),
       recent: (recentRows as any[]).map((r) => ({
         source: r.source as string,
         landingPath: (r.landing_path as string) ?? null,

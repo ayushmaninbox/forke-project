@@ -64,6 +64,13 @@ export const metadata: Metadata = {
 
 import { NextAuthProvider } from '@/components/providers/NextAuthProvider'
 import { ScrollToTopOnLoad } from '@/components/providers/ScrollToTopOnLoad'
+import { CookieConsentProvider } from '@/components/providers/CookieConsentProvider'
+import { GoogleAnalyticsWrapper } from '@/components/providers/GoogleAnalyticsWrapper'
+import { CookieConsentBanner } from '@/components/ui/CookieConsentBanner'
+
+// Load GA4 only in production with a configured ID, so local dev never pollutes
+// the live analytics. Set NEXT_PUBLIC_GA_ID in Vercel (e.g. G-XV7FKNZ4S6).
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
 export default function RootLayout({
   children,
@@ -78,10 +85,15 @@ export default function RootLayout({
     >
       <body className="antialiased bg-[#0A0A0A]">
         <ScrollToTopOnLoad />
-        <NextAuthProvider>
-          {children}
-        </NextAuthProvider>
+        <CookieConsentProvider>
+          <NextAuthProvider>
+            {children}
+          </NextAuthProvider>
+          <CookieConsentBanner />
+          <GoogleAnalyticsWrapper gaId={GA_ID} />
+        </CookieConsentProvider>
       </body>
     </html>
   )
 }
+

@@ -165,6 +165,9 @@ export default auth(async (req) => {
   // first-touch cookie, then redirect to the same URL WITHOUT those params. This keeps the address
   // bar clean — so if the visitor later shares the page from their browser, they share a plain link
   // and don't accidentally pass their own attribution on to the next person.
+  const consent = req.cookies.get('forke_cookie_consent')?.value
+  const isConsentDeclined = consent === 'declined'
+
   const hasTrackingParams = TRACKING_PARAMS.some((p) => req.nextUrl.searchParams.has(p))
   if (hasTrackingParams) {
     const cleanUrl = new URL(req.nextUrl.pathname, req.nextUrl.origin)
@@ -173,20 +176,26 @@ export default auth(async (req) => {
       if (!TRACKING_PARAMS.includes(key)) cleanUrl.searchParams.set(key, value)
     })
     const redirect = NextResponse.redirect(cleanUrl)
-    const attribution = computeAttribution(req)
-    if (attribution) {
-      setAttributionCookie(redirect, attribution)
-      // Ensure a session id exists, then record the click (non-blocking).
-      let sessionId = req.cookies.get(SESSION_COOKIE)?.value
-      if (!sessionId) {
-        sessionId = newSessionId()
-        redirect.cookies.set(SESSION_COOKIE, sessionId, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 90, // 90 days, matches attribution cookie
-          sameSite: 'lax',
-        })
+
+    if (isConsentDeclined) {
+      redirect.cookies.delete(ATTRIBUTION_COOKIE)
+      redirect.cookies.delete(SESSION_COOKIE)
+    } else {
+      const attribution = computeAttribution(req)
+      if (attribution) {
+        setAttributionCookie(redirect, attribution)
+        // Ensure a session id exists, then record the click (non-blocking).
+        let sessionId = req.cookies.get(SESSION_COOKIE)?.value
+        if (!sessionId) {
+          sessionId = newSessionId()
+          redirect.cookies.set(SESSION_COOKIE, sessionId, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 90, // 90 days, matches attribution cookie
+            sameSite: 'lax',
+          })
+        }
+        trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
       }
-      trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
     }
     return redirect
   }
@@ -199,21 +208,27 @@ export default auth(async (req) => {
   const withCookies = (res: NextResponse) => {
     res.cookies.set('site_access_public', siteAccess ? 'true' : 'false', { path: '/' })
     res.cookies.set('waitlist_active', waitlistEnabled ? 'true' : 'false', { path: '/' })
-    // Capture attribution for requests that aren't being redirected to a clean URL below
-    // (e.g. an external referrer with no UTM tags — nothing to strip from the address bar).
-    const attribution = computeAttribution(req)
-    if (attribution && !TRACKING_PARAMS.some((p) => req.nextUrl.searchParams.has(p))) {
-      setAttributionCookie(res, attribution)
-      let sessionId = req.cookies.get(SESSION_COOKIE)?.value
-      if (!sessionId) {
-        sessionId = newSessionId()
-        res.cookies.set(SESSION_COOKIE, sessionId, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 90,
-          sameSite: 'lax',
-        })
+    
+    if (isConsentDeclined) {
+      res.cookies.delete(ATTRIBUTION_COOKIE)
+      res.cookies.delete(SESSION_COOKIE)
+    } else {
+      // Capture attribution for requests that aren't being redirected to a clean URL below
+      // (e.g. an external referrer with no UTM tags — nothing to strip from the address bar).
+      const attribution = computeAttribution(req)
+      if (attribution && !TRACKING_PARAMS.some((p) => req.nextUrl.searchParams.has(p))) {
+        setAttributionCookie(res, attribution)
+        let sessionId = req.cookies.get(SESSION_COOKIE)?.value
+        if (!sessionId) {
+          sessionId = newSessionId()
+          res.cookies.set(SESSION_COOKIE, sessionId, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 90,
+            sameSite: 'lax',
+          })
+        }
+        trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
       }
-      trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
     }
     // Public, indexable surfaces (blogs/docs/changelog) must stay cacheable so
     // crawlers don't treat them as no-store. Everything else is per-visitor

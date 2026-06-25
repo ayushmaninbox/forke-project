@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
         hostname: 'i.pravatar.cc',
         pathname: '**',
       },
+      {
+        protocol: 'https',
+        hostname: 'flagcdn.com',
+        pathname: '**',
+      },
     ],
   },
 };
