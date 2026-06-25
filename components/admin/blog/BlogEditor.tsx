@@ -101,6 +101,7 @@ export default function BlogEditor({
   // Crop target: which slot the cropped/uploaded image should fill.
   const [cropFile, setCropFile] = useState<{ file: File; target: 'body' | 'cover' } | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [isGif, setIsGif] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
   // Open the chooser (upload or paste a link) rather than jumping straight to
@@ -231,6 +232,8 @@ export default function BlogEditor({
     filename: string
   ) => {
     if (!editor) return
+    const isGifFile = blob.type === 'image/gif' || filename.toLowerCase().endsWith('.gif')
+    setIsGif(isGifFile)
     setUploading(true)
     setUploadProgress(0)
     try {
@@ -250,6 +253,7 @@ export default function BlogEditor({
       toast(err instanceof Error ? err.message : 'Failed to add image.', 'error')
     } finally {
       setUploading(false)
+      setIsGif(false)
       setUploadProgress(0)
     }
   }
@@ -690,7 +694,9 @@ export default function BlogEditor({
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-72 rounded-xl border border-[var(--color-border)] bg-[#0b0b0e] p-5 shadow-2xl shadow-black/60">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-white">Uploading image…</span>
+              <span className="text-xs font-medium text-white">
+                {isGif ? 'Uploading GIF…' : 'Uploading image…'}
+              </span>
               <span className="font-mono text-[11px] text-accent">{uploadProgress}%</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">

@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import * as fs from 'fs'
 import * as path from 'path'
 
@@ -64,6 +65,58 @@ export async function uploadToR2(
 
   const basePublicUrl = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl
   return `${basePublicUrl}/${cleanKey}`
+}
+
+/**
+ * Generate a short-lived presigned PUT URL so the browser can upload a file
+ * DIRECTLY to R2, bypassing the server entirely. This sidesteps Vercel's
+ * ~4.5 MB serverless request-body limit (which a multi-MB GIF blows past).
+ *
+ * The signed URL is bound to the exact key and Content-Type, so the client
+ * must PUT with the same `Content-Type` header it declared here.
+ *
+ * @param key         Destination key in the bucket (e.g. 'blogs/uuid.gif').
+ * @param contentType MIME type the browser will send (must match on PUT).
+ * @param expiresIn   URL lifetime in seconds (default 5 minutes).
+ * @returns `{ uploadUrl, publicUrl }` — PUT to `uploadUrl`, serve `publicUrl`.
+ */
+export async function presignUpload(
+  key: string,
+  contentType: string,
+  expiresIn = 300
+): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+  const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT
+  const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME
+  const publicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL
+
+  if (!accessKeyId || !secretAccessKey || !endpoint || !bucketName || !publicUrl) {
+    throw new Error('Cloudflare R2 is not fully configured. Missing environment variables.')
+  }
+
+  const s3Client = new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+  })
+
+  // Same sanitization as uploadToR2 so keys stay consistent across both paths.
+  const cleanKey = key.replace(/[^a-zA-Z0-9.-_/]/g, '_')
+
+  const uploadUrl = await getSignedUrl(
+    s3Client,
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: cleanKey,
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+    }),
+    { expiresIn }
+  )
+
+  const basePublicUrl = publicUrl.endsWith('/') ? publicUrl.slice(0, -1) : publicUrl
+  return { uploadUrl, publicUrl: `${basePublicUrl}/${cleanKey}` }
 }
 
 /**

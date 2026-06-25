@@ -4,6 +4,14 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "935de50",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T15:45:49+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add GIF upload support to blog editor slash menu"
+      },
+      {
         "shortHash": "a6a1ef3",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T14:33:39+05:30",
