@@ -4,6 +4,14 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "547e210",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T13:44:13+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Remove TableOfContents component and consolidate privacy, refund, and terms page layouts"
+      },
+      {
         "shortHash": "a49e01e",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T13:22:02+05:30",

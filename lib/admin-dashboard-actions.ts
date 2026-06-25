@@ -698,7 +698,10 @@ const EMPTY_TRACKER: TrackerData = {
 export async function getTrackerData(days = 30): Promise<{ success: boolean; data: TrackerData }> {
   await ensureAdmin()
   try {
-    const windowSql = sql`created_at >= now() - (${days} || ' days')::interval`
+    const isAllTime = days === -1
+    const windowSql = isAllTime
+      ? sql`1=1`
+      : sql`created_at >= now() - (${days} || ' days')::interval`
 
     const [statsRows, seriesRows, funnelRows, landingRows, referrerRows, countryRows, recentRows] = await Promise.all([
       db.execute(sql`
@@ -745,7 +748,7 @@ export async function getTrackerData(days = 30): Promise<{ success: boolean; dat
                count(DISTINCT conv.sid)::int AS conversions
         FROM public.page_visits pv
         LEFT JOIN conv ON conv.sid = pv.session_id
-        WHERE pv.is_bot = false AND pv.created_at >= now() - (${days} || ' days')::interval
+        WHERE pv.is_bot = false AND ${windowSql}
         GROUP BY 1 ORDER BY clicks DESC LIMIT 20
       `),
       db.execute(sql`

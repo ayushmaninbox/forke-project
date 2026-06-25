@@ -11,6 +11,7 @@ const RANGES: { label: string; days: number }[] = [
   { label: '7d', days: 7 },
   { label: '30d', days: 30 },
   { label: '90d', days: 90 },
+  { label: 'all', days: -1 },
 ]
 
 const EMPTY: TrackerData = {
