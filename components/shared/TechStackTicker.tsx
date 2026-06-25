@@ -95,7 +95,7 @@ export default function TechStackTicker({ isHeroEmbedded = false }: { isHeroEmbe
                 />
               </div>
               <span 
-                style={{ color: isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.4)' }}
+                style={{ color: isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)' }}
                 className="text-[13px] font-medium font-mono transition-colors duration-300"
               >
                 {item.name}

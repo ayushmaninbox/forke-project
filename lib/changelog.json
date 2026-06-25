@@ -4,6 +4,14 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "38f62d4",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T13:57:04+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add all-time data support to tracker panel and admin dashboard queries"
+      },
+      {
         "shortHash": "547e210",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T13:44:13+05:30",

@@ -100,11 +100,11 @@ export default function Footer() {
                 forke<span className="text-accent">*</span>
               </span>
             </a>
-            <p className="mt-4 max-w-xs text-sm font-light leading-relaxed text-white/40">
+            <p className="mt-4 max-w-xs text-sm font-light leading-relaxed text-white/60">
               The micro-task marketplace where Indian developers earn real money by
               shipping real code.
             </p>
-            <p className="mt-5 font-mono text-[11px] text-white/25">
+            <p className="mt-5 font-mono text-[11px] text-white/55">
               {'//'} prove skill by shipping
             </p>
           </div>
@@ -112,16 +112,16 @@ export default function Footer() {
           {/* Link columns */}
           {columns.map((col) => (
             <div key={col.heading}>
-              <h4 className="font-mono text-[11px] uppercase tracking-[0.08em] text-white/30">
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">
                 {col.heading}
-              </h4>
+              </p>
               <ul className="mt-5 space-y-3">
                 {col.links.map((link) => (
                   <li key={link.name}>
                     <a
                       href={link.href}
                       {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                      className="font-mono text-[13px] text-white/50 transition-colors hover:text-white"
+                      className="font-mono text-[13px] text-white/60 transition-colors hover:text-white"
                     >
                       {link.name}
                       {link.external && ' ↗'}
@@ -134,9 +134,9 @@ export default function Footer() {
 
           {/* Connect column */}
           <div>
-            <h4 className="font-mono text-[11px] uppercase tracking-[0.08em] text-white/30">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">
               connect
-            </h4>
+            </p>
             <div className="mt-5 flex flex-wrap gap-2">
               {SOCIALS.map((s) => (
                 <a
@@ -147,7 +147,7 @@ export default function Footer() {
                   {...(s.href.startsWith('http')
                     ? { target: '_blank', rel: 'noopener noreferrer' }
                     : {})}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.02] text-white/50 transition-colors hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.02] text-white/60 transition-colors hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
                 >
                   {s.icon}
                 </a>
@@ -156,7 +156,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/[0.05] py-7 font-mono text-[11px] text-white/30 md:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-white/[0.05] py-7 font-mono text-[11px] text-white/60 md:flex-row">
           <span>© 2026 forke — all rights reserved</span>
           <span>made in india · paid in rupees</span>
         </div>

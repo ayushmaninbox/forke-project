@@ -44,11 +44,11 @@ export function CookieConsentBanner() {
             <h3 className="text-sm font-semibold tracking-[-0.01em] text-white flex items-center gap-1.5">
               We respect your privacy
             </h3>
-            <p className="text-xs text-white/50 leading-relaxed">
+            <p className="text-xs text-white/65 leading-relaxed">
               We use analytics and marketing cookies to optimize your platform experience, track visitor referrals, and measure performance.
             </p>
-            <p className="text-[10px] text-white/30 leading-normal">
-              By clicking <span className="text-white/40 font-medium">Accept All</span>, you consent to our use of these technologies. You can read details in our{' '}
+            <p className="text-[10px] text-white/60 leading-normal">
+              By clicking <span className="text-white/70 font-semibold">Accept All</span>, you consent to our use of these technologies. You can read details in our{' '}
               <Link href="/privacy" className="text-accent hover:underline focus:outline-hidden font-medium">
                 Privacy Policy
               </Link>
