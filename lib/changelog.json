@@ -4,6 +4,14 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "a49e01e",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T13:22:02+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement cookie consent management, Google Analytics integration, and privacy policy table of contents navigation"
+      },
+      {
         "shortHash": "7f2fec0",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T12:41:46+05:30",
