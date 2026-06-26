@@ -2,16 +2,21 @@ import React from 'react'
 import { Metadata } from 'next'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export const metadata: Metadata = {
   title: 'Cancellation & Refund Policy',
   description: 'Understand the terms of task cancellation, bounty refunds, and payout processing timelines on the Forke platform.',
   alternates: { canonical: '/refund' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Cancellation & Refund Policy | Forke',
     description: 'Bounty cancellation rules, refund eligibility, and payment processing details.',
     url: 'https://www.forke.space/refund',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Cancellation & Refund Policy | Forke',
+    description: 'Bounty cancellation rules, refund eligibility, and payment processing details.',
+  }),
 }
 
 export default function RefundPage() {

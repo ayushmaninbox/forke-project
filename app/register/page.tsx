@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import RegisterContent from '@/components/auth/RegisterContent'
 import { isWaitlistEnabled } from '@/lib/db/settings'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 // While the waitlist lock is on, sign-up is closed — this route 404s. EXCEPT for
 // visitors who unlocked the site via /checkout (site_access cookie), so the bypass
@@ -13,11 +14,15 @@ export const metadata: Metadata = {
   title: 'Join the Movement',
   description: 'Create your Forke account today. Start your journey as a builder, ship real work, and earn rewards in the developer marketplace.',
   alternates: { canonical: '/register' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Join the Movement | Forke',
     description: 'Start your journey as a builder and get paid for your work.',
     url: 'https://www.forke.space/register',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Join the Movement | Forke',
+    description: 'Start your journey as a builder and get paid for your work.',
+  }),
 }
 
 export default async function RegisterPage() {

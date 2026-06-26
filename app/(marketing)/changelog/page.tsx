@@ -6,17 +6,22 @@ import { Crosses, Rails } from '@/components/landing/primitives'
 import { getChangelog, getCommitCount, type ChangeKind } from '@/lib/changelog'
 import { isWaitlistEnabled } from '@/lib/db/settings'
 import ChangelogList from './ChangelogList'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export const metadata: Metadata = {
   title: 'Changelog',
   description:
     'What we shipped on Forke — every feature, fix, and polish pass, pulled straight from the commit history.',
   alternates: { canonical: '/changelog' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Changelog | Forke',
     description: 'Every feature, fix, and polish pass — pulled straight from git.',
     url: 'https://www.forke.space/changelog',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Changelog | Forke',
+    description: 'Every feature, fix, and polish pass — pulled straight from git.',
+  }),
 }
 
 // Re-read git history at most every 10 minutes.

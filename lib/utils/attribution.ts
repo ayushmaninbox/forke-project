@@ -28,6 +28,41 @@ export async function readSessionId(): Promise<string | undefined> {
 }
 
 /**
+ * Known marketing channels and the variants we collapse into each one.
+ *
+ * Shared links get mangled in the wild in two ways:
+ *  - concatenated — "?source=reddit" glued to the next URL becomes
+ *    "reddithttps://www…", which slugifies to "reddithttpsw…"
+ *  - truncated — a link clipped mid-param leaves "?source=wh" / "?source=whatsa"
+ *
+ * Matching on a prefix/contains for each canonical channel folds both cases back
+ * into the right bucket so the dashboard shows "reddit"/"whatsapp", not garbage.
+ * Order matters: longer, more specific aliases are checked first.
+ */
+const CHANNEL_ALIASES: { canonical: string; matches: string[] }[] = [
+  { canonical: 'whatsapp', matches: ['whatsapp', 'whatsa', 'whats', 'whatp', 'wapp', 'wa', 'wh'] },
+  { canonical: 'reddit', matches: ['reddit', 'reddi', 'redd'] },
+  { canonical: 'twitter', matches: ['twitter', 'tweet', 'twt'] },
+  { canonical: 'linkedin', matches: ['linkedin', 'linked', 'lnkd'] },
+  { canonical: 'instagram', matches: ['instagram', 'insta', 'ig'] },
+  { canonical: 'discord', matches: ['discord', 'discrd'] },
+  { canonical: 'telegram', matches: ['telegram', 'tgram', 'tg'] },
+  { canonical: 'facebook', matches: ['facebook', 'fbook', 'fb'] },
+  { canonical: 'youtube', matches: ['youtube', 'ytube', 'yt'] },
+  { canonical: 'email', matches: ['email', 'newsletter', 'mail'] },
+]
+
+/** Map a slugified value to a canonical channel, or null if it matches no known channel. */
+function canonicalChannel(slug: string): string | null {
+  for (const { canonical, matches } of CHANNEL_ALIASES) {
+    // exact alias, or the value starts with the canonical name (catches concatenated junk)
+    if (slug === canonical || slug.startsWith(canonical)) return canonical
+    if (matches.some((m) => slug === m)) return canonical
+  }
+  return null
+}
+
+/**
  * Normalize a raw ?source= / ?utm_source= value into a clean, comparable channel slug.
  * Used by the middleware (capture), the waitlist route, and server actions so they all agree.
  */
@@ -38,7 +73,8 @@ export function normalizeSource(raw?: string | null): string {
     .trim()
     .replace(/[^a-z0-9_-]/g, '') // strip anything that isn't a safe slug char
     .slice(0, 32)
-  return cleaned || 'direct'
+  if (!cleaned) return 'direct'
+  return canonicalChannel(cleaned) || cleaned
 }
 
 /** Light cleaner for free-text attribution fields (medium/campaign). Keeps it short and printable. */

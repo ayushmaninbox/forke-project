@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import SignInContent from '@/components/auth/SignInContent'
 import { isWaitlistEnabled } from '@/lib/db/settings'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 // While the waitlist lock is on, sign-in is closed — this route 404s. EXCEPT for
 // visitors who unlocked the site via /checkout (site_access cookie), so the bypass
@@ -13,11 +14,15 @@ export const metadata: Metadata = {
   title: 'Sign In',
   description: 'Log in to your Forke account to access bounties, track your level, and manage your developer earnings.',
   alternates: { canonical: '/signin' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Sign In | Forke',
     description: 'Access the developer marketplace and continue your journey.',
     url: 'https://www.forke.space/signin',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Sign In | Forke',
+    description: 'Access the developer marketplace and continue your journey.',
+  }),
 }
 
 export default async function SignInPage() {

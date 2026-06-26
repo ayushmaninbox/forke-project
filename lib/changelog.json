@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-06-26",
+    "label": "jun 26, 2026",
+    "entries": [
+      {
+        "shortHash": "4e03122",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-26T12:32:22+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Truncate blog meta descriptions and improve open graph image metadata"
+      }
+    ]
+  },
+  {
     "date": "2026-06-25",
     "label": "jun 25, 2026",
     "entries": [

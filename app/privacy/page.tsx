@@ -2,16 +2,21 @@ import React from 'react'
 import { Metadata } from 'next'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Read the Forke Privacy Policy to understand how we collect, use, and protect your data.',
   alternates: { canonical: '/privacy' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Privacy Policy | Forke',
     description: 'How Forke collects, uses, and protects your data.',
     url: 'https://www.forke.space/privacy',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Privacy Policy | Forke',
+    description: 'How Forke collects, uses, and protects your data.',
+  }),
 }
 
 export default function PrivacyPage() {

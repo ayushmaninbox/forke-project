@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export const metadata: Metadata = {
   // Articles override %s, e.g. "Welcome to Forke - Forke Docs". The docs home
@@ -28,20 +29,17 @@ export const metadata: Metadata = {
     'earn money coding india',
   ],
   alternates: { canonical: '/docs' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Forke Docs — How the developer bounty marketplace works',
     description:
       'Everything about claiming bounties, shipping pull requests, passing the AI review pipeline, and getting paid via UPI escrow — for developers and founders alike.',
     url: 'https://www.forke.space/docs',
-    siteName: 'Forke',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
+  }),
+  twitter: buildTwitter({
     title: 'Forke Docs — How the developer bounty marketplace works',
     description:
       'Claim scoped bounties, ship a PR, pass automated + AI review, and get paid instantly via UPI escrow. The complete Forke guide for developers and founders.',
-  },
+  }),
 }
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {

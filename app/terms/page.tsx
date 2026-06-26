@@ -2,16 +2,21 @@ import React from 'react'
 import { Metadata } from 'next'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description: 'Read the Terms of Service for using the Forke platform. Understand our rules for task posting, completion, and community conduct.',
   alternates: { canonical: '/terms' },
-  openGraph: {
+  openGraph: buildOpenGraph({
     title: 'Terms of Service | Forke',
     description: 'The rules for task posting, completion, payouts, and community conduct on Forke.',
     url: 'https://www.forke.space/terms',
-  },
+  }),
+  twitter: buildTwitter({
+    title: 'Terms of Service | Forke',
+    description: 'The rules for task posting, completion, payouts, and community conduct on Forke.',
+  }),
 }
 
 export default function TermsPage() {

@@ -7,6 +7,7 @@ import DocsShell from '../DocsShell'
 import DocToc from '../DocToc'
 import { auth } from '@/auth'
 import { ALL_ARTICLES, getArticleContext, getArticleMarkdown } from '../content'
+import { buildOpenGraph, buildTwitter } from '@/lib/utils/og'
 
 export function generateStaticParams() {
   return ALL_ARTICLES.map((a) => ({ slug: a.slug }))
@@ -40,18 +41,16 @@ export async function generateMetadata({
       'developer bounty marketplace',
     ],
     alternates: { canonical: `/docs/${article.slug}` },
-    openGraph: {
+    openGraph: buildOpenGraph({
       title: `${article.title} - Forke Docs`,
       description,
       url: `https://www.forke.space/docs/${article.slug}`,
-      siteName: 'Forke',
       type: 'article',
-    },
-    twitter: {
-      card: 'summary_large_image',
+    }),
+    twitter: buildTwitter({
       title: `${article.title} - Forke Docs`,
       description,
-    },
+    }),
   }
 }
 

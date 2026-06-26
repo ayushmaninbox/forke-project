@@ -189,7 +189,10 @@ export default function TrackerPanel() {
             {[
               { icon: MousePointerClick, label: 'Clicks', value: stats.clicks.toLocaleString() },
               { icon: Users, label: 'Unique visitors', value: stats.visitors.toLocaleString() },
-              { icon: Target, label: 'Signups (from clicks)', value: stats.conversions.toLocaleString() },
+              // Total real signups (all-time) — matches the "total signups" figure in
+              // the breakdown below. The smaller click-attributed subset lives in the
+              // funnel, so the headline never contradicts the breakdown total.
+              { icon: Target, label: 'Signups (all-time)', value: signupTotal.toLocaleString() },
               { icon: Target, label: 'Conversion rate', value: `${stats.rate}%` },
             ].map((s) => (
               <div key={s.label} className="rounded-xl bg-white/[0.018] border border-[var(--color-border)] px-4 py-3">

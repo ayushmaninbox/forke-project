@@ -13,6 +13,8 @@
  * progress — fetch doesn't expose upload progress events.
  */
 
+import { compressImage } from './compressImage'
+
 export interface UploadResult {
   url: string
 }
@@ -96,19 +98,21 @@ export async function uploadImage(
   filename = 'image',
   onProgress?: (percent: number) => void
 ): Promise<UploadResult> {
-  const contentType = file.type || 'application/octet-stream'
+  // Compress in the browser first (downscale + WebP). GIFs and failures pass
+  // through untouched, so this never blocks an upload — it only ever shrinks it.
+  const { blob, contentType, filename: outName } = await compressImage(file, filename)
 
   // 1) Try the direct-to-R2 presigned path (no Vercel body limit).
   try {
     const res = await fetch('/api/blog-upload/presign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contentType, size: file.size }),
+      body: JSON.stringify({ contentType, size: blob.size }),
     })
 
     if (res.ok) {
       const { uploadUrl, publicUrl } = await res.json()
-      await putToPresignedUrl(uploadUrl, file, contentType, onProgress)
+      await putToPresignedUrl(uploadUrl, blob, contentType, onProgress)
       return { url: publicUrl }
     }
 
@@ -130,5 +134,5 @@ export async function uploadImage(
   }
 
   // 2) Fallback: POST through the server (local dev / no R2).
-  return postThroughServer(file, filename, onProgress)
+  return postThroughServer(blob, outName, onProgress)
 }
