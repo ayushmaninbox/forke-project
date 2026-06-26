@@ -12,26 +12,46 @@ export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ slug: string }> }
 
+/**
+ * Trim a description to a social-preview-friendly length. Google truncates
+ * around 150–160 chars and most social cards show ~125, so we cap at 155 and
+ * cut on a word boundary with an ellipsis rather than mid-word.
+ */
+function truncateDescription(text: string | null | undefined, max = 155): string | undefined {
+  if (!text) return undefined
+  const clean = text.trim()
+  if (clean.length <= max) return clean
+  const cut = clean.slice(0, max)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[.,;:!\-\s]+$/, '')}…`
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params
   const post = await getPublishedBlogBySlug(slug)
   if (!post) return { title: 'Post not found' }
   const url = `https://www.forke.space/blogs/${post.slug}`
+  const description = truncateDescription(post.excerpt)
   return {
     title: post.title,
-    description: post.excerpt || undefined,
+    description,
     alternates: { canonical: `/blogs/${post.slug}` },
     openGraph: {
       title: post.title,
-      description: post.excerpt || undefined,
+      description,
       url,
       type: 'article',
-      images: post.coverImage ? [{ url: post.coverImage }] : undefined,
+      // Next.js replaces (not deep-merges) the parent openGraph block, so the
+      // root layout's siteName would be dropped here unless we re-declare it.
+      siteName: 'Forke',
+      images: post.coverImage
+        ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.title }]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.excerpt || undefined,
+      description,
       images: post.coverImage ? [post.coverImage] : undefined,
     },
   }

@@ -4,6 +4,22 @@
     "label": "jun 25, 2026",
     "entries": [
       {
+        "shortHash": "5d586b3",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T16:23:21+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Implement retry logic for Resend blog broadcasts and improve audit logging for failures"
+      },
+      {
+        "shortHash": "a6d85fc",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-25T16:06:40+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement direct R2 upload via presigned URLs to bypass Vercel request body limits"
+      },
+      {
         "shortHash": "935de50",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-25T15:45:49+05:30",
