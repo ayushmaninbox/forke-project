@@ -4,6 +4,22 @@
     "label": "jun 29, 2026",
     "entries": [
       {
+        "shortHash": "479f183",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T13:56:20+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Improve table layout responsiveness and prevent button wrapping in BucketsPanel"
+      },
+      {
+        "shortHash": "15f8f98",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T13:53:23+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Paginate country list, add funnel show-all, fix mobile bucket actions"
+      },
+      {
         "shortHash": "7f2861c",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-29T13:16:23+05:30",

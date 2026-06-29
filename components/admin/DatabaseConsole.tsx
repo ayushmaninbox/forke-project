@@ -1405,27 +1405,6 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                   </button>
                 )}
 
-                {/* Pagination */}
-                <div className="flex items-center gap-2 border border-white/[0.06] rounded-lg p-0.5 bg-white/[0.02] text-[11px] font-mono text-white/50 select-none whitespace-nowrap shrink-0">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1 || isLoadingData}
-                    className="p-1 hover:bg-white/[0.04] text-white/50 hover:text-white rounded disabled:opacity-20 cursor-pointer"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="px-1 text-white whitespace-nowrap shrink-0 text-[10px] sm:text-[11px]">
-                    {rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, tableRowsCountEnabled ? totalRecords : ((currentPage - 1) * pageSize + rows.length))}<span className="hidden sm:inline"> {tableRowsCountEnabled && `of ${totalRecords}`}</span>
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || isLoadingData}
-                    className="p-1 hover:bg-white/[0.04] text-white/50 hover:text-white rounded disabled:opacity-20 cursor-pointer"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
                 {/* Execution Time */}
                 <span className="text-[10px] text-white/30 font-mono hidden md:inline whitespace-nowrap shrink-0">
                   {queryTimeMs > 0 ? `${queryTimeMs}ms` : ''}
