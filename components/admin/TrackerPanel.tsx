@@ -104,6 +104,109 @@ function BarList({
 }
 
 const RECENT_PAGE_SIZE = 8
+const LIST_PAGE_SIZE = 10
+
+function PagedBarRows({
+  rows,
+  renderRow,
+}: {
+  rows: React.ReactNode[]
+  renderRow?: never
+}) {
+  const [page, setPage] = useState(0)
+  const totalPages = Math.ceil(rows.length / LIST_PAGE_SIZE)
+  const p = Math.min(page, totalPages - 1)
+  const slice = rows.slice(p * LIST_PAGE_SIZE, p * LIST_PAGE_SIZE + LIST_PAGE_SIZE)
+  return (
+    <div>
+      <div className="space-y-2.5">{slice}</div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--color-border)]">
+          <button
+            onClick={() => setPage((x) => Math.max(0, x - 1))}
+            disabled={p === 0}
+            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
+          >
+            ← Prev
+          </button>
+          <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
+            {p * LIST_PAGE_SIZE + 1}–{Math.min((p + 1) * LIST_PAGE_SIZE, rows.length)} of {rows.length}
+          </span>
+          <button
+            onClick={() => setPage((x) => Math.min(totalPages - 1, x + 1))}
+            disabled={p >= totalPages - 1}
+            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FunnelCard({ funnel }: { funnel: { source: string; clicks: number; conversions: number; rate: number }[] }) {
+  if (funnel.length === 0)
+    return (
+      <Card title="Click → signup funnel" subtitle="Per source: total clicks (grey) vs. signups they produced (accent)">
+        <p className="text-xs text-[var(--color-text-muted)] py-4 text-center">No source data yet.</p>
+      </Card>
+    )
+  const maxClicks = Math.max(...funnel.map((f) => f.clicks), 1)
+  const rows = funnel.map((f) => (
+    <div key={f.source} className="flex items-center gap-3">
+      <span className="w-24 shrink-0 text-xs font-mono text-white/70 truncate" title={f.source}>{f.source}</span>
+      <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden relative">
+        <div className="h-full rounded-full bg-white/15" style={{ width: `${(f.clicks / maxClicks) * 100}%` }} />
+        <div className="h-full rounded-full bg-accent/80 absolute top-0 left-0" style={{ width: `${(f.conversions / maxClicks) * 100}%` }} />
+      </div>
+      <span className="w-36 shrink-0 text-right text-xs font-mono text-white/80">
+        {f.conversions}/{f.clicks} <span className="text-[var(--color-text-muted)]">({f.rate}%)</span>
+      </span>
+    </div>
+  ))
+  return (
+    <Card title="Click → signup funnel" subtitle="Per source: total clicks (grey) vs. signups they produced (accent)">
+      <PagedBarRows rows={rows} />
+    </Card>
+  )
+}
+
+function SignupSourceCard({
+  signupSources,
+  signupTotal,
+}: {
+  signupSources: { source: string; count: number }[]
+  signupTotal: number
+}) {
+  const max = Math.max(...signupSources.map((s) => s.count), 1)
+  const rows = signupSources.map((s) => {
+    const pct = signupTotal > 0 ? Math.round((s.count / signupTotal) * 1000) / 10 : 0
+    return (
+      <div key={s.source} className="flex items-center gap-3">
+        <span className="w-28 shrink-0 text-xs font-mono text-white/70 truncate" title={s.source}>{s.source}</span>
+        <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
+          <div className="h-full rounded-full bg-accent/70" style={{ width: `${(s.count / max) * 100}%` }} />
+        </div>
+        <span className="w-24 shrink-0 text-right text-xs font-mono text-white/80">
+          {s.count} <span className="text-[var(--color-text-muted)]">({pct}%)</span>
+        </span>
+      </div>
+    )
+  })
+  return (
+    <Card
+      title="Signups by source (all-time)"
+      subtitle="Every real signup across users + subscribers, grouped by channel. These are confirmed conversions — click data wasn't recorded before the tracker, so no rate is shown here."
+    >
+      <div className="flex items-baseline gap-2 mb-4">
+        <span className="text-2xl font-mono text-white">{signupTotal.toLocaleString()}</span>
+        <span className="text-xs text-[var(--color-text-muted)]">total signups · {signupSources.length} channels</span>
+      </div>
+      <PagedBarRows rows={rows} />
+    </Card>
+  )
+}
 
 export default function TrackerPanel() {
   const [days, setDays] = useState(30)
@@ -247,61 +350,11 @@ export default function TrackerPanel() {
           </Card>
 
           {/* Per-source funnel */}
-          <Card title="Click → signup funnel" subtitle="Per source: total clicks (grey) vs. signups they produced (accent)">
-            {funnel.length > 0 ? (
-              <div className="space-y-2.5">
-                {(() => {
-                  const maxClicks = Math.max(...funnel.map((f) => f.clicks), 1)
-                  return funnel.map((f) => (
-                    <div key={f.source} className="flex items-center gap-3">
-                      <span className="w-24 shrink-0 text-xs font-mono text-white/70 truncate" title={f.source}>{f.source}</span>
-                      <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden relative">
-                        <div className="h-full rounded-full bg-white/15" style={{ width: `${(f.clicks / maxClicks) * 100}%` }} />
-                        <div className="h-full rounded-full bg-accent/80 absolute top-0 left-0" style={{ width: `${(f.conversions / maxClicks) * 100}%` }} />
-                      </div>
-                      <span className="w-36 shrink-0 text-right text-xs font-mono text-white/80">
-                        {f.conversions}/{f.clicks} <span className="text-[var(--color-text-muted)]">({f.rate}%)</span>
-                      </span>
-                    </div>
-                  ))
-                })()}
-              </div>
-            ) : (
-              <p className="text-xs text-[var(--color-text-muted)] py-4 text-center">No source data yet.</p>
-            )}
-          </Card>
+          <FunnelCard funnel={funnel} />
 
-          {/* All-time signups by source — real conversions across the whole history.
-              Shown separately from live clicks so the two are never conflated. */}
+          {/* All-time signups by source */}
           {signupSources.length > 0 && (
-            <Card
-              title="Signups by source (all-time)"
-              subtitle="Every real signup across users + subscribers, grouped by channel. These are confirmed conversions — click data wasn't recorded before the tracker, so no rate is shown here."
-            >
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-2xl font-mono text-white">{signupTotal.toLocaleString()}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">total signups · {signupSources.length} channels</span>
-              </div>
-              <div className="space-y-2.5">
-                {(() => {
-                  const max = Math.max(...signupSources.map((s) => s.count), 1)
-                  return signupSources.map((s) => {
-                    const pct = signupTotal > 0 ? Math.round((s.count / signupTotal) * 1000) / 10 : 0
-                    return (
-                      <div key={s.source} className="flex items-center gap-3">
-                        <span className="w-28 shrink-0 text-xs font-mono text-white/70 truncate" title={s.source}>{s.source}</span>
-                        <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                          <div className="h-full rounded-full bg-accent/70" style={{ width: `${(s.count / max) * 100}%` }} />
-                        </div>
-                        <span className="w-24 shrink-0 text-right text-xs font-mono text-white/80">
-                          {s.count} <span className="text-[var(--color-text-muted)]">({pct}%)</span>
-                        </span>
-                      </div>
-                    )
-                  })
-                })()}
-              </div>
-            </Card>
+            <SignupSourceCard signupSources={signupSources} signupTotal={signupTotal} />
           )}
 
           {/* Landing pages + Referrers side by side */}

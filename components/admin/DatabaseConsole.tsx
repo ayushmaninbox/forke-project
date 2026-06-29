@@ -1108,10 +1108,10 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
         )}
 
         {/* Neon style Top Toolbar */}
-        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11]">
-          
+        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11] overflow-x-auto no-scrollbar">
+
           {/* Left side actions (DATA/STRUCTURE tabs, history nav, search/filters, sort, columns dropdown, insert button) */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             
             {/* DATA / STRUCTURE Tabs */}
             <div className="flex items-center bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg">
@@ -1155,7 +1155,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
             {/* Table-level interactive dropdowns */}
             {selectedTable && activeSubTab === 'data' && (
-              <div className="flex items-center gap-2 flex-wrap max-w-full py-1">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 max-w-full">
                 
                 {/* Filters Button */}
                 <button
@@ -1375,7 +1375,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           </div>
 
           {/* Right: metadata & reload & more actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {selectedTable && activeSubTab === 'data' && (
               <>
                 {/* Execution Time */}
@@ -1422,10 +1422,11 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                       setShowSortDropdown(false)
                       setShowColumnsDropdown(false)
                     }}
-                    className="w-8 h-8 rounded-lg border border-white/[0.06] bg-white/[0.02] flex items-center justify-center text-white/60 hover:text-white hover:border-white/12 transition-colors cursor-pointer"
+                    className="h-8 px-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5 text-white/60 hover:text-white hover:border-white/12 transition-colors cursor-pointer"
                     title="More actions"
                   >
                     <MoreHorizontal className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium hidden sm:inline">Actions</span>
                   </button>
 
                   {showActionsDropdown && (
@@ -1696,8 +1697,8 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                         <span>SQL Editor Console</span>
                       </div>
                       
-                      {/* Query Templates / Snippets */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto max-w-xl no-scrollbar py-0.5">
+                      {/* Query Templates / Snippets — hidden on mobile */}
+                      <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto max-w-xl no-scrollbar py-0.5">
                         <span className="text-[10px] text-white/30 uppercase font-semibold shrink-0 mr-1">Templates:</span>
                         {[
                           { label: 'Subscribers List', query: 'SELECT * FROM subscribers LIMIT 10;' },

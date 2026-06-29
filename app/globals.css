@@ -423,6 +423,10 @@ html, body {
   scrollbar-color: var(--color-accent) transparent;
 }
 
+/* Hide scrollbar but keep scroll behaviour */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* theme-ember scrollbar overrides */
 .theme-ember::-webkit-scrollbar {
   width: 12px;

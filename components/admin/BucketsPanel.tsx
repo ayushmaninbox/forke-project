@@ -81,6 +81,10 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
   // Selection logic for bulk actions
   const [selectedKeys, setSelectedKeys] = useState<string[]>([])
 
+  // Pagination
+  const [pageSize, setPageSize] = useState<number>(10)
+  const [currentPage, setCurrentPage] = useState<number>(0)
+
   // Inline image preview accordion — only one row open at a time (FAQ-style).
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
 
@@ -475,11 +479,16 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
   }, [objects, currentPrefix])
 
   // Filter items matching search bar
-  const filteredItems = parsedItems.filter(item => 
+  const filteredItems = parsedItems.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Selection list logic
+  // Pagination derived values
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
+  const safePage = Math.min(currentPage, totalPages - 1)
+  const pagedItems = filteredItems.slice(safePage * pageSize, safePage * pageSize + pageSize)
+
+  // Selection list logic — operate on the full filtered list, not just the page
   const fileKeysInCurrentView = filteredItems.map(i => i.key)
   const allSelected = fileKeysInCurrentView.length > 0 && fileKeysInCurrentView.every(k => selectedKeys.includes(k))
 
@@ -504,6 +513,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
   function handleEnterFolder(folderKey: string) {
     setCurrentPrefix(folderKey)
     setSearchQuery('')
+    setCurrentPage(0)
   }
 
   // Navigate back to parents in breadcrumbs
@@ -765,7 +775,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] font-mono">
                   {filteredItems.length > 0 ? (
-                    filteredItems.map(item => {
+                    pagedItems.map(item => {
                       const itemContentType = (item as any).contentType as string | undefined
                       const isImage = !item.isFolder && !!itemContentType && itemContentType.startsWith('image/')
                       const isExpanded = expandedKey === item.key
@@ -914,6 +924,41 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Pagination footer */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.06] shrink-0 bg-white/[0.005]">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono text-white/30">Rows:</span>
+                {[10, 50, 100].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => { setPageSize(n); setCurrentPage(0) }}
+                    className={`text-[11px] font-mono px-2 py-0.5 rounded transition-colors ${pageSize === n ? 'bg-white/[0.06] text-white' : 'text-white/40 hover:text-white'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] font-mono text-white/30">
+                  {filteredItems.length === 0 ? '0' : `${safePage * pageSize + 1}–${Math.min((safePage + 1) * pageSize, filteredItems.length)}`} of {filteredItems.length}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="text-[11px] font-mono text-white/40 hover:text-white disabled:opacity-25 transition-colors"
+                >
+                  ← Prev
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={safePage >= totalPages - 1}
+                  className="text-[11px] font-mono text-white/40 hover:text-white disabled:opacity-25 transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
             </div>
 
             {/* Folder creation overlay modal */}
