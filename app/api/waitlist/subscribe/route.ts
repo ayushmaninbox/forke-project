@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { subscribers } from '@/lib/db/schema'
 import { z } from 'zod'
@@ -8,12 +8,14 @@ import { logAudit } from '@/lib/actions/audit-actions'
 import { readAttributionCookie, normalizeSource, readSessionId } from '@/lib/utils/attribution'
 import { getCountry } from '@/lib/utils/analytics'
 
+export const runtime = 'nodejs'
+
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   source: z.string().trim().max(64).optional(),
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, source } = emailSchema.parse(body)
@@ -43,12 +45,12 @@ export async function POST(request: Request) {
       email,
       source: channel,
       attribution: {
-        medium: attribution.medium,
-        campaign: attribution.campaign,
-        referrer: attribution.referrer,
-        landingPage: attribution.landingPage,
-        sessionId, // joins this waitlist conversion back to the originating click
-        country,
+        ...(attribution.medium && { medium: attribution.medium }),
+        ...(attribution.campaign && { campaign: attribution.campaign }),
+        ...(attribution.referrer && { referrer: attribution.referrer }),
+        ...(attribution.landingPage && { landingPage: attribution.landingPage }),
+        ...(sessionId && { sessionId }),
+        ...(country && { country }),
       },
     }).onConflictDoNothing()
 
