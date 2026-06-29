@@ -738,18 +738,33 @@ export async function getTrackerData(days = 30): Promise<{ success: boolean; dat
         GROUP BY 1 ORDER BY clicks DESC LIMIT 10
       `),
       db.execute(sql`
-        WITH conv AS (
-          SELECT attribution->>'sessionId' AS sid FROM public.users WHERE attribution->>'sessionId' IS NOT NULL
-          UNION
-          SELECT attribution->>'sessionId' AS sid FROM public.subscribers WHERE attribution->>'sessionId' IS NOT NULL
+        WITH clicks_by_country AS (
+          SELECT COALESCE(NULLIF(country, ''), 'unknown') AS country, count(*)::int AS clicks
+          FROM public.page_visits
+          WHERE is_bot = false AND ${windowSql}
+          GROUP BY 1
+        ),
+        conversions_by_country AS (
+          SELECT COALESCE(NULLIF(attribution->>'country', ''), 'unknown') AS country, count(*)::int AS conversions
+          FROM public.subscribers
+          WHERE attribution->>'country' IS NOT NULL
+          GROUP BY 1
+          UNION ALL
+          SELECT COALESCE(NULLIF(attribution->>'country', ''), 'unknown') AS country, count(*)::int AS conversions
+          FROM public.users
+          WHERE attribution->>'country' IS NOT NULL
+          GROUP BY 1
+        ),
+        conv_totals AS (
+          SELECT country, sum(conversions)::int AS conversions FROM conversions_by_country GROUP BY 1
         )
-        SELECT COALESCE(NULLIF(pv.country, ''), 'unknown') AS country,
-               count(*)::int AS clicks,
-               count(DISTINCT conv.sid)::int AS conversions
-        FROM public.page_visits pv
-        LEFT JOIN conv ON conv.sid = pv.session_id
-        WHERE pv.is_bot = false AND ${windowSql}
-        GROUP BY 1 ORDER BY clicks DESC LIMIT 20
+        SELECT
+          COALESCE(c.country, v.country) AS country,
+          COALESCE(c.clicks, 0)::int AS clicks,
+          COALESCE(v.conversions, 0)::int AS conversions
+        FROM clicks_by_country c
+        FULL OUTER JOIN conv_totals v ON v.country = c.country
+        ORDER BY clicks DESC LIMIT 20
       `),
       db.execute(sql`
         SELECT source, landing_path, referrer, country, created_at
