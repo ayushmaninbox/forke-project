@@ -610,3 +610,61 @@ export async function getBlogCount() {
     return { success: false as const, count: 0 }
   }
 }
+
+// ── blog view tracking ────────────────────────────────────────────────────────
+
+/** Increment the views counter for a post by slug. No auth gate — public API route. */
+export async function incrementBlogView(slug: string) {
+  try {
+    await db
+      .update(blogs)
+      .set({ views: sql`${blogs.views} + 1` })
+      .where(and(eq(blogs.slug, slug), eq(blogs.status, 'published')))
+    return { success: true as const }
+  } catch {
+    return { success: false as const }
+  }
+}
+
+/** Views for a single post by id (public — no auth gate). */
+export async function getBlogViewCount(blogId: string): Promise<number> {
+  try {
+    const [row] = await db
+      .select({ views: blogs.views })
+      .from(blogs)
+      .where(eq(blogs.id, blogId))
+    return row?.views ?? 0
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Map of blogId → view count for ALL posts.
+ * Used by the admin panel to show counts for every row in one query.
+ */
+export async function getBlogViewCounts(): Promise<Record<string, number>> {
+  try {
+    await ensureAdmin()
+    const rows = await db.select({ id: blogs.id, views: blogs.views }).from(blogs)
+    return Object.fromEntries(rows.map((r) => [r.id, r.views]))
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Map of slug → view count for ALL published posts.
+ * Used by the public blog list to show counts without N+1 queries.
+ */
+export async function getPublishedBlogViewCounts(): Promise<Record<string, number>> {
+  try {
+    const rows = await db
+      .select({ slug: blogs.slug, views: blogs.views })
+      .from(blogs)
+      .where(eq(blogs.status, 'published'))
+    return Object.fromEntries(rows.map((r) => [r.slug, r.views]))
+  } catch {
+    return {}
+  }
+}

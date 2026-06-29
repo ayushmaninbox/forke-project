@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Clock, Users } from 'lucide-react'
 import { instrumentSerif } from '@/app/fonts'
 
 export interface BlogCard {
@@ -21,6 +21,7 @@ export interface BlogCard {
   authorName: string | null
   readingMinutes: number
   publishedAt: string | null
+  viewCount?: number
 }
 
 function formatDate(iso: string | null) {
@@ -115,6 +116,14 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {featured.readingMinutes} min read
               </span>
+              {(featured.viewCount ?? 0) > 0 && (
+                <>
+                  <span className="text-white/15">·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="h-3 w-3" /> {(featured.viewCount ?? 0).toLocaleString()}
+                  </span>
+                </>
+              )}
             </div>
             <h2 className={`${instrumentSerif.className} mt-5 text-3xl leading-[1.12] text-white transition-colors group-hover:text-accent sm:text-4xl lg:text-[2.6rem]`}>
               {featured.title}
@@ -156,6 +165,14 @@ export default function BlogList({ posts }: { posts: BlogCard[] }) {
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3 w-3" /> {post.readingMinutes} min
                   </span>
+                  {(post.viewCount ?? 0) > 0 && (
+                    <>
+                      <span className="text-white/15">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="h-3 w-3" /> {(post.viewCount ?? 0).toLocaleString()}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <h2 className={`${instrumentSerif.className} mt-3 text-xl leading-snug text-white transition-colors group-hover:text-accent`}>
                   {post.title}

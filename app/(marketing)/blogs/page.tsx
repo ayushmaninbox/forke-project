@@ -1,14 +1,17 @@
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
 import DotField from '@/components/shared/DotField'
-import { getPublishedBlogs } from '@/lib/blog-actions'
+import { getPublishedBlogs, getPublishedBlogViewCounts } from '@/lib/blog-actions'
 import BlogList, { type BlogCard } from './BlogList'
 
 // Always reflect the latest published posts.
 export const dynamic = 'force-dynamic'
 
 export default async function BlogsIndexPage() {
-  const rows = await getPublishedBlogs()
+  const [rows, viewCounts] = await Promise.all([
+    getPublishedBlogs(),
+    getPublishedBlogViewCounts(),
+  ])
   const posts: BlogCard[] = rows.map((r) => ({
     slug: r.slug,
     title: r.title,
@@ -17,6 +20,7 @@ export default async function BlogsIndexPage() {
     authorName: r.authorName,
     readingMinutes: r.readingMinutes,
     publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
+    viewCount: viewCounts[r.slug] ?? 0,
   }))
 
   return (

@@ -317,3 +317,5 @@ ALTER TABLE "page_visits" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "auth_events" ENABLE ROW LEVEL SECURITY;
 
 
+--> statement-breakpoint
+ALTER TABLE "blogs" ADD COLUMN IF NOT EXISTS "views" integer NOT NULL DEFAULT 0;

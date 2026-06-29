@@ -293,6 +293,7 @@ export const blogs = pgTable('blogs', {
   contentHtml: text('content_html'),               // rendered HTML snapshot
   status: blogStatusEnum('status').default('draft').notNull(),
   readingMinutes: integer('reading_minutes').default(1).notNull(),
+  views: integer('views').default(0).notNull(),
   publishedAt: timestamp('published_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -6,6 +6,7 @@ import { sendWelcomeEmail } from '@/lib/email'
 import { eq } from 'drizzle-orm'
 import { logAudit } from '@/lib/actions/audit-actions'
 import { readAttributionCookie, normalizeSource, readSessionId } from '@/lib/utils/attribution'
+import { getCountry } from '@/lib/utils/analytics'
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     const attribution = await readAttributionCookie()
     const sessionId = await readSessionId()
     const channel = attribution.source !== 'direct' ? attribution.source : normalizeSource(source)
+    const country = getCountry(request.headers)
 
     // Check if subscriber already exists in Drizzle
     const existing = await db
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
         referrer: attribution.referrer,
         landingPage: attribution.landingPage,
         sessionId, // joins this waitlist conversion back to the originating click
+        country,
       },
     }).onConflictDoNothing()
 

@@ -4,6 +4,14 @@
     "label": "jun 26, 2026",
     "entries": [
       {
+        "shortHash": "c99d11b",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-26T14:32:24+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Abstract OpenGraph and Twitter metadata generation into utility helpers and update marketing page configurations"
+      },
+      {
         "shortHash": "4e03122",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-26T12:32:22+05:30",

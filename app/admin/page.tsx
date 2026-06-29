@@ -688,13 +688,14 @@ export default function AdminDashboard() {
   }
 
   async function handleExportCSV() {
-    const headers = ['ID', 'Email', 'Source', 'Medium', 'Campaign', 'Referrer', 'Created At']
+    const headers = ['ID', 'Email', 'Source', 'Country', 'Medium', 'Campaign', 'Referrer', 'Created At']
     const rows = filteredSubscribers.map((sub) => {
       const a = (sub.attribution as Record<string, any> | null) || {}
       return [
         sub.id,
         sub.email,
         sub.source || 'direct',
+        (a.country as string | null | undefined)?.toUpperCase() || '',
         a.medium || '',
         a.campaign || '',
         a.referrer || '',
@@ -753,7 +754,13 @@ export default function AdminDashboard() {
 
   const filteredSubscribers = subscribersList.filter((sub) => {
     const q = searchQuery.toLowerCase()
-    return sub.email.toLowerCase().includes(q) || (sub.source || 'direct').toLowerCase().includes(q)
+    const a = (sub.attribution as Record<string, any> | null) || {}
+    const country = (a.country as string | null | undefined) || ''
+    return (
+      sub.email.toLowerCase().includes(q) ||
+      (sub.source || 'direct').toLowerCase().includes(q) ||
+      country.toLowerCase().includes(q)
+    )
   })
 
   // Signups grouped by marketing channel — sorted most → least, for the Sources breakdown card.
@@ -2153,7 +2160,7 @@ export default function AdminDashboard() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                   <input 
                     type="text" 
-                    placeholder="Search subscribers by email..."
+                    placeholder="Search subscribers by email, source or country..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-9 bg-white/[0.02] border border-[var(--color-border)] rounded-lg pl-9 pr-3 text-[13px] text-white focus:outline-none focus:border-accent transition-colors"
@@ -2177,6 +2184,7 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Subscriber ID</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Email Address</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Source</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Country</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Date & Time Joined</th>
                       <th className="px-6 py-3 text-xs font-semibold text-[var(--color-text-muted)] whitespace-nowrap">Actions</th>
                     </tr>
@@ -2184,47 +2192,60 @@ export default function AdminDashboard() {
                   <tbody className="divide-y divide-[var(--color-border)]/50">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
+                        <td colSpan={6} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">Loading records...</td>
                       </tr>
                     ) : filteredSubscribers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">No matching records found</td>
+                        <td colSpan={6} className="px-6 py-12 text-center text-[var(--color-text-muted)] text-sm">No matching records found</td>
                       </tr>
                     ) : (
-                      paginatedSubscribers.map((sub) => (
-                        <tr key={sub.id} className="group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0">
-                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
-                            <p>{sub.id}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-sm font-medium text-white">{sub.email}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium font-mono bg-white/[0.04] border border-[var(--color-border)] text-white/70">
-                              {sub.source || 'direct'}
-                            </span>
-                            {(() => {
-                              const a = sub.attribution as Record<string, any> | null
-                              const detail = a ? [a.medium, a.campaign].filter(Boolean).join(' · ') : ''
-                              return detail ? (
-                                <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1" title={a?.referrer || undefined}>{detail}</p>
-                              ) : null
-                            })()}
-                          </td>
-                          <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
-                            <p>{new Date(sub.createdAt).toLocaleString()}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button 
-                              onClick={() => handleDeleteSubscriber(sub.id)}
-                              className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
-                              title="Delete Subscriber"
-                            >
-                              <UserX className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      paginatedSubscribers.map((sub) => {
+                        const a = sub.attribution as Record<string, any> | null
+                        const country = a?.country as string | null | undefined
+                        return (
+                          <tr key={sub.id} className="group hover:bg-white/[0.005] transition-colors border-b border-[var(--color-border)]/50 last:border-b-0">
+                            <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
+                              <p>{sub.id}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-sm font-medium text-white">{sub.email}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium font-mono bg-white/[0.04] border border-[var(--color-border)] text-white/70">
+                                {sub.source || 'direct'}
+                              </span>
+                              {(() => {
+                                const detail = a ? [a.medium, a.campaign].filter(Boolean).join(' · ') : ''
+                                return detail ? (
+                                  <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1" title={a?.referrer || undefined}>{detail}</p>
+                                ) : null
+                              })()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {country ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs font-mono text-white/70">
+                                  <Globe className="w-3 h-3 text-[var(--color-text-muted)]" />
+                                  {country.toUpperCase()}
+                                </span>
+                              ) : (
+                                <span className="text-xs font-mono text-white/25">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-xs font-mono text-[var(--color-text-muted)] whitespace-nowrap">
+                              <p>{new Date(sub.createdAt).toLocaleString()}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => handleDeleteSubscriber(sub.id)}
+                                className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
+                                title="Delete Subscriber"
+                              >
+                                <UserX className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })
                     )}
                   </tbody>
                 </table>

@@ -21,6 +21,7 @@ import {
   bulkDeleteBlogs,
   bulkSetBlogStatus,
   cleanupSessionUploads,
+  getBlogViewCounts,
 } from '@/lib/blog-actions'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
@@ -42,6 +43,7 @@ import {
   ChevronRight,
   Search,
   X,
+  Users,
 } from 'lucide-react'
 import type { BlogEditorValue } from './blog/BlogEditor'
 
@@ -75,6 +77,7 @@ type StatusFilter = 'all' | 'published' | 'draft'
 
 function BlogList({ onOpen }: { onOpen: (id: string | null) => void }) {
   const [rows, setRows] = useState<BlogRow[]>([])
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [confirm, setConfirm] = useState<ConfirmOptions | null>(null)
   const [page, setPage] = useState(1)
@@ -86,8 +89,9 @@ function BlogList({ onOpen }: { onOpen: (id: string | null) => void }) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getBlogs()
+      const [res, counts] = await Promise.all([getBlogs(), getBlogViewCounts()])
       if (res.success) setRows(res.data)
+      setViewCounts(counts)
     } finally {
       setLoading(false)
     }
@@ -318,6 +322,7 @@ function BlogList({ onOpen }: { onOpen: (id: string | null) => void }) {
                 <th className="px-2 py-2.5 font-medium">Title</th>
                 <th className="hidden px-2 py-2.5 font-medium md:table-cell">Status</th>
                 <th className="hidden px-2 py-2.5 font-medium lg:table-cell">Author</th>
+                <th className="hidden px-2 py-2.5 font-medium sm:table-cell">Readers</th>
                 <th className="hidden px-2 py-2.5 font-medium sm:table-cell">Updated</th>
                 <th className="w-28 px-3 py-2.5 text-right font-medium">Actions</th>
               </tr>
@@ -366,6 +371,12 @@ function BlogList({ onOpen }: { onOpen: (id: string | null) => void }) {
                   <td className="hidden px-2 py-2.5 lg:table-cell">
                     <span className="text-[12px] text-[var(--color-text-muted)]">
                       {row.authorName || '—'}
+                    </span>
+                  </td>
+                  <td className="hidden px-2 py-2.5 sm:table-cell">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--color-text-muted)]">
+                      <Users className="h-3 w-3" />
+                      {(viewCounts[row.id] ?? 0).toLocaleString()}
                     </span>
                   </td>
                   <td className="hidden px-2 py-2.5 sm:table-cell">

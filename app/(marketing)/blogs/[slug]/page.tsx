@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowLeft, Clock } from 'lucide-react'
+import { ArrowLeft, Clock, Users } from 'lucide-react'
 import Navbar from '@/components/shared/Navbar'
 import Footer from '@/components/shared/Footer'
-import { getPublishedBlogBySlug, getPublishedBlogs } from '@/lib/blog-actions'
+import { getPublishedBlogBySlug, getPublishedBlogs, getBlogViewCount } from '@/lib/blog-actions'
 import { instrumentSerif } from '@/app/fonts'
 import RelatedArticles, { type RelatedCard } from './RelatedArticles'
+import BlogViewTracker from './BlogViewTracker'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,6 +63,8 @@ export default async function BlogPostPage({ params }: Params) {
   const post = await getPublishedBlogBySlug(slug)
   if (!post) notFound()
 
+  const viewCount = await getBlogViewCount(post.id)
+
   // Recent posts for the "You may also like these" section — exclude the
   // current post and cap at three (already ordered newest-first).
   const related: RelatedCard[] = (await getPublishedBlogs())
@@ -79,6 +82,7 @@ export default async function BlogPostPage({ params }: Params) {
 
   return (
     <div className="min-h-screen bg-bg text-white">
+      <BlogViewTracker slug={slug} />
       <Navbar />
       <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-28 sm:px-6">
         <Link
@@ -107,6 +111,10 @@ export default async function BlogPostPage({ params }: Params) {
                 })}
               </span>
             )}
+            <span className="inline-flex items-center gap-1 font-mono">
+              <Users className="h-3 w-3" />
+              {viewCount.toLocaleString()} {viewCount === 1 ? 'reader' : 'readers'}
+            </span>
           </div>
 
           {post.coverImage && (
