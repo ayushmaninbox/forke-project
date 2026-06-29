@@ -1,5 +1,35 @@
 [
   {
+    "date": "2026-06-29",
+    "label": "jun 29, 2026",
+    "entries": [
+      {
+        "shortHash": "269d178",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T12:11:58+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Use subscriber attribution country for tracker conversions instead of page_visits geo"
+      },
+      {
+        "shortHash": "6b48755",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T11:43:44+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Ensure country is stored in subscriber attribution and skip null JSONB fields"
+      },
+      {
+        "shortHash": "bd55a2d",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T11:12:23+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add blog view tracking system and enhance admin subscriber dashboard with country data and filtering"
+      }
+    ]
+  },
+  {
     "date": "2026-06-26",
     "label": "jun 26, 2026",
     "entries": [

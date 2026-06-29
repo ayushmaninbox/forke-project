@@ -1108,10 +1108,10 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
         )}
 
         {/* Neon style Top Toolbar */}
-        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11] overflow-x-auto no-scrollbar">
+        <div className="min-h-12 border-b border-white/[0.06] flex items-center justify-between gap-2 px-4 shrink-0 bg-[#0d0d11]">
 
           {/* Left side actions (DATA/STRUCTURE tabs, history nav, search/filters, sort, columns dropdown, insert button) */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4 min-w-0 overflow-x-auto no-scrollbar">
             
             {/* DATA / STRUCTURE Tabs */}
             <div className="flex items-center bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg">
@@ -1155,7 +1155,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
 
             {/* Table-level interactive dropdowns */}
             {selectedTable && activeSubTab === 'data' && (
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 max-w-full">
+              <div className="flex items-center gap-2 py-1 shrink-0">
                 
                 {/* Filters Button */}
                 <button
@@ -1375,7 +1375,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
           </div>
 
           {/* Right: metadata & reload & more actions */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 ml-2">
             {selectedTable && activeSubTab === 'data' && (
               <>
                 {/* Execution Time */}
@@ -1778,7 +1778,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                           ) : (
                             <>
                               <Play className="w-3.5 h-3.5 fill-current text-[#0a0a0a]" />
-                              <span>Run Query</span>
+                              <span>Run</span>
                             </>
                           )}
                         </button>
@@ -2092,7 +2092,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
             <div className="flex flex-col gap-6 text-left max-w-4xl pb-10">
               
               {/* Structure Header Controls */}
-              <div className="flex items-center gap-6 p-4 rounded-xl border border-white/[0.06] bg-[#0d0d11] shrink-0 text-xs">
+              <div className="flex flex-wrap items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-[#0d0d11] shrink-0 text-xs">
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] text-white/30 uppercase font-semibold">Table name</span>
                   <input
@@ -2116,10 +2116,10 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 </div>
 
                 {/* RLS Toggle switch */}
-                <div className="flex items-center gap-3 ml-auto border-l border-white/10 pl-6 h-10">
-                  <div className="flex flex-col gap-0.5 text-right">
-                    <span className="font-medium text-white/80">Row Level Security</span>
-                    <span className="text-[10px] text-white/40">Isolate table queries by user policies</span>
+                <div className="flex items-center gap-3 border-l border-white/10 pl-4 ml-auto">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium text-white/80 whitespace-nowrap">Row Level Security</span>
+                    <span className="text-[10px] text-white/40 whitespace-nowrap">Isolate queries by user policies</span>
                   </div>
                   <button
                     disabled={!isSuperAdmin}
