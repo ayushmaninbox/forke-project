@@ -27,7 +27,7 @@ const ISO2_TO_NAME: Record<string, string> = {
   ZA: 'South Africa', ES: 'Spain', IT: 'Italy', SE: 'Sweden', DK: 'Denmark', CH: 'Switzerland',
 }
 
-const PAGE_SIZE = 7
+const PAGE_SIZES = [10, 20, 50] as const
 
 // Reliable flag images (flagcdn) — emoji regional-indicator flags don't render on
 // many systems (e.g. Windows/Chrome showed a globe instead of the US flag).
@@ -67,6 +67,7 @@ function PercentRing({ pct }: { pct: number }) {
 export default function WorldHeatmap({ data }: { data: CountryDatum[] }) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
   const [hover, setHover] = useState<{ name: string; clicks: number } | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -92,9 +93,9 @@ export default function WorldHeatmap({ data }: { data: CountryDatum[] }) {
     return <p className="text-xs text-[var(--color-text-muted)] py-6 text-center">No geo data yet (needs edge geo headers in production).</p>
   }
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize))
   const safePage = Math.min(page, totalPages - 1)
-  const slice = rows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
+  const slice = rows.slice(safePage * pageSize, safePage * pageSize + pageSize)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -195,23 +196,32 @@ export default function WorldHeatmap({ data }: { data: CountryDatum[] }) {
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-2 pt-3 border-t border-[var(--color-border)]">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={safePage === 0}
-              className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
-            >← Prev</button>
+        <div className="flex items-center justify-between mt-2 pt-3 border-t border-[var(--color-border)]">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0 || rows.length === 0}
+            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
+          >← Prev</button>
+          <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono text-[var(--color-text-muted)]">
-              {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+              {rows.length > 0 ? `${safePage * pageSize + 1}–${Math.min((safePage + 1) * pageSize, rows.length)} of ${rows.length}` : '0'}
             </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              disabled={safePage >= totalPages - 1}
-              className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
-            >Next →</button>
+            <div className="flex items-center gap-0.5 border border-[var(--color-border)] rounded-md overflow-hidden">
+              {PAGE_SIZES.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => { setPageSize(s); setPage(0) }}
+                  className={`px-2 py-0.5 text-[10px] font-mono transition-colors ${pageSize === s ? 'bg-white/[0.08] text-white' : 'text-[var(--color-text-muted)] hover:text-white'}`}
+                >{s}</button>
+              ))}
+            </div>
           </div>
-        )}
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage >= totalPages - 1 || rows.length === 0}
+            className="text-[11px] font-mono text-[var(--color-text-muted)] hover:text-white disabled:opacity-30 transition-colors"
+          >Next →</button>
+        </div>
       </div>
     </div>
   )

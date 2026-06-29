@@ -146,6 +146,7 @@ function PagedBarRows({
 }
 
 function FunnelCard({ funnel }: { funnel: { source: string; clicks: number; conversions: number; rate: number }[] }) {
+  const [expanded, setExpanded] = useState(false)
   if (funnel.length === 0)
     return (
       <Card title="Click → signup funnel" subtitle="Per source: total clicks (grey) vs. signups they produced (accent)">
@@ -153,21 +154,26 @@ function FunnelCard({ funnel }: { funnel: { source: string; clicks: number; conv
       </Card>
     )
   const maxClicks = Math.max(...funnel.map((f) => f.clicks), 1)
-  const rows = funnel.map((f) => (
-    <div key={f.source} className="flex items-center gap-3">
-      <span className="w-24 shrink-0 text-xs font-mono text-white/70 truncate" title={f.source}>{f.source}</span>
-      <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden relative">
-        <div className="h-full rounded-full bg-white/15" style={{ width: `${(f.clicks / maxClicks) * 100}%` }} />
-        <div className="h-full rounded-full bg-accent/80 absolute top-0 left-0" style={{ width: `${(f.conversions / maxClicks) * 100}%` }} />
-      </div>
-      <span className="w-36 shrink-0 text-right text-xs font-mono text-white/80">
-        {f.conversions}/{f.clicks} <span className="text-[var(--color-text-muted)]">({f.rate}%)</span>
-      </span>
-    </div>
-  ))
+  const visible = expanded ? funnel : funnel.slice(0, LIST_PAGE_SIZE)
   return (
     <Card title="Click → signup funnel" subtitle="Per source: total clicks (grey) vs. signups they produced (accent)">
-      <PagedBarRows rows={rows} />
+      <div className="space-y-2.5">
+        {visible.map((f) => (
+          <div key={f.source} className="flex items-center gap-3">
+            <span className="w-24 shrink-0 text-xs font-mono text-white/70 truncate" title={f.source}>{f.source}</span>
+            <div className="flex-grow h-2 rounded-full bg-white/[0.04] overflow-hidden relative">
+              <div className="h-full rounded-full bg-white/15" style={{ width: `${(f.clicks / maxClicks) * 100}%` }} />
+              <div className="h-full rounded-full bg-accent/80 absolute top-0 left-0" style={{ width: `${(f.conversions / maxClicks) * 100}%` }} />
+            </div>
+            <span className="w-36 shrink-0 text-right text-xs font-mono text-white/80">
+              {f.conversions}/{f.clicks} <span className="text-[var(--color-text-muted)]">({f.rate}%)</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      {funnel.length > LIST_PAGE_SIZE && (
+        <ShowMoreToggle expanded={expanded} total={funnel.length} onToggle={() => setExpanded((v) => !v)} />
+      )}
     </Card>
   )
 }
