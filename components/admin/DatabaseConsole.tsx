@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { 
   getDatabaseTables, 
   getTableDetails, 
@@ -52,6 +53,50 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { toast } from '@/components/shared/Toast'
 import ConfirmModal, { type ConfirmOptions } from '@/components/shared/ConfirmModal'
 import { cn } from '@/lib/utils/cn'
+
+/** Renders children into document.body positioned below a trigger element,
+ *  so it escapes any overflow:hidden/auto ancestor (e.g. a scrollable toolbar). */
+function PortalDropdown({
+  triggerRef,
+  open,
+  onClose,
+  children,
+  align = 'left',
+}: {
+  triggerRef: React.RefObject<HTMLElement | null>
+  open: boolean
+  onClose: () => void
+  children: React.ReactNode
+  align?: 'left' | 'right'
+}) {
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    setPos({
+      top: rect.bottom + 6,
+      left: align === 'right' ? rect.right : rect.left,
+    })
+  }, [open, triggerRef, align])
+
+  if (!open || typeof document === 'undefined') return null
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-[999]" onClick={onClose} />
+      <div
+        className="fixed z-[1000]"
+        style={{
+          top: pos.top,
+          ...(align === 'right' ? { right: window.innerWidth - pos.left } : { left: pos.left }),
+        }}
+      >
+        {children}
+      </div>
+    </>,
+    document.body
+  )
+}
 
 interface DatabaseConsoleProps {
   currentAdmin: {
@@ -416,6 +461,11 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
   // Multiple Filters Bar
   const [showFilterBar, setShowFilterBar] = useState<boolean>(false)
   const [filtersList, setFiltersList] = useState<TableFilter[]>([])
+
+  // Refs for portal-positioned dropdowns (escape overflow-x-auto toolbar)
+  const sortBtnRef = useRef<HTMLButtonElement>(null)
+  const columnsBtnRef = useRef<HTMLButtonElement>(null)
+  const actionsBtnRef = useRef<HTMLButtonElement>(null)
 
   // UI Dropdowns & Search
   const [showSortDropdown, setShowSortDropdown] = useState<boolean>(false)
@@ -1184,6 +1234,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 {/* Sort Dropdown */}
                 <div className="relative">
                   <button
+                    ref={sortBtnRef}
                     onClick={() => {
                       setShowSortDropdown(!showSortDropdown)
                       setShowColumnsDropdown(false)
@@ -1201,67 +1252,63 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <ChevronDown className="w-3 h-3 opacity-60" />
                   </button>
 
-                  {showSortDropdown && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowSortDropdown(false)} />
-                      <div className="absolute left-0 mt-1.5 w-56 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
-                          <span>Sort By</span>
-                          <div className="flex items-center gap-1.5 lowercase">
-                            <span className="text-[10px]">Ascending</span>
-                            <button
-                              type="button"
-                              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  <PortalDropdown triggerRef={sortBtnRef} open={showSortDropdown} onClose={() => setShowSortDropdown(false)}>
+                    <div className="w-56 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
+                        <span>Sort By</span>
+                        <div className="flex items-center gap-1.5 lowercase">
+                          <span className="text-[10px]">Ascending</span>
+                          <button
+                            type="button"
+                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                            className={cn(
+                              "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                              sortOrder === 'asc' ? "bg-accent" : "bg-white/10"
+                            )}
+                          >
+                            <span
                               className={cn(
-                                "relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                                sortOrder === 'asc' ? "bg-accent" : "bg-white/10"
+                                "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                                sortOrder === 'asc' ? "translate-x-3" : "translate-x-0"
                               )}
-                            >
-                              <span
-                                className={cn(
-                                  "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                                  sortOrder === 'asc' ? "translate-x-3" : "translate-x-0"
-                                )}
-                              />
-                            </button>
-                          </div>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Search column..."
-                          value={sortSearchQuery}
-                          onChange={(e) => setSortSearchQuery(e.target.value)}
-                          className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
-                        />
-                        <div className="max-h-48 overflow-y-auto space-y-0.5">
-                          {columns
-                            .filter(c => c.name.toLowerCase().includes(sortSearchQuery.toLowerCase()))
-                            .map(col => (
-                              <button
-                                key={col.name}
-                                onClick={() => {
-                                  setSortBy(col.name === sortBy ? '' : col.name)
-                                }}
-                                className={cn(
-                                  "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center justify-between cursor-pointer",
-                                  sortBy === col.name
-                                    ? "bg-accent/10 text-accent font-semibold"
-                                    : "text-white/60 hover:text-white hover:bg-white/[0.03]"
-                                )}
-                              >
-                                <span>{col.name}</span>
-                                {sortBy === col.name && <Check className="w-3.5 h-3.5" />}
-                              </button>
-                            ))}
+                            />
+                          </button>
                         </div>
                       </div>
-                    </>
-                  )}
+                      <input
+                        type="text"
+                        placeholder="Search column..."
+                        value={sortSearchQuery}
+                        onChange={(e) => setSortSearchQuery(e.target.value)}
+                        className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
+                      />
+                      <div className="max-h-48 overflow-y-auto space-y-0.5">
+                        {columns
+                          .filter(c => c.name.toLowerCase().includes(sortSearchQuery.toLowerCase()))
+                          .map(col => (
+                            <button
+                              key={col.name}
+                              onClick={() => { setSortBy(col.name === sortBy ? '' : col.name) }}
+                              className={cn(
+                                "w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center justify-between cursor-pointer",
+                                sortBy === col.name
+                                  ? "bg-accent/10 text-accent font-semibold"
+                                  : "text-white/60 hover:text-white hover:bg-white/[0.03]"
+                              )}
+                            >
+                              <span>{col.name}</span>
+                              {sortBy === col.name && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  </PortalDropdown>
                 </div>
 
                 {/* Columns Dropdown */}
                 <div className="relative">
                   <button
+                    ref={columnsBtnRef}
                     onClick={() => {
                       setShowColumnsDropdown(!showColumnsDropdown)
                       setShowSortDropdown(false)
@@ -1274,76 +1321,63 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <ChevronDown className="w-3 h-3 opacity-60" />
                   </button>
 
-                  {showColumnsDropdown && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowColumnsDropdown(false)} />
-                      <div className="absolute left-0 mt-1.5 w-64 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 z-50 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
-                          <span>Manage columns</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const allColNames = columns.map(c => c.name)
-                              if (visibleColumns.length === columns.length) {
-                                const minCol = primaryKeys[0] || allColNames[0]
-                                setVisibleColumns([minCol])
-                              } else {
-                                setVisibleColumns(allColNames)
-                              }
-                            }}
-                            className="text-[9px] hover:text-white transition-colors lowercase cursor-pointer"
-                          >
-                            {visibleColumns.length === columns.length ? "Hide all" : "Show all"}
-                          </button>
-                        </div>
-                        <input
-                          type="text"
-                          placeholder="Search..."
-                          value={columnSearchQuery}
-                          onChange={(e) => setColumnSearchQuery(e.target.value)}
-                          className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
-                        />
-                        <div className="max-h-48 overflow-y-auto space-y-0.5">
-                          {columns
-                            .filter(c => c.name.toLowerCase().includes(columnSearchQuery.toLowerCase()))
-                            .map(col => {
-                              const isVisible = visibleColumns.includes(col.name)
-                              return (
-                                <button
-                                  key={col.name}
-                                  onClick={() => {
-                                    if (isVisible) {
-                                      if (visibleColumns.length > 1) {
-                                        setVisibleColumns(prev => prev.filter(c => c !== col.name))
-                                      }
-                                    } else {
-                                      setVisibleColumns(prev => [...prev, col.name])
-                                    }
-                                  }}
-                                  className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono text-white/60 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center justify-between cursor-pointer group"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-white/30 group-hover:text-white/50">
-                                      <GripVertical className="w-3 h-3" />
-                                    </span>
-                                    <span className={cn(isVisible ? "text-white" : "text-white/40 line-through")}>
-                                      {col.name}
-                                    </span>
-                                  </div>
-                                  <span>
-                                    {isVisible ? (
-                                      <Eye className="w-3.5 h-3.5 text-accent" />
-                                    ) : (
-                                      <EyeOff className="w-3.5 h-3.5 text-white/20" />
-                                    )}
-                                  </span>
-                                </button>
-                              )
-                            })}
-                        </div>
+                  <PortalDropdown triggerRef={columnsBtnRef} open={showColumnsDropdown} onClose={() => setShowColumnsDropdown(false)}>
+                    <div className="w-64 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-[10px] uppercase font-medium text-white/40 mb-1">
+                        <span>Manage columns</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const allColNames = columns.map(c => c.name)
+                            if (visibleColumns.length === columns.length) {
+                              const minCol = primaryKeys[0] || allColNames[0]
+                              setVisibleColumns([minCol])
+                            } else {
+                              setVisibleColumns(allColNames)
+                            }
+                          }}
+                          className="text-[9px] hover:text-white transition-colors lowercase cursor-pointer"
+                        >
+                          {visibleColumns.length === columns.length ? "Hide all" : "Show all"}
+                        </button>
                       </div>
-                    </>
-                  )}
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={columnSearchQuery}
+                        onChange={(e) => setColumnSearchQuery(e.target.value)}
+                        className="bg-white/[0.02] border border-white/[0.06] rounded-lg px-2 py-1 focus:outline-none focus:border-accent text-xs text-white w-full mb-1"
+                      />
+                      <div className="max-h-48 overflow-y-auto space-y-0.5">
+                        {columns
+                          .filter(c => c.name.toLowerCase().includes(columnSearchQuery.toLowerCase()))
+                          .map(col => {
+                            const isVisible = visibleColumns.includes(col.name)
+                            return (
+                              <button
+                                key={col.name}
+                                onClick={() => {
+                                  if (isVisible) {
+                                    if (visibleColumns.length > 1) setVisibleColumns(prev => prev.filter(c => c !== col.name))
+                                  } else {
+                                    setVisibleColumns(prev => [...prev, col.name])
+                                  }
+                                }}
+                                className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-mono text-white/60 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center justify-between cursor-pointer group"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white/30 group-hover:text-white/50"><GripVertical className="w-3 h-3" /></span>
+                                  <span className={cn(isVisible ? "text-white" : "text-white/40 line-through")}>{col.name}</span>
+                                </div>
+                                <span>
+                                  {isVisible ? <Eye className="w-3.5 h-3.5 text-accent" /> : <EyeOff className="w-3.5 h-3.5 text-white/20" />}
+                                </span>
+                              </button>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  </PortalDropdown>
                 </div>
 
                 {/* Add record button (green/accent) */}
@@ -1370,20 +1404,8 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <span>Delete ({selectedRowKeys.length})</span>
                   </button>
                 )}
-              </div>
-            )}
-          </div>
 
-          {/* Right: metadata & reload & more actions */}
-          <div className="flex items-center gap-3 shrink-0 ml-2">
-            {selectedTable && activeSubTab === 'data' && (
-              <>
-                {/* Execution Time */}
-                <span className="text-[10px] text-white/30 font-mono hidden md:inline">
-                  {queryTimeMs > 0 ? `${queryTimeMs}ms` : ''}
-                </span>
-
-                {/* Pagination indicator (compact style) */}
+                {/* Pagination */}
                 <div className="flex items-center gap-2 border border-white/[0.06] rounded-lg p-0.5 bg-white/[0.02] text-[11px] font-mono text-white/50 select-none whitespace-nowrap shrink-0">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -1392,8 +1414,8 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-1 text-white whitespace-nowrap shrink-0">
-                    {rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} - {Math.min(currentPage * pageSize, tableRowsCountEnabled ? totalRecords : ((currentPage - 1) * pageSize + rows.length))} {tableRowsCountEnabled && `of ${totalRecords}`}
+                  <span className="px-1 text-white whitespace-nowrap shrink-0 text-[10px] sm:text-[11px]">
+                    {rows.length > 0 ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, tableRowsCountEnabled ? totalRecords : ((currentPage - 1) * pageSize + rows.length))}<span className="hidden sm:inline"> {tableRowsCountEnabled && `of ${totalRecords}`}</span>
                   </span>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
@@ -1404,6 +1426,18 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                   </button>
                 </div>
 
+                {/* Execution Time */}
+                <span className="text-[10px] text-white/30 font-mono hidden md:inline whitespace-nowrap shrink-0">
+                  {queryTimeMs > 0 ? `${queryTimeMs}ms` : ''}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Right: reload & more actions */}
+          <div className="flex items-center gap-3 shrink-0 ml-2">
+            {selectedTable && activeSubTab === 'data' && (
+              <>
                 {/* Reload button */}
                 <button
                   onClick={fetchTableMetadataAndData}
@@ -1417,6 +1451,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                 {/* More Actions menu (`...`) */}
                 <div className="relative">
                   <button
+                    ref={actionsBtnRef}
                     onClick={() => {
                       setShowActionsDropdown(!showActionsDropdown)
                       setShowSortDropdown(false)
@@ -1429,107 +1464,103 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     <span className="text-xs font-medium hidden sm:inline">Actions</span>
                   </button>
 
-                  {showActionsDropdown && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowActionsDropdown(false)} />
-                      <div className="absolute right-0 mt-1.5 w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col">
-                        <button
-                          onClick={() => {
-                            fetchTableMetadataAndData()
-                            setShowActionsDropdown(false)
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5" />
-                          <span>Refresh rows</span>
-                        </button>
-                        <button
-                          onClick={async () => {
-                            await fetchTables()
-                            await fetchTableMetadataAndData()
-                            setShowActionsDropdown(false)
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <Layers className="w-3.5 h-3.5" />
-                          <span>Refresh schema</span>
-                        </button>
-                        
-                        <div className="border-t border-white/[0.06] my-1" />
+                  <PortalDropdown triggerRef={actionsBtnRef} open={showActionsDropdown} onClose={() => setShowActionsDropdown(false)} align="right">
+                    <div className="w-52 bg-[#0d0d11] border border-white/[0.08] rounded-xl shadow-2xl p-1.5 flex flex-col">
+                      <button
+                        onClick={() => {
+                          fetchTableMetadataAndData()
+                          setShowActionsDropdown(false)
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Refresh rows</span>
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await fetchTables()
+                          await fetchTableMetadataAndData()
+                          setShowActionsDropdown(false)
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Refresh schema</span>
+                      </button>
 
-                        {/* Exports */}
-                        <button
-                          onClick={() => {
-                            exportToJson(rows, `${selectedTable}_all.json`)
-                            setShowActionsDropdown(false)
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Export all to .json</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            exportToCsv(rows, columns.map(c => c.name), `${selectedTable}_all.csv`)
-                            setShowActionsDropdown(false)
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Export all to .csv</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            exportToTsv(rows, columns.map(c => c.name), `${selectedTable}_all.xlsx`)
-                            setShowActionsDropdown(false)
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Export all to .xlsx</span>
-                        </button>
+                      <div className="border-t border-white/[0.06] my-1" />
 
-                        {selectedRowKeys.length > 0 && (
-                          <>
-                            <div className="border-t border-white/[0.06] my-1" />
-                            <button
-                              onClick={() => {
-                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
-                                exportToJson(selectedRows, `${selectedTable}_selected.json`)
-                                setShowActionsDropdown(false)
-                              }}
-                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Export selected to .json</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
-                                exportToCsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.csv`)
-                                setShowActionsDropdown(false)
-                              }}
-                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Export selected to .csv</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
-                                exportToTsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.xlsx`)
-                                setShowActionsDropdown(false)
-                              }}
-                              className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Export selected to .xlsx</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  )}
+                      <button
+                        onClick={() => {
+                          exportToJson(rows, `${selectedTable}_all.json`)
+                          setShowActionsDropdown(false)
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export all to .json</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportToCsv(rows, columns.map(c => c.name), `${selectedTable}_all.csv`)
+                          setShowActionsDropdown(false)
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export all to .csv</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportToTsv(rows, columns.map(c => c.name), `${selectedTable}_all.xlsx`)
+                          setShowActionsDropdown(false)
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export all to .xlsx</span>
+                      </button>
+
+                      {selectedRowKeys.length > 0 && (
+                        <>
+                          <div className="border-t border-white/[0.06] my-1" />
+                          <button
+                            onClick={() => {
+                              const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                              exportToJson(selectedRows, `${selectedTable}_selected.json`)
+                              setShowActionsDropdown(false)
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Export selected to .json</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                              exportToCsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.csv`)
+                              setShowActionsDropdown(false)
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Export selected to .csv</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const selectedRows = rows.filter(r => selectedRowKeys.includes(r[primaryKeyCol]))
+                              exportToTsv(selectedRows, columns.map(c => c.name), `${selectedTable}_selected.xlsx`)
+                              setShowActionsDropdown(false)
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg text-xs text-white/80 hover:text-white hover:bg-white/[0.03] transition-colors flex items-center gap-2 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Export selected to .xlsx</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </PortalDropdown>
                 </div>
               </>
             )}
