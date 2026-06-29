@@ -754,7 +754,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
 
             {/* Objects table matching cloudflare dashboard */}
             <div className="overflow-x-auto border border-white/[0.06] rounded-xl bg-[#0b0b0e]">
-              <table className="w-full border-collapse font-sans text-xs text-left">
+              <table className="w-full min-w-[680px] border-collapse font-sans text-xs text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.01] text-white/40 font-semibold select-none">
                     <th className="w-10 px-4 py-3">
@@ -770,7 +770,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                     <th className="px-4 py-3">Storage Class</th>
                     <th className="px-4 py-3">Size</th>
                     <th className="px-4 py-3">Modified</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] font-mono">
@@ -833,21 +833,22 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                         </td>
 
                         {/* Actions Column */}
-                        <td className="px-4 py-3.5 text-right space-x-1">
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-1 flex-nowrap whitespace-nowrap">
                           {!item.isFolder ? (
                             <>
                               <button
                                 onClick={() => handleCopyUrl((item as any).url, item.key)}
-                                className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer"
+                                className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer shrink-0"
                                 title="Copy public link"
                               >
                                 {copiedKey === item.key ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                               </button>
-                              
+
                               {isImage ? (
                                 <button
                                   onClick={() => toggleExpanded(item.key)}
-                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center shrink-0"
                                   title={isExpanded ? 'Hide preview' : 'Show preview'}
                                   aria-expanded={isExpanded}
                                 >
@@ -858,7 +859,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                                   href={(item as any).url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center"
+                                  className="p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer inline-flex items-center shrink-0"
                                   title="Open file in new tab"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -868,7 +869,7 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                               <button
                                 onClick={() => handleDeleteFile(item.key)}
                                 disabled={!isSuperAdmin}
-                                className="p-1 rounded hover:bg-red-500/10 text-white/20 hover:text-red-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/20 transition-colors cursor-pointer"
+                                className="p-1 rounded hover:bg-red-500/10 text-white/20 hover:text-red-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/20 transition-colors cursor-pointer shrink-0"
                                 title="Delete file"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -878,12 +879,13 @@ export default function BucketsPanel({ currentAdmin }: BucketsPanelProps) {
                             <button
                               onClick={() => handleDeleteFile(item.key)}
                               disabled={!isSuperAdmin}
-                              className="p-1 rounded hover:bg-red-500/10 text-white/20 hover:text-red-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/20 transition-colors cursor-pointer"
+                              className="p-1 rounded hover:bg-red-500/10 text-white/20 hover:text-red-400 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/20 transition-colors cursor-pointer shrink-0"
                               title="Delete folder"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
+                          </div>
                         </td>
 
                       </tr>

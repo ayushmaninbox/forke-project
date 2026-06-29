@@ -4,12 +4,44 @@
     "label": "jun 29, 2026",
     "entries": [
       {
+        "shortHash": "7f2861c",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T13:16:23+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement PortalDropdown component to allow toolbar dropdowns to escape overflow boundaries in DatabaseConsole"
+      },
+      {
+        "shortHash": "345f78c",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T12:42:55+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Paginate tracker lists and add bucket page size selector"
+      },
+      {
+        "shortHash": "b85fb4d",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T12:11:58+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Use subscriber attribution country for tracker conversions instead of page_visits geo"
+      },
+      {
         "shortHash": "269d178",
         "author": "Ayushman Mohapatra",
         "date": "2026-06-29T12:11:58+05:30",
         "kind": "fix",
         "scope": null,
         "title": "Use subscriber attribution country for tracker conversions instead of page_visits geo"
+      },
+      {
+        "shortHash": "db5f3dd",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-06-29T11:43:44+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Ensure country is stored in subscriber attribution and skip null JSONB fields"
       },
       {
         "shortHash": "6b48755",
