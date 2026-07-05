@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/cleanup-backups",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }

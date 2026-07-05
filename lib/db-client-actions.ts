@@ -5,7 +5,7 @@ import { sql } from 'drizzle-orm'
 import { getCurrentAdmin, isAdminAuthenticated } from './admin-actions'
 import { logAudit } from './actions/audit-actions'
 import AdmZip from 'adm-zip'
-import { isR2Configured, uploadToR2, getPresignedDownloadUrl } from './r2'
+import { isR2Configured, uploadToR2, getPresignedDownloadUrl, cleanupExpiredBackups } from './r2'
 import { sendDatabaseBackupNotification } from './email'
 
 // Helper to check standard admin authentication
@@ -1464,6 +1464,13 @@ export async function generateDatabaseBackupAction(): Promise<{
   error?: string
 }> {
   await ensureAdmin()
+
+  // Run cleanup of expired backups on-demand
+  try {
+    await cleanupExpiredBackups()
+  } catch (cleanupErr) {
+    console.error('Failed to run on-demand backup cleanup:', cleanupErr)
+  }
 
   try {
     const tablesResult: any = await db.execute(sql`
