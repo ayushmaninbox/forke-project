@@ -13,10 +13,12 @@ import {
   executeSQLQuery,
   submitSQLQueryRequest,
   getSQLQueryRequests,
-  reviewSQLQueryRequest
+  reviewSQLQueryRequest,
+  generateDatabaseBackupAction
 } from '@/lib/db-client-actions'
 import { 
   Database, 
+  FolderArchive,
   Search, 
   Plus, 
   Trash2, 
@@ -488,6 +490,7 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
   // Sidebar popover triggers
   const [showToolsPopover, setShowToolsPopover] = useState<boolean>(false)
   const [sidebarActiveTableMenu, setSidebarActiveTableMenu] = useState<string>('')
+  const [isBackingUp, setIsBackingUp] = useState<boolean>(false)
 
   // Constraints edit states
   const [activeConstraintEdit, setActiveConstraintEdit] = useState<string>('')
@@ -778,6 +781,34 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
       toast(res.error || 'Failed to insert new record.', 'error')
     }
     setIsSubmittingRecord(false)
+  }
+
+  // Database Backup Handler
+  const handleDatabaseBackup = async () => {
+    if (isBackingUp) return
+    setIsBackingUp(true)
+    setShowToolsPopover(false)
+    toast('Generating database backup ZIP...', 'info')
+
+    try {
+      const res = await generateDatabaseBackupAction()
+      if (res.success && res.url) {
+        const downloadAnchor = document.createElement('a')
+        downloadAnchor.setAttribute('href', res.url)
+        downloadAnchor.setAttribute('download', `db-backup-${new Date().toISOString().split('T')[0]}.zip`)
+        document.body.appendChild(downloadAnchor)
+        downloadAnchor.click()
+        downloadAnchor.remove()
+        toast('Backup generated and email sent successfully!', 'success')
+      } else {
+        toast(res.error || 'Failed to generate database backup.', 'error')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast(err.message || 'An error occurred during database backup.', 'error')
+    } finally {
+      setIsBackingUp(false)
+    }
   }
 
   // Exports Handlers
@@ -1127,6 +1158,19 @@ export default function DatabaseConsole({ currentAdmin, initialTab }: DatabaseCo
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download context</span>
+                    </button>
+                    <button
+                      onClick={handleDatabaseBackup}
+                      disabled={isBackingUp}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center gap-2.5 cursor-pointer",
+                        isBackingUp 
+                          ? "text-white/40 cursor-not-allowed" 
+                          : "text-white/80 hover:text-white hover:bg-white/[0.03]"
+                      )}
+                    >
+                      <FolderArchive className="w-3.5 h-3.5" />
+                      <span>{isBackingUp ? 'Backing up...' : 'Backup database'}</span>
                     </button>
                   </div>
                 </>

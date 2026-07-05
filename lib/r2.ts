@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -200,4 +200,98 @@ export async function deleteFileByUrl(url: string): Promise<boolean> {
   }
 
   return false
+}
+
+/**
+ * Generate a short-lived presigned GET URL so that the user can download
+ * the backup file securely.
+ */
+export async function getPresignedDownloadUrl(
+  key: string,
+  expiresIn = 43200 // 12 hours in seconds
+): Promise<string> {
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+  const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT
+  const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME
+
+  if (!accessKeyId || !secretAccessKey || !endpoint || !bucketName) {
+    throw new Error('Cloudflare R2 is not fully configured.')
+  }
+
+  const s3Client = new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+  })
+
+  const cleanKey = key.replace(/[^a-zA-Z0-9.-_/]/g, '_')
+
+  return await getSignedUrl(
+    s3Client,
+    new GetObjectCommand({
+      Bucket: bucketName,
+      Key: cleanKey,
+    }),
+    { expiresIn }
+  )
+}
+
+/**
+ * Lists all objects with prefix 'backups/' and deletes any that are
+ * older than maxAgeMs (default 12 hours).
+ */
+export async function cleanupExpiredBackups(
+  maxAgeMs = 12 * 60 * 60 * 1000 // 12 hours
+): Promise<string[]> {
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+  const endpoint = process.env.CLOUDFLARE_R2_ENDPOINT
+  const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME
+
+  if (!accessKeyId || !secretAccessKey || !endpoint || !bucketName) {
+    throw new Error('Cloudflare R2 is not fully configured.')
+  }
+
+  const s3Client = new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+  })
+
+  const listRes = await s3Client.send(
+    new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: 'backups/',
+    })
+  )
+
+  if (!listRes.Contents || listRes.Contents.length === 0) {
+    return []
+  }
+
+  const now = Date.now()
+  const deletedKeys: string[] = []
+  
+  const objectsToDelete = listRes.Contents.filter((obj) => {
+    if (!obj.Key || !obj.LastModified) return false
+    const age = now - new Date(obj.LastModified).getTime()
+    return age > maxAgeMs
+  })
+
+  if (objectsToDelete.length > 0) {
+    await s3Client.send(
+      new DeleteObjectsCommand({
+        Bucket: bucketName,
+        Delete: {
+          Objects: objectsToDelete.map((obj) => ({ Key: obj.Key! })),
+        },
+      })
+    )
+    objectsToDelete.forEach((obj) => {
+      if (obj.Key) deletedKeys.push(obj.Key)
+    })
+  }
+
+  return deletedKeys
 }

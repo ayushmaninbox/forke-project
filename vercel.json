@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/purge-logs",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/backup-db",
+      "schedule": "29 18 * * 0"
+    },
+    {
+      "path": "/api/cron/cleanup-backups",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

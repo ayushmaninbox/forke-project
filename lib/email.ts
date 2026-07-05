@@ -1124,3 +1124,142 @@ export async function sendOwnerBannedEmail(toEmail: string, name: string): Promi
 export async function sendDeveloperBannedEmail(toEmail: string, name: string): Promise<boolean> {
   return sendBannedEmail(toEmail, name, 'developer')
 }
+
+/**
+ * Dynamic helper to ensure an audience exists in Resend by name.
+ */
+async function ensureAudienceByName(name: string, apiKey: string): Promise<string | null> {
+  const existingId = await findAudienceByName(name, apiKey)
+  if (existingId) return existingId
+
+  try {
+    const res = await resendFetch('/audiences', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }, apiKey)
+    if (!res.ok) {
+      console.error(`Failed to create Resend audience "${name}":`, await res.text())
+      return null
+    }
+    const json = (await res.json()) as { id?: string }
+    return json.id ?? null
+  } catch (err) {
+    console.error(`Error creating Resend audience "${name}":`, err)
+    return null
+  }
+}
+
+/**
+ * Sync active database administrators to the "Forke Admins" Resend audience.
+ */
+export async function syncAdminsToResend(): Promise<{ success: boolean; syncedCount: number }> {
+  const apiKey = resolveResendApiKey()
+  if (!apiKey) {
+    console.warn('⚠️ RESEND_API_KEY is not configured. Skipping admin sync.')
+    return { success: false, syncedCount: 0 }
+  }
+
+  try {
+    const { db } = await import('./db')
+    const { admins } = await import('./db/schema')
+    const { eq } = await import('drizzle-orm')
+
+    const activeAdmins = await db
+      .select({ email: admins.email })
+      .from(admins)
+      .where(eq(admins.isDisabled, false))
+
+    const emails = activeAdmins.map((a) => a.email).filter(Boolean)
+    if (emails.length === 0) {
+      return { success: true, syncedCount: 0 }
+    }
+
+    const audienceId = await ensureAudienceByName('Forke Admins', apiKey)
+    if (!audienceId) {
+      return { success: false, syncedCount: 0 }
+    }
+
+    const syncedCount = await syncContactsToAudience(audienceId, emails, apiKey)
+    return { success: true, syncedCount }
+  } catch (err) {
+    console.error('Error syncing admins to Resend:', err)
+    return { success: false, syncedCount: 0 }
+  }
+}
+
+/**
+ * Database backup notification email HTML template.
+ */
+export function buildDatabaseBackupEmail(
+  downloadUrl: string,
+  expiryTime: string,
+  recentPosts?: BlogEmailRecent[],
+  maxWidth?: number
+): string {
+  return emailShell({
+    maxWidth,
+    recentPosts,
+    title: 'Forke — Database Backup',
+    preheader: 'Your database backup is ready. Link expires in 12 hours.',
+    banner: 'main-banner.png',
+    footerLabel: 'Automated Database Backup',
+    bodyHtml: `
+      ${heading('Database backup.', 'Ready.')}
+      ${p('A full backup of the public schema has been compiled into a ZIP archive.')}
+      ${calloutBox(
+        '⚠️ Security Warning',
+        `This download link contains sensitive database information and will expire at <strong>${expiryTime}</strong> (in 12 hours). Do not share this email or link.`
+      )}
+      ${p('Click the button below to download the backup archive:')}
+      ${buttonPrimary(downloadUrl, 'Download backup ZIP')}
+      ${fallbackLink(downloadUrl)}
+    `,
+  })
+}
+
+/**
+ * Dispatches database backup notification emails to all active admins.
+ */
+export async function sendDatabaseBackupNotification(
+  downloadUrl: string,
+  expiryTime: string
+): Promise<boolean> {
+  // Try to sync admins first
+  await syncAdminsToResend()
+
+  try {
+    const { db } = await import('./db')
+    const { admins } = await import('./db/schema')
+    const { eq } = await import('drizzle-orm')
+
+    const activeAdmins = await db
+      .select({ email: admins.email, name: admins.name })
+      .from(admins)
+      .where(eq(admins.isDisabled, false))
+
+    if (activeAdmins.length === 0) {
+      console.warn('No active admins found to send backup notification.')
+      return false
+    }
+
+    const recentPosts = await getRecentPostsForEmail()
+    const emailBody = buildDatabaseBackupEmail(downloadUrl, expiryTime, recentPosts)
+
+    let allSent = true
+    for (const admin of activeAdmins) {
+      const success = await sendResendEmail(
+        admin.email,
+        'Forke: Your database backup is ready',
+        emailBody,
+        'database backup',
+        'Forke Database <db@forke.space>'
+      )
+      if (!success) allSent = false
+    }
+
+    return allSent
+  } catch (err) {
+    console.error('Failed to send database backup notifications:', err)
+    return false
+  }
+}

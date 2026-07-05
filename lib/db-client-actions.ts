@@ -4,6 +4,9 @@ import { db, client } from './db'
 import { sql } from 'drizzle-orm'
 import { getCurrentAdmin, isAdminAuthenticated } from './admin-actions'
 import { logAudit } from './actions/audit-actions'
+import AdmZip from 'adm-zip'
+import { isR2Configured, uploadToR2, getPresignedDownloadUrl } from './r2'
+import { sendDatabaseBackupNotification } from './email'
 
 // Helper to check standard admin authentication
 async function ensureAdmin() {
@@ -1413,6 +1416,113 @@ export async function reviewSQLQueryRequest(requestId: string, action: 'approve'
   } catch (error: any) {
     console.error('Failed to review SQL request:', error)
     return { success: false, error: error.message || 'Failed to process request.' }
+  }
+}
+
+/**
+ * Generates CSV content for a single table in the public schema.
+ */
+async function getTableCsv(tableName: string): Promise<string> {
+  const colsResult: any = await db.execute(sql`
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+      AND table_name = ${tableName}
+    ORDER BY ordinal_position;
+  `)
+  const headers = colsResult.map((row: any) => row.column_name as string)
+  if (headers.length === 0) return ''
+
+  const rows: any = await db.execute(sql.raw(`SELECT * FROM public."${tableName}"`))
+
+  const csvRows = [headers.join(',')]
+
+  for (const row of rows) {
+    const values = headers.map((header) => {
+      const val = row[header]
+      if (val === null || val === undefined) {
+        return '""'
+      }
+      const valStr = typeof val === 'object' ? JSON.stringify(val) : String(val)
+      const escaped = valStr.replace(/"/g, '""')
+      return `"${escaped}"`
+    })
+    csvRows.push(values.join(','))
+  }
+
+  return csvRows.join('\n')
+}
+
+/**
+ * Server Action: Compiles all public tables into a ZIP archive,
+ * uploads it to R2, generates a 12-hour presigned download URL,
+ * and notifies active administrators.
+ */
+export async function generateDatabaseBackupAction(): Promise<{
+  success: boolean
+  url?: string
+  error?: string
+}> {
+  await ensureAdmin()
+
+  try {
+    const tablesResult: any = await db.execute(sql`
+      SELECT c.relname AS name
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'public' 
+        AND c.relkind = 'r'
+      ORDER BY c.relname;
+    `)
+    const tableNames = tablesResult.map((row: any) => row.name as string)
+
+    const zip = new AdmZip()
+    for (const tableName of tableNames) {
+      const csvContent = await getTableCsv(tableName)
+      zip.addFile(`${tableName}.csv`, Buffer.from(csvContent, 'utf-8'))
+    }
+    const zipBuffer = zip.toBuffer()
+
+    if (!isR2Configured()) {
+      return {
+        success: false,
+        error: 'Cloudflare R2 is not configured. Cannot upload backup.'
+      }
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const key = `backups/db-backup-${timestamp}.zip`
+    
+    await uploadToR2(zipBuffer, key, 'application/zip')
+
+    const downloadUrl = await getPresignedDownloadUrl(key, 43200)
+
+    const expiryDate = new Date(Date.now() + 12 * 60 * 60 * 1000)
+    const expiryTimeIST = expiryDate.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }) + ' IST'
+
+    await sendDatabaseBackupNotification(downloadUrl, expiryTimeIST)
+
+    await logAudit({
+      category: 'db',
+      action: 'database.backup_generated',
+      target: `Full database ZIP backup generated and uploaded to R2. Key: ${key}. Notification sent to admins.`
+    })
+
+    return {
+      success: true,
+      url: downloadUrl
+    }
+  } catch (error: any) {
+    console.error('Backup generation action failed:', error)
+    return {
+      success: false,
+      error: error.message || 'Failed to generate backup.'
+    }
   }
 }
 
