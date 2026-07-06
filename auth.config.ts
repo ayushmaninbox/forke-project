@@ -2,7 +2,31 @@ import type { NextAuthConfig } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import GitHub from 'next-auth/providers/github'
 
+const useSecureCookies = process.env.NODE_ENV === 'production'
+const cookiePrefix = useSecureCookies ? '__Secure-' : ''
+
 export const authConfig = {
+  cookies: useSecureCookies ? {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: '.forke.space',
+      },
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: '.forke.space',
+      },
+    },
+  } : undefined,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,

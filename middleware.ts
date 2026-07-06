@@ -249,6 +249,52 @@ export default auth(async (req) => {
     }
     return res
   }
+  // ===== SUBDOMAIN ROUTING & REDIRECTS =====
+  const host = req.headers.get('host') || ''
+  const isDashboardSubdomain = host.startsWith('dashboard.')
+  const isAdminSubdomain = host.startsWith('admin.')
+
+  // 1. Redirections from the main domain (forke.space) to subdomains
+  if (!isDashboardSubdomain && !isAdminSubdomain) {
+    if (pathname === '/dashboard') {
+      return withCookies(NextResponse.redirect(new URL('/overview', 'https://dashboard.forke.space')))
+    }
+
+    const isAppRoute = pathname.startsWith('/tasks') ||
+                       pathname.startsWith('/profile') ||
+                       pathname.startsWith('/submissions') ||
+                       pathname.startsWith('/earnings') ||
+                       pathname.startsWith('/settings') ||
+                       pathname.startsWith('/analytics') ||
+                       pathname.startsWith('/messages') ||
+                       pathname.startsWith('/onboarding') ||
+                       pathname.startsWith('/support') ||
+                       pathname.startsWith('/post-task')
+
+    if (isAppRoute) {
+      return withCookies(NextResponse.redirect(new URL(pathname + req.nextUrl.search, 'https://dashboard.forke.space')))
+    }
+
+    if (pathname.startsWith('/admin')) {
+      const cleanAdminPath = pathname.replace(/^\/admin/, '') || '/'
+      return withCookies(NextResponse.redirect(new URL(cleanAdminPath + req.nextUrl.search, 'https://admin.forke.space')))
+    }
+  }
+
+  // 2. Redirections on dashboard.forke.space
+  if (isDashboardSubdomain) {
+    if (pathname === '/' || pathname === '/dashboard') {
+      return withCookies(NextResponse.redirect(new URL('/overview', 'https://dashboard.forke.space')))
+    }
+  }
+
+  // 3. Redirections on admin.forke.space
+  if (isAdminSubdomain) {
+    if (pathname.startsWith('/admin')) {
+      const cleanAdminPath = pathname.replace(/^\/admin/, '') || '/'
+      return withCookies(NextResponse.redirect(new URL(cleanAdminPath + req.nextUrl.search, 'https://admin.forke.space')))
+    }
+  }
 
   // ===== WAITLIST GATE =====
   // New model: the waitlist no longer locks visitors OUT of public pages.
@@ -264,7 +310,7 @@ export default auth(async (req) => {
   //    in app/waitlist/layout.tsx via notFound(); we don't redirect here so the
   //    not-found UI shows the real URL).
   if (pathname === '/waitlist' && waitlistEnabled && (siteAccess || waitlistJoined)) {
-    const redirectUrl = new URL('/', req.nextUrl.origin)
+    const redirectUrl = new URL('/', 'https://forke.space')
     redirectUrl.search = req.nextUrl.search
     return withCookies(NextResponse.redirect(redirectUrl))
   }
@@ -272,19 +318,26 @@ export default auth(async (req) => {
   // ===== EXISTING AUTH LOGIC =====
   const isLoggedIn = !!req.auth
   const isBanned = (req.auth?.user as any)?.isBanned
-  const isAppPage = req.nextUrl.pathname.startsWith('/dashboard') || 
+  const isAppPage = isDashboardSubdomain ||
+                    req.nextUrl.pathname.startsWith('/dashboard') || 
                     req.nextUrl.pathname.startsWith('/tasks') ||
                     req.nextUrl.pathname.startsWith('/profile') ||
                     req.nextUrl.pathname.startsWith('/submissions') ||
-                    req.nextUrl.pathname.startsWith('/earnings')
+                    req.nextUrl.pathname.startsWith('/earnings') ||
+                    req.nextUrl.pathname.startsWith('/settings') ||
+                    req.nextUrl.pathname.startsWith('/analytics') ||
+                    req.nextUrl.pathname.startsWith('/messages') ||
+                    req.nextUrl.pathname.startsWith('/onboarding') ||
+                    req.nextUrl.pathname.startsWith('/support') ||
+                    req.nextUrl.pathname.startsWith('/post-task')
   
-  const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
-  const isAdminLogin = req.nextUrl.pathname === '/admin/login'
-  const isAdminSetup = req.nextUrl.pathname === '/admin/setup'
+  const isAdminPage = isAdminSubdomain || req.nextUrl.pathname.startsWith('/admin')
+  const isAdminLogin = (isAdminSubdomain && pathname === '/login') || req.nextUrl.pathname === '/admin/login'
+  const isAdminSetup = (isAdminSubdomain && pathname === '/setup') || req.nextUrl.pathname === '/admin/setup'
 
   // Block banned users
   if (isLoggedIn && isBanned && !isAdminPage && !req.nextUrl.pathname.startsWith('/auth-error')) {
-     const errorUrl = new URL('/auth-error?error=AccessDenied', req.nextUrl.origin)
+     const errorUrl = new URL('/auth-error?error=AccessDenied', 'https://forke.space')
      return withCookies(NextResponse.redirect(errorUrl))
   }
 
@@ -292,36 +345,47 @@ export default auth(async (req) => {
   if (isAdminPage && !isAdminLogin && !isAdminSetup) {
     const adminToken = req.cookies.get('admin_token')?.value
     if (!adminToken || !adminToken.startsWith('forke_admin_session:')) {
-      return withCookies(NextResponse.redirect(new URL('/admin/login', req.nextUrl.origin)))
+      return withCookies(NextResponse.redirect(new URL('/login', 'https://admin.forke.space')))
     }
   }
 
   if (isAppPage && !isLoggedIn) {
-    const loginUrl = new URL('/', req.nextUrl.origin)
+    const loginUrl = new URL('/', 'https://forke.space')
     return withCookies(NextResponse.redirect(loginUrl))
   }
 
   // Redirect logged in users from root to dashboard (only if waitlist is disabled or they have site access)
-  if (isLoggedIn && req.nextUrl.pathname === '/' && (!waitlistEnabled || siteAccess)) {
-    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
+  if (isLoggedIn && !isDashboardSubdomain && !isAdminSubdomain && pathname === '/' && (!waitlistEnabled || siteAccess)) {
+    return withCookies(NextResponse.redirect(new URL('/overview', 'https://dashboard.forke.space')))
   }
 
   // Onboarding redirection for developers without username
   const role = (req.auth?.user as any)?.role
   const username = (req.auth?.user as any)?.username
-  const isOnboardingPage = req.nextUrl.pathname === '/onboarding'
+  const isOnboardingPage = pathname === '/onboarding'
 
   const needsOnboarding = role === 'developer' && !username
 
   if (isLoggedIn && needsOnboarding && !isOnboardingPage && isAppPage) {
-    return withCookies(NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin)))
+    return withCookies(NextResponse.redirect(new URL('/onboarding', 'https://dashboard.forke.space')))
   }
 
   // Prevent users who don't need onboarding from accessing it
   if (isLoggedIn && !needsOnboarding && isOnboardingPage) {
-    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
+    return withCookies(NextResponse.redirect(new URL('/overview', 'https://dashboard.forke.space')))
   }
   
+  // ===== INTERNAL SUBDOMAIN REWRITES =====
+  if (isAdminSubdomain) {
+    return NextResponse.rewrite(new URL(`/admin${pathname}${req.nextUrl.search}`, req.url))
+  }
+
+  if (isDashboardSubdomain) {
+    if (pathname === '/overview') {
+      return NextResponse.rewrite(new URL(`/dashboard${req.nextUrl.search}`, req.url))
+    }
+  }
+
   return withCookies(NextResponse.next())
 })
 

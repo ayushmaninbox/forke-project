@@ -5,6 +5,7 @@ import FirstMerge from '@/components/shared/FirstMerge'
 import LevelSystem from '@/components/shared/LevelSystem'
 import FAQ from '@/components/shared/FAQ'
 import CTA from '@/components/shared/CTA'
+import SupportedBy from '@/components/landing/SupportedBy'
 import Footer from '@/components/shared/Footer'
 import Stats from '@/components/landing/Stats'
 import Pipeline from '@/components/landing/Pipeline'
@@ -49,6 +50,7 @@ export default function MarketingPage() {
           <FAQ n="007" />
         </Rails>
 
+        <SupportedBy />
         <CTA />
       </main>
       <Footer />
