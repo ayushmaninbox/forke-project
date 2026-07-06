@@ -141,12 +141,6 @@ async function fetchWaitlistStatus(origin: string): Promise<boolean> {
 export default auth(async (req) => {
   const pathname = req.nextUrl.pathname
 
-  // Prevent infinite rewrite-to-redirect loops
-  const isRewritten = req.headers.get('x-middleware-rewrite') === 'true'
-  if (isRewritten) {
-    return NextResponse.next()
-  }
-
   // Bypass all static files and system assets containing a dot (like .glb, .svg, .png, etc.)
   // and Next.js internal /_next paths or custom /uploads paths.
   if (
@@ -255,61 +249,6 @@ export default auth(async (req) => {
     }
     return res
   }
-  // ===== SUBDOMAIN ROUTING & REDIRECTS =====
-  const host = req.headers.get('host') || ''
-  const isDashboardSubdomain = host.startsWith('dashboard.')
-  const isAdminSubdomain = host.startsWith('admin.')
-
-  // Detect localhost to enable testing subdomains dynamically
-  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
-  const port = host.split(':')[1]
-  const portSuffix = port ? `:${port}` : ''
-
-  const dashboardBase = isLocalhost ? `http://dashboard.localhost${portSuffix}` : 'https://dashboard.forke.space'
-  const adminBase = isLocalhost ? `http://admin.localhost${portSuffix}` : 'https://admin.forke.space'
-  const mainBase = isLocalhost ? `http://localhost${portSuffix}` : 'https://forke.space'
-
-  // 1. Redirections from the main domain (forke.space) to subdomains
-  if (!isDashboardSubdomain && !isAdminSubdomain) {
-    if (pathname === '/dashboard') {
-      return withCookies(NextResponse.redirect(new URL('/overview', dashboardBase)))
-    }
-
-    const isAppRoute = pathname.startsWith('/tasks') ||
-                       pathname.startsWith('/profile') ||
-                       pathname.startsWith('/submissions') ||
-                       pathname.startsWith('/earnings') ||
-                       pathname.startsWith('/settings') ||
-                       pathname.startsWith('/analytics') ||
-                       pathname.startsWith('/messages') ||
-                       pathname.startsWith('/onboarding') ||
-                       pathname.startsWith('/support') ||
-                       pathname.startsWith('/post-task')
-
-    if (isAppRoute) {
-      return withCookies(NextResponse.redirect(new URL(pathname + req.nextUrl.search, dashboardBase)))
-    }
-
-    if (pathname.startsWith('/admin')) {
-      const cleanAdminPath = pathname.replace(/^\/admin/, '') || '/'
-      return withCookies(NextResponse.redirect(new URL(cleanAdminPath + req.nextUrl.search, adminBase)))
-    }
-  }
-
-  // 2. Redirections on dashboard.forke.space
-  if (isDashboardSubdomain) {
-    if (pathname === '/' || pathname === '/dashboard') {
-      return withCookies(NextResponse.redirect(new URL('/overview', dashboardBase)))
-    }
-  }
-
-  // 3. Redirections on admin.forke.space
-  if (isAdminSubdomain) {
-    if (pathname.startsWith('/admin')) {
-      const cleanAdminPath = pathname.replace(/^\/admin/, '') || '/'
-      return withCookies(NextResponse.redirect(new URL(cleanAdminPath + req.nextUrl.search, adminBase)))
-    }
-  }
 
   // ===== WAITLIST GATE =====
   // New model: the waitlist no longer locks visitors OUT of public pages.
@@ -325,7 +264,7 @@ export default auth(async (req) => {
   //    in app/waitlist/layout.tsx via notFound(); we don't redirect here so the
   //    not-found UI shows the real URL).
   if (pathname === '/waitlist' && waitlistEnabled && (siteAccess || waitlistJoined)) {
-    const redirectUrl = new URL('/', mainBase)
+    const redirectUrl = new URL('/', req.nextUrl.origin)
     redirectUrl.search = req.nextUrl.search
     return withCookies(NextResponse.redirect(redirectUrl))
   }
@@ -333,26 +272,19 @@ export default auth(async (req) => {
   // ===== EXISTING AUTH LOGIC =====
   const isLoggedIn = !!req.auth
   const isBanned = (req.auth?.user as any)?.isBanned
-  const isAppPage = isDashboardSubdomain ||
-                    req.nextUrl.pathname.startsWith('/dashboard') || 
+  const isAppPage = req.nextUrl.pathname.startsWith('/dashboard') || 
                     req.nextUrl.pathname.startsWith('/tasks') ||
                     req.nextUrl.pathname.startsWith('/profile') ||
                     req.nextUrl.pathname.startsWith('/submissions') ||
-                    req.nextUrl.pathname.startsWith('/earnings') ||
-                    req.nextUrl.pathname.startsWith('/settings') ||
-                    req.nextUrl.pathname.startsWith('/analytics') ||
-                    req.nextUrl.pathname.startsWith('/messages') ||
-                    req.nextUrl.pathname.startsWith('/onboarding') ||
-                    req.nextUrl.pathname.startsWith('/support') ||
-                    req.nextUrl.pathname.startsWith('/post-task')
+                    req.nextUrl.pathname.startsWith('/earnings')
   
-  const isAdminPage = isAdminSubdomain || req.nextUrl.pathname.startsWith('/admin')
-  const isAdminLogin = (isAdminSubdomain && pathname === '/login') || req.nextUrl.pathname === '/admin/login'
-  const isAdminSetup = (isAdminSubdomain && pathname === '/setup') || req.nextUrl.pathname === '/admin/setup'
+  const isAdminPage = req.nextUrl.pathname.startsWith('/admin')
+  const isAdminLogin = req.nextUrl.pathname === '/admin/login'
+  const isAdminSetup = req.nextUrl.pathname === '/admin/setup'
 
   // Block banned users
   if (isLoggedIn && isBanned && !isAdminPage && !req.nextUrl.pathname.startsWith('/auth-error')) {
-     const errorUrl = new URL('/auth-error?error=AccessDenied', mainBase)
+     const errorUrl = new URL('/auth-error?error=AccessDenied', req.nextUrl.origin)
      return withCookies(NextResponse.redirect(errorUrl))
   }
 
@@ -360,59 +292,36 @@ export default auth(async (req) => {
   if (isAdminPage && !isAdminLogin && !isAdminSetup) {
     const adminToken = req.cookies.get('admin_token')?.value
     if (!adminToken || !adminToken.startsWith('forke_admin_session:')) {
-      return withCookies(NextResponse.redirect(new URL('/login', adminBase)))
+      return withCookies(NextResponse.redirect(new URL('/admin/login', req.nextUrl.origin)))
     }
   }
 
   if (isAppPage && !isLoggedIn) {
-    const loginUrl = new URL('/', mainBase)
+    const loginUrl = new URL('/', req.nextUrl.origin)
     return withCookies(NextResponse.redirect(loginUrl))
   }
 
   // Redirect logged in users from root to dashboard (only if waitlist is disabled or they have site access)
-  if (isLoggedIn && !isDashboardSubdomain && !isAdminSubdomain && pathname === '/' && (!waitlistEnabled || siteAccess)) {
-    return withCookies(NextResponse.redirect(new URL('/overview', dashboardBase)))
+  if (isLoggedIn && req.nextUrl.pathname === '/' && (!waitlistEnabled || siteAccess)) {
+    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
   }
 
   // Onboarding redirection for developers without username
   const role = (req.auth?.user as any)?.role
   const username = (req.auth?.user as any)?.username
-  const isOnboardingPage = pathname === '/onboarding'
+  const isOnboardingPage = req.nextUrl.pathname === '/onboarding'
 
   const needsOnboarding = role === 'developer' && !username
 
   if (isLoggedIn && needsOnboarding && !isOnboardingPage && isAppPage) {
-    return withCookies(NextResponse.redirect(new URL('/onboarding', dashboardBase)))
+    return withCookies(NextResponse.redirect(new URL('/onboarding', req.nextUrl.origin)))
   }
 
   // Prevent users who don't need onboarding from accessing it
   if (isLoggedIn && !needsOnboarding && isOnboardingPage) {
-    return withCookies(NextResponse.redirect(new URL('/overview', dashboardBase)))
+    return withCookies(NextResponse.redirect(new URL('/dashboard', req.nextUrl.origin)))
   }
   
-  // ===== INTERNAL SUBDOMAIN REWRITES =====
-  if (isAdminSubdomain) {
-    const headers = new Headers(req.headers)
-    headers.set('x-middleware-rewrite', 'true')
-    return NextResponse.rewrite(new URL(`/admin${pathname}${req.nextUrl.search}`, req.url), {
-      request: {
-        headers,
-      }
-    })
-  }
-
-  if (isDashboardSubdomain) {
-    if (pathname === '/overview') {
-      const headers = new Headers(req.headers)
-      headers.set('x-middleware-rewrite', 'true')
-      return NextResponse.rewrite(new URL(`/dashboard${req.nextUrl.search}`, req.url), {
-        request: {
-          headers,
-        }
-      })
-    }
-  }
-
   return withCookies(NextResponse.next())
 })
 
