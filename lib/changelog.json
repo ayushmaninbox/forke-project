@@ -4,6 +4,14 @@
     "label": "jul 6, 2026",
     "entries": [
       {
+        "shortHash": "c413ec8",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T10:01:16+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement dynamic subdomain routing for local development"
+      },
+      {
         "shortHash": "52c9ef2",
         "author": "Ayushman Mohapatra",
         "date": "2026-07-06T09:57:23+05:30",

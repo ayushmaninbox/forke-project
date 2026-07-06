@@ -141,6 +141,12 @@ async function fetchWaitlistStatus(origin: string): Promise<boolean> {
 export default auth(async (req) => {
   const pathname = req.nextUrl.pathname
 
+  // Prevent infinite rewrite-to-redirect loops
+  const isRewritten = req.headers.get('x-middleware-rewrite') === 'true'
+  if (isRewritten) {
+    return NextResponse.next()
+  }
+
   // Bypass all static files and system assets containing a dot (like .glb, .svg, .png, etc.)
   // and Next.js internal /_next paths or custom /uploads paths.
   if (
@@ -386,12 +392,24 @@ export default auth(async (req) => {
   
   // ===== INTERNAL SUBDOMAIN REWRITES =====
   if (isAdminSubdomain) {
-    return NextResponse.rewrite(new URL(`/admin${pathname}${req.nextUrl.search}`, req.url))
+    const headers = new Headers(req.headers)
+    headers.set('x-middleware-rewrite', 'true')
+    return NextResponse.rewrite(new URL(`/admin${pathname}${req.nextUrl.search}`, req.url), {
+      request: {
+        headers,
+      }
+    })
   }
 
   if (isDashboardSubdomain) {
     if (pathname === '/overview') {
-      return NextResponse.rewrite(new URL(`/dashboard${req.nextUrl.search}`, req.url))
+      const headers = new Headers(req.headers)
+      headers.set('x-middleware-rewrite', 'true')
+      return NextResponse.rewrite(new URL(`/dashboard${req.nextUrl.search}`, req.url), {
+        request: {
+          headers,
+        }
+      })
     }
   }
 
