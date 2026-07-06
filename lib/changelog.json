@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-07-06",
+    "label": "jul 6, 2026",
+    "entries": [
+      {
+        "shortHash": "52c9ef2",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T09:57:23+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add SupportedBy component to landing page and configure cross-subdomain session cookies"
+      }
+    ]
+  },
+  {
     "date": "2026-07-05",
     "label": "jul 5, 2026",
     "entries": [
