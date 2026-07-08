@@ -374,7 +374,10 @@ export async function runFullPRPipeline(params: PipelineParams) {
       commitSha: headSha,
       baselineSnapshotId: baseline ? baseline.id : null,
       // Deterministic Results
-      results: JSON.stringify(deterministicResults),
+      results: JSON.stringify({
+        ...deterministicResults,
+        scoreBreakdown: aiResult.scoreBreakdown
+      }),
       comparison: comparisonReport ? JSON.stringify(comparisonReport) : '{}',
       verdict: finalDeterministicVerdict,
       reportHtml,
