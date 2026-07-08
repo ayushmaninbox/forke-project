@@ -4,6 +4,14 @@
     "label": "jul 8, 2026",
     "entries": [
       {
+        "shortHash": "a6c47ab",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T15:33:30+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Redirect Get Started buttons to signin and rename migration to 0000_forke_db"
+      },
+      {
         "shortHash": "6150bf6",
         "author": "Ayushman Mohapatra",
         "date": "2026-07-08T14:29:51+05:30",
