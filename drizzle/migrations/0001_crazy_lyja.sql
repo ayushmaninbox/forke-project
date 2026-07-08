@@ -87,9 +87,9 @@ CREATE TABLE "sandbox_repos" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "subscribers" ADD COLUMN "source" text DEFAULT 'direct' NOT NULL;--> statement-breakpoint
-ALTER TABLE "subscribers" ADD COLUMN "attribution" jsonb;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "attribution" jsonb;--> statement-breakpoint
+ALTER TABLE "subscribers" ADD COLUMN IF NOT EXISTS "source" text DEFAULT 'direct' NOT NULL;--> statement-breakpoint
+ALTER TABLE "subscribers" ADD COLUMN IF NOT EXISTS "attribution" jsonb;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "attribution" jsonb;--> statement-breakpoint
 ALTER TABLE "ai_reviews" ADD CONSTRAINT "ai_reviews_developer_fork_id_developer_forks_id_fk" FOREIGN KEY ("developer_fork_id") REFERENCES "public"."developer_forks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ai_reviews" ADD CONSTRAINT "ai_reviews_sandbox_repo_id_sandbox_repos_id_fk" FOREIGN KEY ("sandbox_repo_id") REFERENCES "public"."sandbox_repos"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "baseline_snapshots" ADD CONSTRAINT "baseline_snapshots_sandbox_repo_id_sandbox_repos_id_fk" FOREIGN KEY ("sandbox_repo_id") REFERENCES "public"."sandbox_repos"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

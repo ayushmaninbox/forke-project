@@ -1,8 +1,52 @@
 [
   {
+    "date": "2026-07-08",
+    "label": "jul 8, 2026",
+    "entries": [
+      {
+        "shortHash": "e0303d4",
+        "author": "Sudhanshub27",
+        "date": "2026-07-08T11:04:16+05:30",
+        "kind": "fix",
+        "scope": "types",
+        "title": "Type header parameter explicitly in db-client-actions"
+      }
+    ]
+  },
+  {
+    "date": "2026-07-07",
+    "label": "jul 7, 2026",
+    "entries": [
+      {
+        "shortHash": "a8aa6a6",
+        "author": "Sudhanshub27",
+        "date": "2026-07-07T12:07:40+05:30",
+        "kind": "update",
+        "scope": null,
+        "title": "Update owner application submission and check role"
+      }
+    ]
+  },
+  {
     "date": "2026-07-06",
     "label": "jul 6, 2026",
     "entries": [
+      {
+        "shortHash": "f72a5c0",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T11:07:57+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Remove the isolated subdomains to prevent domain conflict"
+      },
+      {
+        "shortHash": "03a73fd",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T11:00:38+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement dynamic subdomain routing and prevent infinite rewrite loops in middleware"
+      },
       {
         "shortHash": "c413ec8",
         "author": "Ayushman Mohapatra",
@@ -362,6 +406,90 @@
     ]
   },
   {
+    "date": "2026-06-22",
+    "label": "jun 22, 2026",
+    "entries": [
+      {
+        "shortHash": "1d67b7f",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T23:54:38+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Ai report improved"
+      },
+      {
+        "shortHash": "bcc4b65",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T19:58:46+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Corrected ui fixes and import errors"
+      },
+      {
+        "shortHash": "88016f3",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T17:54:03+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Deleted redundant files"
+      },
+      {
+        "shortHash": "e453d9d",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T02:49:41+05:30",
+        "kind": "feature",
+        "scope": "ai-review",
+        "title": "Add unified AI review report UI and replace legacy review views"
+      },
+      {
+        "shortHash": "c4e41e9",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T01:20:09+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implemented file tree in tasks"
+      },
+      {
+        "shortHash": "41e7593",
+        "author": "Sudhanshub27",
+        "date": "2026-06-22T00:16:18+05:30",
+        "kind": "feature",
+        "scope": "sandbox",
+        "title": "Add task publishing workflow, feed integration, task status navigation, and Kiro config ignores"
+      }
+    ]
+  },
+  {
+    "date": "2026-06-21",
+    "label": "jun 21, 2026",
+    "entries": [
+      {
+        "shortHash": "48da4d6",
+        "author": "Sudhanshub27",
+        "date": "2026-06-21T23:45:56+05:30",
+        "kind": "update",
+        "scope": null,
+        "title": "Updated gitignore"
+      },
+      {
+        "shortHash": "1c9314a",
+        "author": "Sudhanshub27",
+        "date": "2026-06-21T23:38:26+05:30",
+        "kind": "update",
+        "scope": null,
+        "title": "Updated gitignore"
+      },
+      {
+        "shortHash": "f5c73f6",
+        "author": "Sudhanshub27",
+        "date": "2026-06-21T23:25:30+05:30",
+        "kind": "feature",
+        "scope": "ui",
+        "title": "Refine button variants, sizing, and hover states; document persistent changelog storage and repository mirroring"
+      }
+    ]
+  },
+  {
     "date": "2026-06-19",
     "label": "jun 19, 2026",
     "entries": [
@@ -394,6 +522,78 @@
         "kind": "fix",
         "scope": null,
         "title": "Prevent Tiptap JSON data loss by stringifying content during server action transition"
+      },
+      {
+        "shortHash": "be025d7",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T23:09:31+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement persistent changelog storage and add repository mirroring utility"
+      },
+      {
+        "shortHash": "99f721d",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T22:35:15+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add API routes for repository listing and workspace mirroring with auto-healing functionality"
+      },
+      {
+        "shortHash": "a672fd7",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T22:30:27+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement sandbox workspace with OAuth callback and repository mirroring capabilities"
+      },
+      {
+        "shortHash": "ce816b0",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T22:05:04+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement GitHub OAuth authentication and initial SandboxWorkspace component"
+      },
+      {
+        "shortHash": "ca9fada",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T21:15:54+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement initial SandboxWorkspace component for developer and owner dashboards"
+      },
+      {
+        "shortHash": "b828f4f",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T21:14:48+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement GitHub OAuth authentication flow and initialize sandbox dashboard and task workspaces"
+      },
+      {
+        "shortHash": "3478535",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T21:03:18+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement GitHub OAuth authentication flow and initialize sandbox dashboard and task posting workspaces"
+      },
+      {
+        "shortHash": "582b6d7",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T20:37:35+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement OAuth-based authentication and scaffolding for the core sandbox review engine and developer dashboard"
+      },
+      {
+        "shortHash": "bf922de",
+        "author": "Sudhanshub27",
+        "date": "2026-06-18T20:37:15+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement automated AI-driven pull request review pipeline and GitHub OAuth integration with Drizzle persistence"
       },
       {
         "shortHash": "47db0fd",
