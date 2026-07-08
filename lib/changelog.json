@@ -4,12 +4,36 @@
     "label": "jul 8, 2026",
     "entries": [
       {
+        "shortHash": "3395128",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T12:38:32+05:30",
+        "kind": "update",
+        "scope": null,
+        "title": "Merge sandbox users and review tables, verify compilation"
+      },
+      {
         "shortHash": "5191d1f",
         "author": "Ayushman Mohapatra",
         "date": "2026-07-08T12:12:16+05:30",
         "kind": "polish",
         "scope": null,
         "title": "Fix double scrollbars and apply sleek opaque branding custom scrollbars"
+      },
+      {
+        "shortHash": "2d43ea5",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T12:00:04+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Update scrollbar aesthetics to use theme-aware accent colors and record changes in changelog"
+      },
+      {
+        "shortHash": "9f2b625",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T11:57:47+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Modernize scrollbar design with sleek macOS-inspired aesthetics and remove redundant theme overrides"
       },
       {
         "shortHash": "36fd3fd",
