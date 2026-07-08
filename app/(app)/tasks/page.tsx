@@ -30,7 +30,7 @@ export default async function TasksPage({
   const q = params.q || ''
   const filterParam = params.filter
 
-  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true })
+  const tasks = await getOpenTasks({ skillTags: tags, maxBudget, q, includeClaimed: true, callerRole: user?.role })
 
   return (
     <div className="flex flex-col h-full bg-transparent text-[var(--color-text-primary)]">

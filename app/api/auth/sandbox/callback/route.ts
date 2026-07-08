@@ -11,9 +11,9 @@ export async function GET(request: Request) {
     )
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET
-  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI
+  const clientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET
+  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/callback/github`
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(

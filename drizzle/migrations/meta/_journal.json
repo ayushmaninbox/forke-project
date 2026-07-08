@@ -8,6 +8,13 @@
       "when": 1783494241665,
       "tag": "0000_forke_db",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783532499018,
+      "tag": "0001_fixed_magma",
+      "breakpoints": true
     }
   ]
 }

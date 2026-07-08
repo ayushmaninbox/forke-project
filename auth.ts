@@ -282,6 +282,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               where: eq(developers.userId, token.id as string),
             })
             token.isGithubConnected = !!devProfile?.isGithubConnected
+          } else {
+            // User does not exist in the database (e.g. database reset/wiped) -> destroy the JWT session
+            return null
           }
         } catch (error) {
           console.error('Error fetching fresh user data in JWT:', error)

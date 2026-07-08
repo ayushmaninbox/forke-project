@@ -37,7 +37,7 @@ export default async function PostTaskPage() {
 
   return (
     <div className="flex flex-col h-full bg-transparent text-white font-sans">
-      <TopBar title="Post task" />
+      <TopBar title="Post task" breadcrumbs={[{ label: 'Tasks', href: '/tasks' }]} />
 
       <div className="flex-grow overflow-y-auto">
         <div className="mx-auto max-w-6xl px-5 md:px-8 py-6 md:py-8 space-y-6 select-none w-full">
@@ -59,7 +59,7 @@ export default async function PostTaskPage() {
           </p>
         </div>
 
-        <SandboxWorkspace presetRole="owner" />
+        <SandboxWorkspace presetRole="owner" embedded={true} />
         </div>
       </div>
     </div>
