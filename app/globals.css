@@ -474,23 +474,15 @@ img {
   .skeleton-shimmer { animation-duration: 3.5s; }
 }
 
-/* Custom Scrollbar - Positioned at extreme right edge */
+/* Custom Scrollbar - Sleek, rounded macOS style using branding color (opaque) */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 0;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-button {
   height: 0;
   width: 0;
-}
-
-::-webkit-scrollbar-button:vertical:start {
-  height: 0;
-}
-
-::-webkit-scrollbar-button:vertical:end {
-  height: 0;
 }
 
 ::-webkit-scrollbar-track {
@@ -499,13 +491,16 @@ img {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-accent);
-  border-radius: 0;
-  border: none;
-  min-height: 50px;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-height: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent-hover);
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-corner {
@@ -513,13 +508,17 @@ img {
   display: none;
 }
 
-/* Ensure scrollbar is at extreme right */
-html, body {
-  overflow-y: scroll;
+/* Ensure scrollbar does not double up by avoiding forcing overflow-y on both elements */
+html {
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* Firefox scrollbar */
+body {
+  overflow-x: hidden;
+}
+
+/* Firefox scrollbar style matching the macOS layout with brand colors */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-accent) transparent;
@@ -528,51 +527,6 @@ html, body {
 /* Hide scrollbar but keep scroll behaviour */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* theme-ember scrollbar overrides */
-.theme-ember::-webkit-scrollbar {
-  width: 12px;
-  height: 0;
-}
-
-.theme-ember::-webkit-scrollbar-button,
-.theme-ember ::-webkit-scrollbar-button {
-  height: 0;
-  width: 0;
-}
-
-.theme-ember::-webkit-scrollbar-button:vertical:start,
-.theme-ember ::-webkit-scrollbar-button:vertical:start {
-  height: 0;
-}
-
-.theme-ember::-webkit-scrollbar-button:vertical:end,
-.theme-ember ::-webkit-scrollbar-button:vertical:end {
-  height: 0;
-}
-
-.theme-ember::-webkit-scrollbar-track,
-.theme-ember ::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.theme-ember::-webkit-scrollbar-thumb,
-.theme-ember ::-webkit-scrollbar-thumb {
-  background: var(--color-accent);
-  border: none;
-  border-radius: 0;
-  min-height: 50px;
-}
-
-.theme-ember::-webkit-scrollbar-thumb:hover,
-.theme-ember ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent-hover);
-}
-
-.theme-ember,
-.theme-ember * {
-  scrollbar-color: var(--color-accent) transparent;
-}
 
 /* Selection overrides */
 ::selection {
@@ -596,7 +550,7 @@ html, body {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Thin, unobtrusive scrollbar for the docs sidebar nav */
+/* Thin, unobtrusive scrollbar for the docs sidebar nav using brand colors (opaque) */
 .docs-scroll::-webkit-scrollbar {
   width: 6px;
 }
@@ -604,11 +558,11 @@ html, body {
   background: transparent;
 }
 .docs-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-accent);
   border-radius: 999px;
 }
 .docs-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-accent-hover);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
