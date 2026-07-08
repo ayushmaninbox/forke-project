@@ -372,7 +372,7 @@ img {
   .skeleton-shimmer { animation-duration: 3.5s; }
 }
 
-/* Custom Scrollbar - Sleek, rounded macOS style */
+/* Custom Scrollbar - Sleek, rounded macOS style using branding color (opaque) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -388,7 +388,7 @@ img {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-accent);
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: padding-box;
@@ -396,7 +396,7 @@ img {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--color-accent-hover);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
@@ -416,10 +416,10 @@ body {
   overflow-x: hidden;
 }
 
-/* Firefox scrollbar style matching the macOS layout */
+/* Firefox scrollbar style matching the macOS layout with brand colors */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: var(--color-accent) transparent;
 }
 
 /* Hide scrollbar but keep scroll behaviour */
@@ -448,7 +448,7 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Thin, unobtrusive scrollbar for the docs sidebar nav */
+/* Thin, unobtrusive scrollbar for the docs sidebar nav using brand colors (opaque) */
 .docs-scroll::-webkit-scrollbar {
   width: 6px;
 }
@@ -456,11 +456,11 @@ body {
   background: transparent;
 }
 .docs-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-accent);
   border-radius: 999px;
 }
 .docs-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-accent-hover);
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

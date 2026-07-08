@@ -1,8 +1,38 @@
 [
   {
+    "date": "2026-07-08",
+    "label": "jul 8, 2026",
+    "entries": [
+      {
+        "shortHash": "9f2b625",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T11:57:47+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Modernize scrollbar design with sleek macOS-inspired aesthetics and remove redundant theme overrides"
+      }
+    ]
+  },
+  {
     "date": "2026-07-06",
     "label": "jul 6, 2026",
     "entries": [
+      {
+        "shortHash": "f72a5c0",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T11:07:57+05:30",
+        "kind": "fix",
+        "scope": null,
+        "title": "Remove the isolated subdomains to prevent domain conflict"
+      },
+      {
+        "shortHash": "03a73fd",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-06T11:00:38+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement dynamic subdomain routing and prevent infinite rewrite loops in middleware"
+      },
       {
         "shortHash": "c413ec8",
         "author": "Ayushman Mohapatra",
