@@ -4,6 +4,22 @@
     "label": "jul 8, 2026",
     "entries": [
       {
+        "shortHash": "6150bf6",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T14:29:51+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Add .vscode to gitignore"
+      },
+      {
+        "shortHash": "2239652",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T14:21:55+05:30",
+        "kind": "chore",
+        "scope": null,
+        "title": "Remove kiro references from .gitignore"
+      },
+      {
         "shortHash": "3395128",
         "author": "Ayushman Mohapatra",
         "date": "2026-07-08T12:38:32+05:30",
