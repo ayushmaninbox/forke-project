@@ -90,7 +90,7 @@ export default function Verdict({ n = '003', flush = false }: { n?: string; flus
             ))}
           </ul>
           <Link
-            href={showWaitlisterView ? '/waitlist' : '/register'}
+            href={showWaitlisterView ? '/waitlist' : '/signin'}
             className="group mt-9 inline-flex items-center gap-2 text-[14.5px] font-medium text-white/75 transition-colors hover:text-white"
           >
             {showWaitlisterView ? 'Join the waitlist' : 'Post your first task'}

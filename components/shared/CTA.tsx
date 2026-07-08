@@ -141,7 +141,7 @@ export default function CTA() {
               <Button
                 size="lg"
                 className="rounded-full px-7 py-3 h-auto text-xs font-bold uppercase tracking-wider bg-[#FF7A00] hover:bg-[#FF8B1F] text-black transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group/btn shadow-[0_4px_20px_rgba(255,122,0,0.15)]"
-                onClick={() => router.push(showWaitlisterView ? '/waitlist' : '/register')}
+                onClick={() => router.push(showWaitlisterView ? '/waitlist' : '/signin')}
               >
                 {showWaitlisterView ? 'Join the waitlist' : 'Join the movement'}
                 <span className="ml-1 w-6 h-6 rounded-full bg-black/10 flex items-center justify-center transition-transform duration-300 group-hover/btn:translate-x-0.5 shrink-0">
@@ -190,7 +190,7 @@ export default function CTA() {
                   if (showWaitlisterView) {
                     router.push('/waitlist')
                   } else {
-                    router.push('/register')
+                    router.push('/signin')
                   }
                 }}
               >

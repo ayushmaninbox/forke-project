@@ -139,7 +139,7 @@ export default function WhatsForkePage() {
   const showWaitlisterView = useWaitlisterView()
   // Route the primary CTA to the waitlist while the lock is on (sign-up is
   // closed and /register 404s then); otherwise send people to register.
-  const primaryCtaHref = showWaitlisterView ? '/waitlist' : '/register'
+  const primaryCtaHref = showWaitlisterView ? '/waitlist' : '/signin'
   const pageContainerRef = useRef<HTMLDivElement>(null)
 
   useGSAP(() => {

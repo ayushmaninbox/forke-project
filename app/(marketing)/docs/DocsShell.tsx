@@ -400,7 +400,7 @@ export default function DocsShell({
                 </Link>
               ) : (
                 <Link
-                  href={showWaitlisterView ? '/waitlist' : '/register'}
+                  href={showWaitlisterView ? '/waitlist' : '/signin'}
                   className="rounded-lg bg-white px-3.5 py-1.5 text-[13px] font-semibold tracking-tight text-[#0a0a0a] transition-colors hover:bg-white/90"
                 >
                   {showWaitlisterView ? 'Join waitlist' : 'Sign up'}

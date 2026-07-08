@@ -195,7 +195,7 @@ export default function Hero() {
                   <Button
                     size="lg"
                     className="gsap-hero-btn group h-12 px-7 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] font-semibold tracking-tight shadow-none transition-colors opacity-0"
-                    onClick={() => router.push('/register')}
+                    onClick={() => router.push('/signin')}
                   >
                     Start earning <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                   </Button>
@@ -297,7 +297,7 @@ export default function Hero() {
           <Button
             size="lg"
             className="gsap-hero-btn group w-full h-12 sm:h-14 py-0 gap-2 rounded-lg bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[15px] sm:text-base font-semibold tracking-tight shadow-none transition-colors opacity-0 flex items-center justify-center"
-            onClick={() => router.push('/register')}
+            onClick={() => router.push('/signin')}
           >
             Start earning <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Button>

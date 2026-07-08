@@ -116,7 +116,7 @@ export default function Navbar() {
                 <Button 
                   variant="primary" 
                   className="hidden lg:inline-flex rounded-full px-5 py-2 h-auto text-[13px] font-semibold tracking-tight bg-accent hover:bg-accent-hover text-[#0a0a0a] shadow-none transition-colors" 
-                  onClick={() => router.push('/register')}
+                  onClick={() => router.push('/signin')}
                 >
                   Get Started
                 </Button>
@@ -181,7 +181,7 @@ export default function Navbar() {
                     <Button 
                       variant="primary" 
                       className="w-full h-11 rounded-xl bg-accent hover:bg-accent-hover text-[#0a0a0a] text-[14px] font-semibold tracking-tight shadow-none transition-colors" 
-                      onClick={() => { setIsMobileMenuOpen(false); router.push('/register'); }}
+                      onClick={() => { setIsMobileMenuOpen(false); router.push('/signin'); }}
                     >
                       Get Started
                     </Button>

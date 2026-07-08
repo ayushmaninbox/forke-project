@@ -31,7 +31,7 @@ export default async function ChangelogPage() {
   const days = getChangelog()
   const commitCount = getCommitCount()
   // While the lock is on, /register 404s — point the CTA at the waitlist instead.
-  const ctaHref = (await isWaitlistEnabled()) ? '/waitlist' : '/register'
+  const ctaHref = (await isWaitlistEnabled()) ? '/waitlist' : '/signin'
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
