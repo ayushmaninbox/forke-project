@@ -283,6 +283,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             })
             token.isGithubConnected = !!devProfile?.isGithubConnected
           }
+          else{
+            return null
+          }
         } catch (error) {
           console.error('Error fetching fresh user data in JWT:', error)
         }

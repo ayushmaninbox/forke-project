@@ -118,7 +118,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (isCompleted) {
+    // Check database to see if we actually have a saved review report
+    const existingReviews = await db
+      .select()
+      .from(codeReviews)
+      .where(
+        and(
+          eq(codeReviews.sandboxRepoId, sandboxRecord.id),
+          eq(codeReviews.commitSha, headSha)
+        )
+      )
+      .limit(1)
+
+    const hasSavedReview = existingReviews.length > 0
+
+    if (isCompleted && hasSavedReview) {
       return NextResponse.json({
         triggered: false,
         message: 'Review already complete for this commit SHA.',
