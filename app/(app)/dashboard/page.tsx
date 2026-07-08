@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import TopBar from '@/components/shared/TopBar'
+import SandboxWorkspace from '@/components/sandbox/SandboxWorkspace'
 import { getTasksPendingReview, getTasksByClaimant } from '@/lib/db/queries/tasks'
 import ReviewCard from '@/components/tasks/ReviewCard'
 import ActiveTaskCard from '@/components/tasks/ActiveTaskCard'
@@ -353,6 +354,12 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {!isOwner && (
+            <div className="border-t border-[var(--color-border)] pt-6">
+              <SandboxWorkspace presetRole="developer" embedded />
+            </div>
+          )}
         </div>
       </div>
     </div>
