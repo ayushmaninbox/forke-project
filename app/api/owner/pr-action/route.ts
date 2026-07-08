@@ -11,8 +11,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db, sandboxOwners } from '@/lib/db'
-import { eq } from 'drizzle-orm'
+import { db, sandboxUsers } from '@/lib/db'
+import { eq, and } from 'drizzle-orm'
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
     // Get owner's access token
     const ownerRecords = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
       .limit(1)
 
     if (ownerRecords.length === 0) {

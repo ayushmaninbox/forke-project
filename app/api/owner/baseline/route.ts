@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxOwners, sandboxRepos, baselineSnapshots } from '@/lib/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { sandboxUsers, sandboxRepos, baselineSnapshots } from '@/lib/db/schema'
+import { eq, desc, and } from 'drizzle-orm'
 import { runReviewPipeline } from '@/lib/review/runner'
 import { analyzeBaselineWithAI } from '@/lib/review/gemini'
 import { exec } from 'child_process'
@@ -27,8 +27,8 @@ export async function POST(request: Request) {
 
     const ownerRecord = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
       .limit(1)
 
     if (ownerRecord.length > 0 && !token) {

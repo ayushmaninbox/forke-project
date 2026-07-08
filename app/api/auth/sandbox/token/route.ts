@@ -36,22 +36,15 @@ export async function POST(request: Request) {
     // Save to database (non-blocking — sandbox still works if DB is down)
     try {
       const { db } = await import('@/lib/db')
-      const { sandboxOwners, sandboxDevelopers } = await import('@/lib/db/schema')
+      const { sandboxUsers } = await import('@/lib/db/schema')
       const { eq } = await import('drizzle-orm')
 
-      if (role === 'owner') {
-        const existing = await db.select().from(sandboxOwners).where(eq(sandboxOwners.githubId, githubId))
+      if (role === 'owner' || role === 'developer') {
+        const existing = await db.select().from(sandboxUsers).where(eq(sandboxUsers.githubId, githubId))
         if (existing.length > 0) {
-          await db.update(sandboxOwners).set({ username: githubUsername, accessToken: token }).where(eq(sandboxOwners.githubId, githubId))
+          await db.update(sandboxUsers).set({ username: githubUsername, accessToken: token, role }).where(eq(sandboxUsers.githubId, githubId))
         } else {
-          await db.insert(sandboxOwners).values({ githubId, username: githubUsername, accessToken: token })
-        }
-      } else if (role === 'developer') {
-        const existing = await db.select().from(sandboxDevelopers).where(eq(sandboxDevelopers.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxDevelopers).set({ username: githubUsername, accessToken: token }).where(eq(sandboxDevelopers.githubId, githubId))
-        } else {
-          await db.insert(sandboxDevelopers).values({ githubId, username: githubUsername, accessToken: token })
+          await db.insert(sandboxUsers).values({ githubId, username: githubUsername, accessToken: token, role })
         }
       }
     } catch (dbErr) {

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { db, developerForks, aiReviews, sandboxRepos, reviewResults } from '@/lib/db'
+import { db, developerForks, codeReviews, sandboxRepos } from '@/lib/db'
 import { eq, desc, and } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {
@@ -35,14 +35,14 @@ export async function GET(req: NextRequest) {
 
     const sandboxRepoId = repoInfo.length > 0 ? repoInfo[0].id : null
 
-    // For each fork, get its latest AI review and deterministic reviewResults
+    // For each fork, get its latest unified review (which includes both AI and deterministic details)
     const prsWithReviews = await Promise.all(
       forks.map(async fork => {
         const reviews = await db
           .select()
-          .from(aiReviews)
-          .where(eq(aiReviews.developerForkId, fork.id))
-          .orderBy(desc(aiReviews.createdAt))
+          .from(codeReviews)
+          .where(eq(codeReviews.developerForkId, fork.id))
+          .orderBy(desc(codeReviews.createdAt))
           .limit(1)
 
         const latestReview = reviews[0] || null
@@ -55,22 +55,6 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        let detReview = null
-        if (prNumber && sandboxRepoId) {
-          const detReviews = await db
-            .select()
-            .from(reviewResults)
-            .where(
-              and(
-                eq(reviewResults.sandboxRepoId, sandboxRepoId),
-                eq(reviewResults.prNumber, prNumber)
-              )
-            )
-            .orderBy(desc(reviewResults.createdAt))
-            .limit(1)
-          detReview = detReviews[0] || null
-        }
-
         return {
           fork: {
             id: fork.id,
@@ -80,24 +64,24 @@ export async function GET(req: NextRequest) {
             prUrl: fork.prUrl,
             createdAt: fork.createdAt,
           },
-          review: (latestReview || detReview) ? {
-            id: latestReview ? latestReview.id : (detReview ? detReview.id : null),
+          review: latestReview ? {
+            id: latestReview.id,
             prNumber: prNumber,
-            commitSha: detReview ? detReview.commitSha : '',
-            verdict: latestReview ? latestReview.verdict : (detReview ? detReview.verdict : 'pass'),
-            score: latestReview ? latestReview.score : (detReview ? (detReview.verdict === 'pass' ? 100 : 50) : 100),
-            requirementMatch: latestReview ? parseFloat(latestReview.requirementMatch) : 0,
-            summary: latestReview ? latestReview.summary : 'Validation completed.',
-            strengths: latestReview ? safeParseJSON(latestReview.strengths, []) : [],
-            issues: latestReview ? safeParseJSON(latestReview.issues, []) : [],
-            risks: latestReview ? safeParseJSON(latestReview.risks, []) : [],
-            unauthorizedEdits: latestReview ? safeParseJSON(latestReview.unauthorizedEdits, []) : [],
-            resolvedIssues: latestReview ? safeParseJSON(latestReview.resolvedIssues, []) : [],
-            resolvedRisks: latestReview ? safeParseJSON(latestReview.resolvedRisks, []) : [],
-            results: detReview ? safeParseJSON(detReview.results, {}) : {},
-            comparison: detReview ? safeParseJSON(detReview.comparison, {}) : {},
-            reportHtml: detReview ? detReview.reportHtml : '',
-            createdAt: latestReview ? latestReview.createdAt : (detReview ? detReview.createdAt : fork.createdAt)
+            commitSha: latestReview.commitSha || '',
+            verdict: latestReview.aiVerdict || 'pass',
+            score: latestReview.aiScore !== null ? latestReview.aiScore : 100,
+            requirementMatch: latestReview.requirementMatch ? parseFloat(latestReview.requirementMatch) : 0,
+            summary: latestReview.aiSummary || 'Validation completed.',
+            strengths: safeParseJSON(latestReview.aiStrengths, []),
+            issues: safeParseJSON(latestReview.aiIssues, []),
+            risks: safeParseJSON(latestReview.aiRisks, []),
+            unauthorizedEdits: safeParseJSON(latestReview.unauthorizedEdits, []),
+            resolvedIssues: safeParseJSON(latestReview.resolvedIssues, []),
+            resolvedRisks: safeParseJSON(latestReview.resolvedRisks, []),
+            results: safeParseJSON(latestReview.results, {}),
+            comparison: safeParseJSON(latestReview.comparison, {}),
+            reportHtml: latestReview.reportHtml || '',
+            createdAt: latestReview.createdAt
           } : null,
         }
       })

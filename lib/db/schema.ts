@@ -337,13 +337,14 @@ export const authEvents = pgTable('auth_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-// ─── Sandbox Owners (GitHub users who import repos) ───────────────────────────
+// ─── Sandbox Users (GitHub users who import repos or do tasks) ────────────────
 
-export const sandboxOwners = pgTable('sandbox_owners', {
+export const sandboxUsers = pgTable('sandbox_users', {
   id: uuid('id').primaryKey().defaultRandom(),
   githubId: integer('github_id').notNull().unique(),
   username: text('username').notNull(),
   accessToken: text('access_token').notNull(),
+  role: text('role').notNull(), // 'owner' | 'developer'
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -352,7 +353,7 @@ export const sandboxOwners = pgTable('sandbox_owners', {
 export const sandboxRepos = pgTable('sandbox_repos', {
   id: uuid('id').primaryKey().defaultRandom(),
   ownerId: uuid('owner_id')
-    .references(() => sandboxOwners.id, { onDelete: 'cascade' })
+    .references(() => sandboxUsers.id, { onDelete: 'cascade' })
     .notNull(),
   sourceRepo: text('source_repo').notNull(),       // e.g. "owner/original-repo"
   sandboxRepo: text('sandbox_repo').notNull(),      // e.g. "forke-sandbox/owner-repo-mirror"
@@ -379,16 +380,6 @@ export const developerForks = pgTable('developer_forks', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-// ─── Sandbox Developers (GitHub users who do tasks) ───────────────────────────
-
-export const sandboxDevelopers = pgTable('sandbox_developers', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  githubId: integer('github_id').notNull().unique(),
-  username: text('username').notNull(),
-  accessToken: text('access_token').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
-
 // ─── Baseline Snapshots (Deterministic health check of base branch) ───────────
 
 export const baselineSnapshots = pgTable('baseline_snapshots', {
@@ -404,47 +395,38 @@ export const baselineSnapshots = pgTable('baseline_snapshots', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-// ─── Review Results (Deterministic PR review with baseline comparison) ─────────
+// ─── Code Reviews (Unified automated and AI code reviews) ───────────────────
 
-export const reviewResults = pgTable('review_results', {
+export const codeReviews = pgTable('code_reviews', {
   id: uuid('id').primaryKey().defaultRandom(),
-  prNumber: integer('pr_number').notNull(),
   sandboxRepoId: uuid('sandbox_repo_id')
     .references(() => sandboxRepos.id, { onDelete: 'cascade' })
     .notNull(),
+  developerForkId: uuid('developer_fork_id')
+    .references(() => developerForks.id, { onDelete: 'cascade' }),
+  prNumber: integer('pr_number'),
   commitSha: text('commit_sha').notNull(),
   baselineSnapshotId: uuid('baseline_snapshot_id')
     .references(() => baselineSnapshots.id, { onDelete: 'set null' }),
-  results: text('results').notNull(),       // JSON of PR deterministic test results
-  comparison: text('comparison').notNull(), // JSON comparison diff
-  verdict: text('verdict').notNull(),       // 'pass', 'warn', 'fail'
+  // Deterministic checks
+  results: text('results'),
+  comparison: text('comparison'),
+  verdict: text('verdict'), // 'pass', 'warn', 'fail'
   reportHtml: text('report_html'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
-
-// ─── AI Reviews (Gemini/Claude structured code review) ────────────────────────
-
-export const aiReviews = pgTable('ai_reviews', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  developerForkId: uuid('developer_fork_id')
-    .references(() => developerForks.id, { onDelete: 'cascade' }),
-  sandboxRepoId: uuid('sandbox_repo_id')
-    .references(() => sandboxRepos.id, { onDelete: 'cascade' }),
-  prNumber: integer('pr_number'),
-  verdict: text('verdict').notNull(),             // 'pass', 'needs_changes', 'high_risk'
-  score: integer('score').notNull(),               // 0 to 100
-  requirementMatch: text('requirement_match').notNull(),
-  summary: text('summary').notNull(),
-  strengths: text('strengths'),                    // JSON array string
-  issues: text('issues'),                          // JSON array string
-  risks: text('risks'),                            // JSON array string
-  unauthorizedEdits: text('unauthorized_edits'),   // JSON array string
-  resolvedIssues: text('resolved_issues'),         // JSON array string
-  resolvedRisks: text('resolved_risks'),           // JSON array string
-  // Layer 4 risk scoring
-  riskScore: integer('risk_score'),                // 0-100 composite risk score
-  riskRouting: text('risk_routing'),               // 'auto_approve', 'owner_review', 'reviewer_queue'
-  model: text('model'),                            // Which AI model was used
-  tokensUsed: integer('tokens_used'),              // Token usage tracking
+  // AI review metrics
+  aiVerdict: text('ai_verdict'), // 'pass', 'needs_changes', 'high_risk'
+  aiScore: integer('ai_score'), // 0 to 100
+  requirementMatch: text('requirement_match'),
+  aiSummary: text('ai_summary'),
+  aiStrengths: text('ai_strengths'), // JSON array string
+  aiIssues: text('ai_issues'), // JSON array string
+  aiRisks: text('ai_risks'), // JSON array string
+  unauthorizedEdits: text('unauthorized_edits'), // JSON array string
+  resolvedIssues: text('resolved_issues'), // JSON array string
+  resolvedRisks: text('resolved_risks'), // JSON array string
+  riskScore: integer('risk_score'),
+  riskRouting: text('risk_routing'),
+  aiModel: text('ai_model'),
+  tokensUsed: integer('tokens_used'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

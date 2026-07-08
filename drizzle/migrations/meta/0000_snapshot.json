@@ -1,5 +1,5 @@
 {
-  "id": "559d4a11-98da-48a6-9e31-9baf0a3345d8",
+  "id": "4285a955-ea12-4796-827c-7f668050647a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -268,162 +268,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.ai_reviews": {
-      "name": "ai_reviews",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "developer_fork_id": {
-          "name": "developer_fork_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sandbox_repo_id": {
-          "name": "sandbox_repo_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pr_number": {
-          "name": "pr_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "verdict": {
-          "name": "verdict",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "score": {
-          "name": "score",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "requirement_match": {
-          "name": "requirement_match",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "summary": {
-          "name": "summary",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "strengths": {
-          "name": "strengths",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "issues": {
-          "name": "issues",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "risks": {
-          "name": "risks",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "unauthorized_edits": {
-          "name": "unauthorized_edits",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_issues": {
-          "name": "resolved_issues",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_risks": {
-          "name": "resolved_risks",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "risk_score": {
-          "name": "risk_score",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "risk_routing": {
-          "name": "risk_routing",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tokens_used": {
-          "name": "tokens_used",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "ai_reviews_developer_fork_id_developer_forks_id_fk": {
-          "name": "ai_reviews_developer_fork_id_developer_forks_id_fk",
-          "tableFrom": "ai_reviews",
-          "tableTo": "developer_forks",
-          "columnsFrom": [
-            "developer_fork_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "ai_reviews_sandbox_repo_id_sandbox_repos_id_fk": {
-          "name": "ai_reviews_sandbox_repo_id_sandbox_repos_id_fk",
-          "tableFrom": "ai_reviews",
-          "tableTo": "sandbox_repos",
-          "columnsFrom": [
-            "sandbox_repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -717,6 +561,211 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.code_reviews": {
+      "name": "code_reviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "sandbox_repo_id": {
+          "name": "sandbox_repo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "developer_fork_id": {
+          "name": "developer_fork_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pr_number": {
+          "name": "pr_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commit_sha": {
+          "name": "commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "baseline_snapshot_id": {
+          "name": "baseline_snapshot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "results": {
+          "name": "results",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comparison": {
+          "name": "comparison",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_html": {
+          "name": "report_html",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_verdict": {
+          "name": "ai_verdict",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_score": {
+          "name": "ai_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requirement_match": {
+          "name": "requirement_match",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_summary": {
+          "name": "ai_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_strengths": {
+          "name": "ai_strengths",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_issues": {
+          "name": "ai_issues",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_risks": {
+          "name": "ai_risks",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unauthorized_edits": {
+          "name": "unauthorized_edits",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_issues": {
+          "name": "resolved_issues",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_risks": {
+          "name": "resolved_risks",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_score": {
+          "name": "risk_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risk_routing": {
+          "name": "risk_routing",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ai_model": {
+          "name": "ai_model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tokens_used": {
+          "name": "tokens_used",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "code_reviews_sandbox_repo_id_sandbox_repos_id_fk": {
+          "name": "code_reviews_sandbox_repo_id_sandbox_repos_id_fk",
+          "tableFrom": "code_reviews",
+          "tableTo": "sandbox_repos",
+          "columnsFrom": [
+            "sandbox_repo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "code_reviews_developer_fork_id_developer_forks_id_fk": {
+          "name": "code_reviews_developer_fork_id_developer_forks_id_fk",
+          "tableFrom": "code_reviews",
+          "tableTo": "developer_forks",
+          "columnsFrom": [
+            "developer_fork_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "code_reviews_baseline_snapshot_id_baseline_snapshots_id_fk": {
+          "name": "code_reviews_baseline_snapshot_id_baseline_snapshots_id_fk",
+          "tableFrom": "code_reviews",
+          "tableTo": "baseline_snapshots",
+          "columnsFrom": [
+            "baseline_snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1324,108 +1373,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.review_results": {
-      "name": "review_results",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "pr_number": {
-          "name": "pr_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sandbox_repo_id": {
-          "name": "sandbox_repo_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "commit_sha": {
-          "name": "commit_sha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "baseline_snapshot_id": {
-          "name": "baseline_snapshot_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "results": {
-          "name": "results",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "comparison": {
-          "name": "comparison",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "verdict": {
-          "name": "verdict",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "report_html": {
-          "name": "report_html",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "review_results_sandbox_repo_id_sandbox_repos_id_fk": {
-          "name": "review_results_sandbox_repo_id_sandbox_repos_id_fk",
-          "tableFrom": "review_results",
-          "tableTo": "sandbox_repos",
-          "columnsFrom": [
-            "sandbox_repo_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "review_results_baseline_snapshot_id_baseline_snapshots_id_fk": {
-          "name": "review_results_baseline_snapshot_id_baseline_snapshots_id_fk",
-          "tableFrom": "review_results",
-          "tableTo": "baseline_snapshots",
-          "columnsFrom": [
-            "baseline_snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.revision_requests": {
       "name": "revision_requests",
       "schema": "",
@@ -1475,112 +1422,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sandbox_developers": {
-      "name": "sandbox_developers",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "github_id": {
-          "name": "github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "username": {
-          "name": "username",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "access_token": {
-          "name": "access_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "sandbox_developers_github_id_unique": {
-          "name": "sandbox_developers_github_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "github_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sandbox_owners": {
-      "name": "sandbox_owners",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "github_id": {
-          "name": "github_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "username": {
-          "name": "username",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "access_token": {
-          "name": "access_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "sandbox_owners_github_id_unique": {
-          "name": "sandbox_owners_github_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "github_id"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1673,10 +1514,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "sandbox_repos_owner_id_sandbox_owners_id_fk": {
-          "name": "sandbox_repos_owner_id_sandbox_owners_id_fk",
+        "sandbox_repos_owner_id_sandbox_users_id_fk": {
+          "name": "sandbox_repos_owner_id_sandbox_users_id_fk",
           "tableFrom": "sandbox_repos",
-          "tableTo": "sandbox_owners",
+          "tableTo": "sandbox_users",
           "columnsFrom": [
             "owner_id"
           ],
@@ -1689,6 +1530,65 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sandbox_users": {
+      "name": "sandbox_users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "github_id": {
+          "name": "github_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sandbox_users_github_id_unique": {
+          "name": "sandbox_users_github_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "github_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

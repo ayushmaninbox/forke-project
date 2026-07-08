@@ -4,6 +4,22 @@
     "label": "jul 8, 2026",
     "entries": [
       {
+        "shortHash": "5191d1f",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-08T12:12:16+05:30",
+        "kind": "polish",
+        "scope": null,
+        "title": "Fix double scrollbars and apply sleek opaque branding custom scrollbars"
+      },
+      {
+        "shortHash": "36fd3fd",
+        "author": "Sudhanshub27",
+        "date": "2026-07-08T11:28:13+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add audit log, AI review, auth event, and baseline snapshot tables to database schema"
+      },
+      {
         "shortHash": "cfe8df3",
         "author": "Sudhanshub27",
         "date": "2026-07-08T11:06:25+05:30",

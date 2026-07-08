@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sandboxOwners } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { sandboxUsers } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
   try {
     const rows = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
       .limit(1)
     if (rows.length > 0) token = rows[0].accessToken
   } catch {

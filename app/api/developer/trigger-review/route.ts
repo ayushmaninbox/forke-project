@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
-import { db, sandboxRepos, developerForks, sandboxOwners } from '@/lib/db'
+import { db, sandboxRepos, developerForks, sandboxUsers } from '@/lib/db'
 import { eq, and } from 'drizzle-orm'
 import { updateCommitStatus } from '@/lib/github/commitStatus'
 import { runFullPRPipeline } from '@/lib/review/pipeline'
@@ -49,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     const ownerRecords = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.id, sandboxRecord.ownerId))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.id, sandboxRecord.ownerId), eq(sandboxUsers.role, 'owner')))
       .limit(1)
 
     if (ownerRecords.length === 0) {

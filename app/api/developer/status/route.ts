@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { developerForks, sandboxOwners, sandboxDevelopers } from '@/lib/db/schema'
+import { developerForks, sandboxUsers } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
 
 export async function GET(request: Request) {
@@ -17,13 +17,13 @@ export async function GET(request: Request) {
   let token = cookieStore.get('forke_access_token')?.value
 
   if (!token) {
-    // Attempt database lookup in sandboxDevelopers table first, falling back to sandboxOwners table
+    // Attempt database lookup in sandboxUsers table (developer role first, fallback to owner)
     try {
-      const devData = await db.select().from(sandboxDevelopers).where(eq(sandboxDevelopers.username, username))
+      const devData = await db.select().from(sandboxUsers).where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'developer')))
       if (devData.length > 0) {
         token = devData[0].accessToken
       } else {
-        const ownerData = await db.select().from(sandboxOwners).where(eq(sandboxOwners.username, username))
+        const ownerData = await db.select().from(sandboxUsers).where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
         if (ownerData.length > 0) {
           token = ownerData[0].accessToken
         }

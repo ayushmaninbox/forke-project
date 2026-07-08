@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxOwners, sandboxRepos, developerForks, sandboxDevelopers } from '@/lib/db/schema'
+import { sandboxUsers, sandboxRepos, developerForks } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 // POST/PUT to configure/update sandbox metadata
@@ -63,8 +63,8 @@ export async function DELETE(request: Request) {
     // 1. Fetch token for owner to delete organization repo
     const existing = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
 
     if (existing.length > 0 && !token) {
       token = existing[0].accessToken
@@ -94,18 +94,18 @@ export async function DELETE(request: Request) {
 
         const devRecord = await db
           .select()
-          .from(sandboxDevelopers)
-          .where(eq(sandboxDevelopers.username, devUsername))
+          .from(sandboxUsers)
+          .where(and(eq(sandboxUsers.username, devUsername), eq(sandboxUsers.role, 'developer')))
           .limit(1)
 
         if (devRecord.length > 0 && devRecord[0].accessToken) {
           devToken = devRecord[0].accessToken
         } else {
-          // Look up developer's OAuth token in sandboxOwners table as a fallback
+          // Look up developer's OAuth token in sandboxUsers table as a fallback
           const devOwnerRecord = await db
             .select()
-            .from(sandboxOwners)
-            .where(eq(sandboxOwners.username, devUsername))
+            .from(sandboxUsers)
+            .where(and(eq(sandboxUsers.username, devUsername), eq(sandboxUsers.role, 'owner')))
             .limit(1)
 
           if (devOwnerRecord.length > 0 && devOwnerRecord[0].accessToken) {

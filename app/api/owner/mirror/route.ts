@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxOwners, sandboxRepos } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { sandboxUsers, sandboxRepos } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
 import { activeJobs } from '@/lib/jobs'
 import { runMirrorJob } from '@/lib/github/mirror'
 
@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     // 1. Fetch token & database ID for owner
     let existing = await db
       .select()
-      .from(sandboxOwners)
-      .where(eq(sandboxOwners.username, username))
+      .from(sandboxUsers)
+      .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
 
     if (existing.length > 0) {
       ownerId = existing[0].id
@@ -63,11 +63,12 @@ export async function POST(request: Request) {
             // Verify that the token matches the requested username
             if (userData.login.toLowerCase() === username.toLowerCase()) {
               const inserted = await db
-                .insert(sandboxOwners)
+                .insert(sandboxUsers)
                 .values({
                   githubId: userData.id,
                   username: userData.login,
                   accessToken: token,
+                  role: 'owner',
                 })
                 .returning()
               if (inserted.length > 0) {

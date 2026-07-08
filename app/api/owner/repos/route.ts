@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { sandboxOwners } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { sandboxUsers } from '@/lib/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -16,8 +16,8 @@ export async function GET(request: Request) {
     try {
       const existing = await db
         .select()
-        .from(sandboxOwners)
-        .where(eq(sandboxOwners.username, username))
+        .from(sandboxUsers)
+        .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
       if (existing.length > 0) {
         token = existing[0].accessToken
       }
@@ -31,8 +31,8 @@ export async function GET(request: Request) {
     try {
       const existing = await db
         .select()
-        .from(sandboxOwners)
-        .where(eq(sandboxOwners.username, username))
+        .from(sandboxUsers)
+        .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
       if (existing.length === 0) {
         const userRes = await fetch('https://api.github.com/user', {
           headers: {
@@ -45,11 +45,12 @@ export async function GET(request: Request) {
           const userData = await userRes.json()
           if (userData && userData.id && userData.login && userData.login.toLowerCase() === username.toLowerCase()) {
             await db
-              .insert(sandboxOwners)
+              .insert(sandboxUsers)
               .values({
                 githubId: userData.id,
                 username: userData.login,
                 accessToken: token,
+                role: 'owner',
               })
           }
         }

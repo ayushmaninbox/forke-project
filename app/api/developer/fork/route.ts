@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { developerForks, sandboxOwners, sandboxRepos, sandboxDevelopers } from '@/lib/db/schema'
+import { developerForks, sandboxUsers, sandboxRepos } from '@/lib/db/schema'
 import { and, eq } from 'drizzle-orm'
 
 export async function POST(request: Request) {
@@ -20,11 +20,11 @@ export async function POST(request: Request) {
       // Find the specific owner token for this sandbox repo
       const sandboxRepoInfo = await db
         .select({
-          accessToken: sandboxOwners.accessToken
+          accessToken: sandboxUsers.accessToken
         })
         .from(sandboxRepos)
-        .innerJoin(sandboxOwners, eq(sandboxRepos.ownerId, sandboxOwners.id))
-        .where(eq(sandboxRepos.sandboxRepo, sandboxRepo))
+        .innerJoin(sandboxUsers, eq(sandboxRepos.ownerId, sandboxUsers.id))
+        .where(and(eq(sandboxRepos.sandboxRepo, sandboxRepo), eq(sandboxUsers.role, 'owner')))
         .limit(1)
 
       let ownerToken = sandboxRepoInfo[0]?.accessToken
@@ -32,8 +32,9 @@ export async function POST(request: Request) {
       // Fallback to any active owner token in the database
       if (!ownerToken) {
         const fallbackOwner = await db
-          .select({ accessToken: sandboxOwners.accessToken })
-          .from(sandboxOwners)
+          .select({ accessToken: sandboxUsers.accessToken })
+          .from(sandboxUsers)
+          .where(eq(sandboxUsers.role, 'owner'))
           .limit(1)
         ownerToken = fallbackOwner[0]?.accessToken
       }
@@ -68,8 +69,8 @@ export async function POST(request: Request) {
             try {
               const devRecord = await db
                 .select()
-                .from(sandboxDevelopers)
-                .where(eq(sandboxDevelopers.username, username))
+                .from(sandboxUsers)
+                .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'developer')))
                 .limit(1)
               if (devRecord.length > 0) {
                 devToken = devRecord[0].accessToken

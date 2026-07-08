@@ -66,23 +66,14 @@ async function handleSandboxCallback(request: NextRequest, role: string) {
     // 3. Save to DB — non-blocking, never fails the login
     try {
       const { db } = await import('@/lib/db')
-      const { sandboxOwners, sandboxDevelopers } = await import('@/lib/db/schema')
+      const { sandboxUsers } = await import('@/lib/db/schema')
       const { eq } = await import('drizzle-orm')
 
-      if (role === 'owner') {
-        const existing = await db.select().from(sandboxOwners).where(eq(sandboxOwners.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxOwners).set({ username: githubUsername, accessToken }).where(eq(sandboxOwners.githubId, githubId))
-        } else {
-          await db.insert(sandboxOwners).values({ githubId, username: githubUsername, accessToken })
-        }
+      const existing = await db.select().from(sandboxUsers).where(eq(sandboxUsers.githubId, githubId))
+      if (existing.length > 0) {
+        await db.update(sandboxUsers).set({ username: githubUsername, accessToken, role }).where(eq(sandboxUsers.githubId, githubId))
       } else {
-        const existing = await db.select().from(sandboxDevelopers).where(eq(sandboxDevelopers.githubId, githubId))
-        if (existing.length > 0) {
-          await db.update(sandboxDevelopers).set({ username: githubUsername, accessToken }).where(eq(sandboxDevelopers.githubId, githubId))
-        } else {
-          await db.insert(sandboxDevelopers).values({ githubId, username: githubUsername, accessToken })
-        }
+        await db.insert(sandboxUsers).values({ githubId, username: githubUsername, accessToken, role })
       }
     } catch (dbErr) {
       console.warn('[Sandbox OAuth] DB save skipped (DB unavailable):', dbErr)
