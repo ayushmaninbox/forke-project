@@ -337,4 +337,96 @@ export const authEvents = pgTable('auth_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+// ─── Sandbox Users (GitHub users who import repos or do tasks) ────────────────
 
+export const sandboxUsers = pgTable('sandbox_users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubId: integer('github_id').notNull().unique(),
+  username: text('username').notNull(),
+  accessToken: text('access_token').notNull(),
+  role: text('role').notNull(), // 'owner' | 'developer'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Sandbox Repos (Mirrors of owner repos managed by Forke) ──────────────────
+
+export const sandboxRepos = pgTable('sandbox_repos', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ownerId: uuid('owner_id')
+    .references(() => sandboxUsers.id, { onDelete: 'cascade' })
+    .notNull(),
+  sourceRepo: text('source_repo').notNull(),       // e.g. "owner/original-repo"
+  sandboxRepo: text('sandbox_repo').notNull(),      // e.g. "forke-sandbox/owner-repo-mirror"
+  // Task metadata — filled in via Configure Task form
+  taskTitle: text('task_title'),
+  taskDescription: text('task_description'),
+  frontendStack: text('frontend_stack'),
+  backendStack: text('backend_stack'),
+  allowedPaths: text('allowed_paths'),              // Comma/newline-separated glob patterns
+  restrictedPaths: text('restricted_paths'),        // Comma/newline-separated glob patterns
+  acceptanceCriteria: text('acceptance_criteria'),
+  verificationStatus: text('verification_status').default('verifying').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Developer Forks (Developers who fork sandbox repos) ──────────────────────
+
+export const developerForks = pgTable('developer_forks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  githubUsername: text('github_username').notNull(),
+  sandboxRepo: text('sandbox_repo').notNull(),
+  forkUrl: text('fork_url').notNull(),
+  prUrl: text('pr_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Baseline Snapshots (Deterministic health check of base branch) ───────────
+
+export const baselineSnapshots = pgTable('baseline_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sandboxRepoId: uuid('sandbox_repo_id')
+    .references(() => sandboxRepos.id, { onDelete: 'cascade' })
+    .notNull(),
+  branch: text('branch').notNull(),
+  commitSha: text('commit_sha').notNull(),
+  techStack: text('tech_stack'),      // JSON string of DetectedStack
+  results: text('results'),           // JSON string of 12 deterministic test results
+  aiSummary: text('ai_summary'),      // JSON string of Gemini baseline diagnostic
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+// ─── Code Reviews (Unified automated and AI code reviews) ───────────────────
+
+export const codeReviews = pgTable('code_reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sandboxRepoId: uuid('sandbox_repo_id')
+    .references(() => sandboxRepos.id, { onDelete: 'cascade' })
+    .notNull(),
+  developerForkId: uuid('developer_fork_id')
+    .references(() => developerForks.id, { onDelete: 'cascade' }),
+  prNumber: integer('pr_number'),
+  commitSha: text('commit_sha').notNull(),
+  baselineSnapshotId: uuid('baseline_snapshot_id')
+    .references(() => baselineSnapshots.id, { onDelete: 'set null' }),
+  // Deterministic checks
+  results: text('results'),
+  comparison: text('comparison'),
+  verdict: text('verdict'), // 'pass', 'warn', 'fail'
+  reportHtml: text('report_html'),
+  // AI review metrics
+  aiVerdict: text('ai_verdict'), // 'pass', 'needs_changes', 'high_risk'
+  aiScore: integer('ai_score'), // 0 to 100
+  requirementMatch: text('requirement_match'),
+  aiSummary: text('ai_summary'),
+  aiStrengths: text('ai_strengths'), // JSON array string
+  aiIssues: text('ai_issues'), // JSON array string
+  aiRisks: text('ai_risks'), // JSON array string
+  unauthorizedEdits: text('unauthorized_edits'), // JSON array string
+  resolvedIssues: text('resolved_issues'), // JSON array string
+  resolvedRisks: text('resolved_risks'), // JSON array string
+  riskScore: integer('risk_score'),
+  riskRouting: text('risk_routing'),
+  aiModel: text('ai_model'),
+  tokensUsed: integer('tokens_used'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})

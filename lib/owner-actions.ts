@@ -17,12 +17,16 @@ export async function submitOwnerApplication(formData: any) {
   const userId = session.user.id
 
   try {
-    // 1. Verify user isn't already a developer
+    // 1. Verify user exists and isn't already a developer
     const existingUser = await db.query.users.findFirst({
       where: eq(users.id, userId)
     })
 
-    if (existingUser?.role === 'developer') {
+    if (!existingUser) {
+      return { success: false, error: 'User account not found in database. Please log out and sign in again to recreate your profile.' }
+    }
+
+    if (existingUser.role === 'developer') {
       return { success: false, error: 'Cannot register a Developer account as an Owner.' }
     }
 

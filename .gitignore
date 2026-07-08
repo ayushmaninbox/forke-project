@@ -49,3 +49,9 @@ package-lock.json
 
 # User Uploads
 /public/uploads/
+
+
+git-mirrors/
+
+.config.kiro
+.kiro/

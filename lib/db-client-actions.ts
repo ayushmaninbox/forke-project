@@ -1438,7 +1438,7 @@ async function getTableCsv(tableName: string): Promise<string> {
   const csvRows = [headers.join(',')]
 
   for (const row of rows) {
-    const values = headers.map((header) => {
+    const values = headers.map((header: string) => {
       const val = row[header]
       if (val === null || val === undefined) {
         return '""'
