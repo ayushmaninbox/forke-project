@@ -5,16 +5,19 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const state = searchParams.get('state') || ''
 
+  const decodedState = decodeURIComponent(state)
+  const [role] = decodedState.split(':')
+
   // If state is 'owner' or 'developer', this is the sandbox OAuth flow
-  if (state === 'owner' || state === 'developer') {
-    return handleSandboxCallback(request, state)
+  if (role === 'owner' || role === 'developer') {
+    return handleSandboxCallback(request, decodedState)
   }
 
   // Otherwise delegate to NextAuth's built-in GitHub callback handler
   return handlers.GET(request)
 }
 
-async function handleSandboxCallback(request: NextRequest, role: string) {
+async function handleSandboxCallback(request: NextRequest, state: string) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
@@ -22,9 +25,10 @@ async function handleSandboxCallback(request: NextRequest, role: string) {
     return NextResponse.redirect(new URL('/?error=No+code+received+from+GitHub', request.url))
   }
 
-  const clientId = process.env.GITHUB_CLIENT_ID
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET
-  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI
+  const [role, callbackUrl] = state.split(':')
+  const clientId = process.env.GITHUB_CLIENT_ID || process.env.AUTH_GITHUB_ID
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET || process.env.AUTH_GITHUB_SECRET
+  const redirectUri = process.env.GITHUB_SANDBOX_REDIRECT_URI || `${new URL(request.url).origin}/api/auth/callback/github`
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL('/?error=GitHub+OAuth+not+configured', request.url))
@@ -80,7 +84,7 @@ async function handleSandboxCallback(request: NextRequest, role: string) {
     }
 
     // 4. Redirect to workspace page with session info in URL params
-    const targetPath = role === 'owner' ? '/owner' : '/developer'
+    const targetPath = callbackUrl || (role === 'owner' ? '/owner' : '/developer')
     const targetUrl = new URL(targetPath, request.url)
     targetUrl.searchParams.set('success', 'true')
     targetUrl.searchParams.set('github_id', githubUsername)

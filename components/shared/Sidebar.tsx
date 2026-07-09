@@ -127,7 +127,7 @@ export default function Sidebar({ user, pendingSubmissionsCount = 0, unreadMessa
         {/* Middle: Navigation */}
         <nav className="flex-grow py-4 px-3 space-y-0.5 overflow-y-auto">
           {links.map((link) => {
-            const isActive = pathname === link.href
+            const isActive = pathname === link.href || (link.href === '/tasks' && pathname === '/post-task')
             const Icon = link.icon
             return (
               <Link

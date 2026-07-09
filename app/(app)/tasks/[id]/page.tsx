@@ -38,6 +38,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   if (!taskResult) notFound()
 
   const { task, clientName, claimantName } = taskResult
+  
+  // Prevent developers or guest users from viewing 'processing' tasks
+  if (task.status === 'processing' && currentUser?.id !== task.clientId) {
+    notFound()
+  }
   const isClaimedByMe = task.claimantId === currentUser?.id
   const isClaimedByOther = task.status !== 'open' && !isClaimedByMe
   const isDeveloper = currentUser?.role === 'developer'

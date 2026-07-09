@@ -73,7 +73,7 @@ export default function TaskFeed({ tasks, userLevel, isOwner = false, initialFil
       return task.status === 'open'
     }
     if (filterStatus === 'claimed') {
-      return task.status !== 'open'
+      return task.status !== 'open' && task.status !== 'processing'
     }
     return true
   })

@@ -18,12 +18,23 @@ export async function submitOwnerApplication(formData: any) {
 
   try {
     // 1. Verify user exists and isn't already a developer
-    const existingUser = await db.query.users.findFirst({
+    let existingUser = await db.query.users.findFirst({
       where: eq(users.id, userId)
     })
 
     if (!existingUser) {
-      return { success: false, error: 'User account not found in database. Please log out and sign in again to recreate your profile.' }
+      if (!session.user.email) {
+        return { success: false, error: 'User account not found in database and email is missing from session. Please log out and sign in again.' }
+      }
+      const [insertedUser] = await db.insert(users).values({
+        id: userId,
+        email: session.user.email,
+        name: session.user.name || session.user.email.split('@')[0] || 'User',
+        image: session.user.image || null,
+        role: 'owner',
+        isApproved: false,
+      }).returning()
+      existingUser = insertedUser
     }
 
     if (existingUser.role === 'developer') {

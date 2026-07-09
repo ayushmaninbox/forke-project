@@ -4,11 +4,17 @@ import { auth } from '@/auth'
 import NotificationBell from './NotificationBell'
 import { getUnreadCount } from '@/app/(app)/notifications/actions'
 
-interface TopBarProps {
-  title: string
+interface BreadcrumbItem {
+  label: string
+  href?: string
 }
 
-export default async function TopBar({ title }: TopBarProps) {
+interface TopBarProps {
+  title: string
+  breadcrumbs?: BreadcrumbItem[]
+}
+
+export default async function TopBar({ title, breadcrumbs }: TopBarProps) {
   const session = await auth()
   const user = session?.user as { id: string; name: string; role: 'developer' | 'owner'; image?: string } | undefined
 
@@ -34,6 +40,21 @@ export default async function TopBar({ title }: TopBarProps) {
           Dashboard
         </Link>
         <span className="text-white/20 shrink-0">/</span>
+        {breadcrumbs?.map((crumb, idx) => (
+          <React.Fragment key={idx}>
+            {crumb.href ? (
+              <Link
+                href={crumb.href}
+                className="text-[var(--color-text-muted)] hover:text-white transition-colors shrink-0"
+              >
+                {crumb.label}
+              </Link>
+            ) : (
+              <span className="text-[var(--color-text-muted)] shrink-0">{crumb.label}</span>
+            )}
+            <span className="text-white/20 shrink-0">/</span>
+          </React.Fragment>
+        ))}
         <span className="text-white/90 font-medium truncate">{title}</span>
       </nav>
 

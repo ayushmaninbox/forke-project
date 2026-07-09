@@ -10,21 +10,7 @@ export async function GET(request: Request) {
   const org = searchParams.get('org')
 
   const cookieStore = await cookies()
-  let token = cookieStore.get('forke_access_token')?.value
-
-  if (!token && username) {
-    try {
-      const existing = await db
-        .select()
-        .from(sandboxUsers)
-        .where(and(eq(sandboxUsers.username, username), eq(sandboxUsers.role, 'owner')))
-      if (existing.length > 0) {
-        token = existing[0].accessToken
-      }
-    } catch (dbError) {
-      console.error('Failed to query database for owner token:', dbError)
-    }
-  }
+  const token = cookieStore.get('forke_access_token')?.value
 
   // Auto-heal if token is present in cookie but owner is not registered in the database
   if (token && username) {

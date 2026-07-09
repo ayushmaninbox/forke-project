@@ -1,12 +1,23 @@
 import { db } from '@/lib/db'
 import { tasks, users, submissions, revisionRequests } from '@/lib/db/schema'
-import { eq, and, or, desc, lte, ilike, sql } from 'drizzle-orm'
+import { eq, and, or, ne, desc, lte, ilike, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
-export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: number; q?: string; includeClaimed?: boolean } = {}) {
-  const { skillTags, maxBudget, q, includeClaimed } = filters
+export async function getOpenTasks(filters: { skillTags?: string[]; maxBudget?: number; q?: string; includeClaimed?: boolean; callerRole?: 'owner' | 'developer' } = {}) {
+  const { skillTags, maxBudget, q, includeClaimed, callerRole } = filters
 
-  const conditions = includeClaimed ? [] : [eq(tasks.status, 'open')]
+  const conditions: any[] = []
+  
+  if (includeClaimed) {
+    // Owner view: show all statuses INCLUDING 'processing' (shown faded)
+    // Developer view: exclude 'processing' tasks even when viewing all
+    if (callerRole !== 'owner') {
+      conditions.push(ne(tasks.status, 'processing'))
+    }
+  } else {
+    // Default: only open tasks (never shows processing)
+    conditions.push(eq(tasks.status, 'open'))
+  }
 
   if (maxBudget) {
     conditions.push(lte(tasks.budget, maxBudget))
