@@ -1,8 +1,46 @@
 [
   {
+    "date": "2026-07-09",
+    "label": "jul 9, 2026",
+    "entries": [
+      {
+        "shortHash": "cd452ca",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-09T02:43:48+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Implement secure owner session management with OAuth state validation and server-side logout functionality"
+      },
+      {
+        "shortHash": "c074efc",
+        "author": "Sudhanshub27",
+        "date": "2026-07-09T00:05:50+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Update AI review scoring to use a qualitative, evidence-driven multi-dimensional assessment model"
+      }
+    ]
+  },
+  {
     "date": "2026-07-08",
     "label": "jul 8, 2026",
     "entries": [
+      {
+        "shortHash": "5212825",
+        "author": "Sudhanshub27",
+        "date": "2026-07-08T22:34:03+05:30",
+        "kind": "refactor",
+        "scope": null,
+        "title": "Move BASELINE_SYSTEM_PROMPT to a dedicated file and update scoring logic"
+      },
+      {
+        "shortHash": "c289955",
+        "author": "Sudhanshub27",
+        "date": "2026-07-08T21:53:15+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Add mock Gemini responses and improve review completion checks to verify database entries"
+      },
       {
         "shortHash": "a6c47ab",
         "author": "Ayushman Mohapatra",

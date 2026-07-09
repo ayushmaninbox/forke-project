@@ -286,9 +286,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // User does not exist in the database (e.g. database reset/wiped) -> destroy the JWT session
             return null
           }
-          else{
-            return null
-          }
         } catch (error) {
           console.error('Error fetching fresh user data in JWT:', error)
         }
