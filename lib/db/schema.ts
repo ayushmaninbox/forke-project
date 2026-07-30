@@ -145,6 +145,9 @@ export const tasks = pgTable('tasks', {
   deadline: timestamp('deadline'),
   sandboxRepoId: uuid('sandbox_repo_id').references(() => sandboxRepos.id, { onDelete: 'set null' }),
   sourceRepo: text('source_repo'), // e.g. "owner/original-repo" — stored for reference
+  codespaceName: text('codespace_name'),
+  codespaceUrl: text('codespace_url'),
+  codespaceStatus: text('codespace_status'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

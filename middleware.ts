@@ -23,6 +23,7 @@ function trackVisit(
   sessionId: string,
   attribution: { source: string; medium?: string; campaign?: string; referrer?: string; landingPage?: string },
   userAgent: string | null,
+  country: string | null,
 ) {
   try {
     const url = new URL('/api/track', origin)
@@ -37,6 +38,10 @@ function trackVisit(
         campaign: attribution.campaign,
         referrer: attribution.referrer,
         landingPath: attribution.landingPage,
+        // Geo MUST be resolved here and passed in the body: this is an internal
+        // server-to-server fetch, so the edge geo headers (x-vercel-ip-country)
+        // do not exist on the receiving end of it.
+        country,
       }),
       cache: 'no-store',
       keepalive: true,
@@ -44,6 +49,18 @@ function trackVisit(
   } catch {
     // never throw from tracking
   }
+}
+
+/** Coarse country from the edge geo headers on the *original* request. */
+function getEdgeCountry(req: NextRequest): string | null {
+  const raw =
+    req.headers.get('x-vercel-ip-country') ||
+    req.headers.get('cf-ipcountry') ||
+    null
+  if (!raw) return null
+  const code = raw.trim().toUpperCase()
+  // "XX" is Cloudflare's placeholder for unknown / Tor exits.
+  return /^[A-Z]{2}$/.test(code) && code !== 'XX' ? code : null
 }
 
 // Edge-safe copy of normalizeSource (middleware can't import next/headers from the shared util).
@@ -59,8 +76,63 @@ function cleanField(raw?: string | null): string | undefined {
   return cleaned || undefined
 }
 
+/**
+ * Derive a channel from the referring host when the link carried no ?source=/utm_*.
+ * Without this, every visitor arriving from Google search was recorded as "direct",
+ * which is why organic traffic never appeared as its own channel.
+ */
+function sourceFromReferrerHost(host: string): string {
+  const h = host.toLowerCase()
+  if (/(^|\.)(google|bing|yahoo|yandex|duckduckgo|brave|baidu|ecosia|qwant)\./.test(h)) return 'organic'
+  if (/(^|\.)reddit\.|^out\.reddit\./.test(h)) return 'reddit'
+  if (/(^|\.)(linkedin\.|lnkd\.in)/.test(h)) return 'linkedin'
+  if (/(^|\.)(twitter\.|x\.com|t\.co)/.test(h)) return 'twitter'
+  if (/(^|\.)github\./.test(h)) return 'github'
+  if (/(^|\.)producthunt\./.test(h)) return 'producthunt'
+  if (/(^|\.)(instagram\.|l\.instagram\.)/.test(h)) return 'instagram'
+  if (/(^|\.)(facebook\.|m\.facebook\.|fb\.me)/.test(h)) return 'facebook'
+  if (/(^|\.)(youtube\.|youtu\.be)/.test(h)) return 'youtube'
+  if (/(^|\.)(discord\.|discordapp\.)/.test(h)) return 'discord'
+  if (/(^|\.)(t\.me|telegram\.)/.test(h)) return 'telegram'
+  if (/(^|\.)whatsapp\./.test(h) || h === 'wa.me') return 'whatsapp'
+  return 'referral'
+}
+
+/** Android/iOS in-app webviews send `android-app://com.pkg/` instead of an https referrer. */
+function sourceFromAppReferrer(referrer: string): string | null {
+  const m = referrer.match(/^android-app:\/\/([^/]+)/i)
+  if (!m) return null
+  const pkg = m[1].toLowerCase()
+  if (pkg.includes('reddit')) return 'reddit'
+  if (pkg.includes('linkedin')) return 'linkedin'
+  if (pkg.includes('instagram')) return 'instagram'
+  if (pkg.includes('facebook') || pkg.includes('katana')) return 'facebook'
+  if (pkg.includes('whatsapp')) return 'whatsapp'
+  if (pkg.includes('twitter') || pkg.includes('x.android')) return 'twitter'
+  if (pkg.includes('telegram')) return 'telegram'
+  if (pkg.includes('discord')) return 'discord'
+  if (pkg.includes('gm') || pkg.includes('gmail') || pkg.includes('email')) return 'email'
+  if (pkg.includes('google')) return 'organic'
+  return 'referral'
+}
+
 // Query params we capture then strip from the visible URL.
 const TRACKING_PARAMS = ['source', 'utm_source', 'ref', 'utm_medium', 'utm_campaign']
+
+/**
+ * Internal/authenticated surfaces that must never enter the acquisition funnel.
+ * These are the team's own sessions, not marketing traffic.
+ */
+function isInternalSurface(pathname: string): boolean {
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/submissions') ||
+    pathname.startsWith('/earnings') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/auth-error')
+  )
+}
 
 /**
  * Compute first-touch attribution from the request, or null if there's nothing to record
@@ -79,34 +151,50 @@ function computeAttribution(req: NextRequest) {
 
   const referrerHeader = req.headers.get('referer') || ''
   let externalReferrer: string | undefined
+  let referrerSource: string | undefined
   if (referrerHeader) {
-    try {
-      // Normalize hosts (drop "www.") so forke.space and www.forke.space both count as "self".
-      // Behind Vercel, req.nextUrl.host can be an internal deployment host, so we also trust the
-      // forwarded host header and a known production host to reliably recognize self-referrals.
-      const stripWww = (h: string) => h.replace(/^www\./, '').toLowerCase()
-      const refHost = stripWww(new URL(referrerHeader).host)
-      const selfHosts = new Set(
-        [
-          req.nextUrl.host,
-          req.headers.get('x-forwarded-host') || '',
-          'forke.space',
-        ]
-          .filter(Boolean)
-          .map(stripWww),
-      )
-      if (refHost && !selfHosts.has(refHost)) externalReferrer = referrerHeader.slice(0, 255)
-    } catch {
-      // ignore malformed referrer
+    const appSource = sourceFromAppReferrer(referrerHeader)
+    if (appSource) {
+      externalReferrer = referrerHeader.slice(0, 255)
+      referrerSource = appSource
+    } else {
+      try {
+        // Normalize hosts (drop "www.") so forke.space and www.forke.space both count as "self".
+        // Behind Vercel, req.nextUrl.host can be an internal deployment host, so we also trust the
+        // forwarded host header and a known production host to reliably recognize self-referrals.
+        const stripWww = (h: string) => h.replace(/^www\./, '').toLowerCase()
+        const refHost = stripWww(new URL(referrerHeader).host)
+        // Any *.forke.space host is us — admin/app subdomains must never be counted as
+        // external referrals, or internal navigation pollutes the acquisition funnel.
+        const isSelfHost =
+          refHost === 'forke.space' ||
+          refHost.endsWith('.forke.space') ||
+          new Set(
+            [req.nextUrl.host, req.headers.get('x-forwarded-host') || '']
+              .filter(Boolean)
+              .map(stripWww),
+          ).has(refHost)
+
+        if (refHost && !isSelfHost) {
+          externalReferrer = referrerHeader.slice(0, 255)
+          referrerSource = sourceFromReferrerHost(refHost)
+        }
+      } catch {
+        // ignore malformed referrer
+      }
     }
   }
 
   // Only record when there's a real signal — otherwise let "direct" stay the honest default.
   if (!rawSource && !medium && !campaign && !externalReferrer) return null
 
+  // An explicit ?source=/utm_source wins; otherwise fall back to the channel implied by
+  // the referrer. Previously this always resolved to "direct" when no UTM was present.
+  const source = rawSource ? normalizeSource(rawSource) : referrerSource || 'direct'
+
   return {
-    source: normalizeSource(rawSource),
-    medium: cleanField(medium),
+    source,
+    medium: cleanField(medium) || (!rawSource && referrerSource === 'organic' ? 'organic' : undefined),
     campaign: cleanField(campaign),
     referrer: externalReferrer,
     landingPage: req.nextUrl.pathname.slice(0, 255),
@@ -194,7 +282,15 @@ export default auth(async (req) => {
             sameSite: 'lax',
           })
         }
-        trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
+        if (!isInternalSurface(pathname)) {
+          trackVisit(
+            req.nextUrl.origin,
+            sessionId,
+            attribution,
+            req.headers.get('user-agent'),
+            getEdgeCountry(req),
+          )
+        }
       }
     }
     return redirect
@@ -227,7 +323,15 @@ export default auth(async (req) => {
             sameSite: 'lax',
           })
         }
-        trackVisit(req.nextUrl.origin, sessionId, attribution, req.headers.get('user-agent'))
+        if (!isInternalSurface(pathname)) {
+          trackVisit(
+            req.nextUrl.origin,
+            sessionId,
+            attribution,
+            req.headers.get('user-agent'),
+            getEdgeCountry(req),
+          )
+        }
       }
     }
     // Public, indexable surfaces (blogs/docs/changelog) must stay cacheable so

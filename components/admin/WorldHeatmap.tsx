@@ -20,11 +20,24 @@ const GlobeView = dynamic(() => import('@/components/admin/GlobeView'), {
   ),
 })
 
-const ISO2_TO_NAME: Record<string, string> = {
-  IN: 'India', US: 'United States', GB: 'United Kingdom', DE: 'Germany', AE: 'United Arab Emirates',
-  CA: 'Canada', SG: 'Singapore', FR: 'France', AU: 'Australia', BR: 'Brazil', JP: 'Japan',
-  NL: 'Netherlands', PK: 'Pakistan', NG: 'Nigeria', ID: 'Indonesia', CN: 'China', RU: 'Russia',
-  ZA: 'South Africa', ES: 'Spain', IT: 'Italy', SE: 'Sweden', DK: 'Denmark', CH: 'Switzerland',
+// Full ISO-3166 coverage via the platform's own CLDR data, so every code resolves to a
+// readable name. The previous hardcoded map only listed ~20 countries, which is why codes
+// like KE / TH / LK / MG rendered as raw ISO instead of names.
+const COUNTRY_DISPLAY =
+  typeof Intl !== 'undefined' && 'DisplayNames' in Intl
+    ? new Intl.DisplayNames(['en'], { type: 'region' })
+    : null
+
+export function countryName(iso?: string | null): string {
+  if (!iso) return 'Unknown'
+  const code = iso.trim().toUpperCase()
+  if (!/^[A-Z]{2}$/.test(code)) return 'Unknown'
+  try {
+    // Intl returns the input unchanged for codes it doesn't recognise.
+    return COUNTRY_DISPLAY?.of(code) || code
+  } catch {
+    return code
+  }
 }
 
 const PAGE_SIZES = [10, 20, 50] as const
@@ -77,7 +90,7 @@ export default function WorldHeatmap({ data }: { data: CountryDatum[] }) {
     const withMeta = data
       .map((d) => ({
         iso: d.country,
-        name: ISO2_TO_NAME[d.country] || d.country.toUpperCase(),
+        name: countryName(d.country),
         clicks: d.clicks,
         conversions: d.conversions ?? 0,
         pct: total > 0 ? Math.round((d.clicks / total) * 1000) / 10 : 0,

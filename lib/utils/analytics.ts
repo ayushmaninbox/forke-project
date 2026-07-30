@@ -42,7 +42,14 @@ export function getCountry(headers: Headers): string | null {
 
 // Conservative bot match — keeps obvious crawlers out of the human click charts without
 // trying to be a full bot-detection system.
-const BOT_UA = /bot|crawl|spider|slurp|bing|google|yandex|baidu|duckduck|facebookexternalhit|preview|monitor|curl|wget|python-requests|headless|lighthouse|pingdom|uptime/i
+//
+// Deliberately NOT matching bare "google" / "bing" / "preview": those appear in ordinary
+// human user-agents (Chrome on Android ships "Mobile Safari", iOS in-app webviews identify
+// as "GSA"/Google app, and "preview" shows up in legitimate webviews). Matching them meant
+// real visits were dropped before insert and never recorded at all. Crawlers are matched by
+// their specific bot tokens instead.
+const BOT_UA =
+  /bot\b|bot\/|crawl|spider|slurp|googlebot|adsbot|mediapartners-google|bingbot|yandexbot|baiduspider|duckduckbot|facebookexternalhit|twitterbot|slackbot|discordbot|telegrambot|whatsapp|linkedinbot|embedly|quora link preview|monitor|curl|wget|python-requests|libwww-perl|go-http-client|okhttp|axios|node-fetch|headless|phantomjs|puppeteer|playwright|lighthouse|pingdom|uptime|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|gptbot|ccbot|claudebot|perplexitybot/i
 
 export function isBotUserAgent(ua?: string | null): boolean {
   if (!ua) return true // no UA at all is almost always a script/scanner
