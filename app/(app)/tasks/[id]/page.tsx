@@ -167,21 +167,22 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 </Link>
 
-                {/* Submit Work Form */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-5">
-                   <div className="space-y-2.5">
-                     <h2 className="text-base font-medium text-white">Submit your work</h2>
-                     <ul className="space-y-1.5">
-                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> Source code pushed to GitHub
-                        </li>
-                        <li className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-accent" /> All requirements met
-                        </li>
-                     </ul>
-                   </div>
+                {/* Workspace / Online IDE Link */}
+                <div className="rounded-xl border border-[var(--color-border)] bg-white/[0.018] p-5 space-y-4">
+                  <div className="space-y-2">
+                    <h2 className="text-base font-semibold text-white">Workspace</h2>
+                    <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
+                      Write, compile, and run code directly inside the browser using your dedicated secure environment.
+                    </p>
+                  </div>
 
-                   <SubmitWorkForm taskId={task.id} />
+                  <Link
+                    href={`/ide/${task.id}`}
+                    className="w-full py-3 bg-gradient-to-r from-[#FF7A00] to-[#FF9E40] text-white font-bold rounded-xl text-xs hover:shadow-[0_0_15px_rgba(255,122,0,0.3)] transition-all flex items-center justify-center space-x-2 text-center cursor-pointer font-sans"
+                  >
+                    <span>Open Online IDE</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
            </div>
