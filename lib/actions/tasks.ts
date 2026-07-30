@@ -222,7 +222,7 @@ export async function claimTask(taskId: string) {
 
   revalidatePath('/tasks')
   revalidatePath(`/tasks/${taskId}`)
-  redirect(`/tasks/${taskId}?toast=claimed`)
+  redirect(`/ide/${taskId}`)
 }
 
 export async function submitWork(prevState: SubmitWorkState | null, formData: FormData): Promise<SubmitWorkState> {

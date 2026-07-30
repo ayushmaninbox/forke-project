@@ -5,7 +5,7 @@ import { MousePointerClick, Users, Target, FileText, ExternalLink, RefreshCw } f
 import { getTrackerData, getSignupSourceBreakdown, type TrackerData } from '@/lib/admin-dashboard-actions'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils/cn'
-import WorldHeatmap from '@/components/admin/WorldHeatmap'
+import WorldHeatmap, { countryName } from '@/components/admin/WorldHeatmap'
 
 const RANGES: { label: string; days: number }[] = [
   { label: '7d', days: 7 },
@@ -404,7 +404,7 @@ export default function TrackerPanel() {
                               {r.source}
                             </span>
                             <span className="font-mono text-white/50 truncate flex-grow" title={r.referrer || r.landingPath || ''}>
-                              {r.landingPath || '/'}{r.country ? ` · ${r.country.toUpperCase()}` : ''}
+                              {r.landingPath || '/'}{r.country ? ` · ${countryName(r.country)}` : ''}
                             </span>
                             <span className="font-mono text-[var(--color-text-muted)] shrink-0">{timeAgo(r.createdAt)}</span>
                           </div>
