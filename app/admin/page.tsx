@@ -2215,7 +2215,14 @@ export default function AdminDashboard() {
                                 {sub.source || 'direct'}
                               </span>
                               {(() => {
-                                const detail = a ? [a.medium, a.campaign].filter(Boolean).join(' · ') : ''
+                                // Skip detail parts that just repeat the source badge above
+                                // (e.g. source "organic" with medium "organic").
+                                const shown = (sub.source || 'direct').toLowerCase()
+                                const detail = a
+                                  ? [a.medium, a.campaign]
+                                      .filter((v) => v && String(v).toLowerCase() !== shown)
+                                      .join(' · ')
+                                  : ''
                                 return detail ? (
                                   <p className="text-[10px] text-[var(--color-text-muted)] font-mono mt-1" title={a?.referrer || undefined}>{detail}</p>
                                 ) : null

@@ -1,5 +1,19 @@
 [
   {
+    "date": "2026-07-30",
+    "label": "jul 30, 2026",
+    "entries": [
+      {
+        "shortHash": "55eb8e1",
+        "author": "Ayushman Mohapatra",
+        "date": "2026-07-30T21:52:25+05:30",
+        "kind": "feature",
+        "scope": null,
+        "title": "Enhance tracking with organic referrer detection, geo-resolution in middleware, and codespace schema fields"
+      }
+    ]
+  },
+  {
     "date": "2026-07-09",
     "label": "jul 9, 2026",
     "entries": [
