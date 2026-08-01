@@ -485,91 +485,176 @@ function ActionButtons({ review, prUrl }: {
 }
 
 // ─── Scorecard Breakdown ──────────────────────────────────────────────────────
-function ScorecardBreakdown({ results }: { results: any }) {
-  const breakdown = results?.scoreBreakdown
-  if (!breakdown) return null
+function ScorecardBreakdown({ results, requirementMatch }: { results: any; requirementMatch: number }) {
+  const ts = results?.testScoreResult
+  if (!ts) return null
 
-  const categories = [
-    {
-      key: 'requirementFulfillment',
-      label: 'Requirement Fulfillment',
-      max: 40,
-      data: breakdown.requirementFulfillment,
-      color: 'border-emerald-500/10 hover:border-emerald-500/20 bg-emerald-500/[0.005]',
-      icon: '✓'
-    },
-    {
-      key: 'techStackAdherence',
-      label: 'Tech Stack Adherence',
-      max: 20,
-      data: breakdown.techStackAdherence,
-      color: 'border-blue-500/10 hover:border-blue-500/20 bg-blue-500/[0.005]',
-      icon: '⚓'
-    },
-    {
-      key: 'codeCleanliness',
-      label: 'Code Cleanliness',
-      max: 15,
-      data: breakdown.codeCleanliness,
-      color: 'border-amber-500/10 hover:border-amber-500/20 bg-amber-500/[0.005]',
-      icon: '✦'
-    },
-    {
-      key: 'executionSafety',
-      label: 'Execution Safety',
-      max: 25,
-      data: breakdown.executionSafety,
-      color: 'border-red-500/10 hover:border-red-500/20 bg-red-500/[0.005]',
-      icon: '⚡'
+  const { testScore, rawScore, buildFailed, categories, penalties } = ts
+
+  // Calculate sum of weights for ran categories to determine exact raw loss contribution
+  const possibleWeight = (categories as any[]).reduce((sum, c) => sum + (c.weight || 0), 0)
+
+  // Compute detailed deductions list
+  const categoryDeductions = (categories as any[])
+    .filter(c => c.quality < 1)
+    .map(c => {
+      const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
+      const finalLoss = rawLoss * 0.7
+      const count = typeof c.issuesCount === 'number' ? c.issuesCount : 0
+      return {
+        type: 'test_category',
+        name: String(c.name).replace(/_/g, ' '),
+        detail: `Status is ${c.status.toUpperCase()} (${count} issue${count === 1 ? '' : 's'} detected)`,
+        rawLoss: Math.round(rawLoss * 10) / 10,
+        finalLoss: Math.round(finalLoss * 10) / 10,
+      }
+    })
+
+  const penaltyDeductions = (penalties as any[] || []).map((p: any) => {
+    const rawLoss = p.points
+    const finalLoss = p.points * 0.7
+    return {
+      type: 'penalty',
+      name: p.reason,
+      detail: 'Deterministic policy penalty',
+      rawLoss: Math.round(rawLoss * 10) / 10,
+      finalLoss: Math.round(finalLoss * 10) / 10,
     }
-  ]
+  })
+
+  const reqDeductions = []
+  if (requirementMatch < 1.0) {
+    const finalLoss = (1 - requirementMatch) * 30
+    reqDeductions.push({
+      type: 'requirement',
+      name: 'Requirement Fulfillment',
+      detail: `AI assessed requirement completion at ${Math.round(requirementMatch * 100)}%`,
+      rawLoss: 0,
+      finalLoss: Math.round(finalLoss * 10) / 10,
+    })
+  }
+
+  const allDeductions = [...categoryDeductions, ...penaltyDeductions, ...reqDeductions]
+
+  // Build failure alert
+  const buildAlert = buildFailed ? (
+    <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3">
+      <span className="text-red-400 text-[18px] leading-none shrink-0 mt-0.5">🔴</span>
+      <div>
+        <p className="text-[12px] font-bold text-red-400">Build Failure Detected</p>
+        <p className="text-[11px] text-red-400/70 mt-0.5">Code does not compile. Execution score is capped regardless of other results.</p>
+      </div>
+    </div>
+  ) : null
 
   return (
-    <div className="space-y-2.5">
-      <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Scorecard Rubric & Deductions</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {categories.map(c => {
-          const score = c.data?.score ?? c.max
-          const deductions = c.data?.deductions ?? []
-          const hasDeductions = deductions.length > 0
-          const lostPoints = deductions.reduce((sum: number, d: any) => sum + (d.points || 0), 0)
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Execution Score Breakdown</p>
+        <div className="text-right">
+          <span className="text-[11px] text-zinc-400">Test Quality: </span>
+          <span className="text-[13px] font-black text-white">{testScore}</span>
+          <span className="text-[10px] text-zinc-500"> / 100</span>
+          {rawScore !== testScore && (
+            <span className="text-[10px] text-zinc-600 ml-1">(raw {rawScore})</span>
+          )}
+        </div>
+      </div>
 
-          return (
-            <div key={c.key} className={cn("rounded-xl border p-3.5 transition-all flex flex-col justify-between", c.color)}>
-              <div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[12px] opacity-75">{c.icon}</span>
-                    <span className="text-[11px] font-bold text-white/90">{c.label}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className={cn("text-[12px] font-black", lostPoints > 0 ? "text-amber-400" : "text-emerald-400")}>
-                      {score}
-                    </span>
-                    <span className="text-[9px] text-[var(--color-text-muted)]"> / {c.max}</span>
-                  </div>
-                </div>
+      {buildAlert}
 
-                {hasDeductions ? (
-                  <div className="mt-2.5 pl-3 border-l border-zinc-800 space-y-1.5">
-                    {deductions.map((d: any, idx: number) => (
-                      <div key={idx} className="text-[11px] leading-relaxed">
-                        <div className="flex items-start gap-2">
-                          <span className="text-red-400 font-bold shrink-0">-{d.points} pts</span>
-                          <span className="text-[var(--color-text-muted)]">{d.reason}</span>
-                        </div>
+      <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
+        <table className="w-full text-[11px]">
+          <thead>
+            <tr className="border-b border-[var(--color-border)] bg-white/[0.02]">
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Category</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-20">Status</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider w-16">Weight</th>
+              <th className="text-left px-3 py-2 text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wider">Quality</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(categories as any[]).map((c: any, i: number) => {
+              const statusColor = c.status === 'pass'
+                ? 'text-emerald-400'
+                : c.status === 'fail'
+                  ? 'text-red-400'
+                  : 'text-amber-400'
+              const barColor = c.status === 'pass' ? 'bg-emerald-500' : c.status === 'fail' ? 'bg-red-500' : 'bg-amber-500'
+              const qualityPct = Math.round(c.quality * 100)
+
+              return (
+                <tr key={i} className="border-b border-[var(--color-border)] last:border-0">
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      {c.isBlocking && (
+                        <span className="text-[8px] text-zinc-500 font-bold border border-zinc-700 rounded px-1">BLOCKING</span>
+                      )}
+                      <span className="font-medium text-white capitalize">{String(c.name).replace(/_/g, ' ')}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className={cn('text-[10px] font-bold uppercase', statusColor)}>{c.status}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-[var(--color-text-muted)] font-mono">
+                    ×{c.weight}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/10 min-w-[60px]">
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-500', barColor)}
+                          style={{ width: `${qualityPct}%` }}
+                        />
                       </div>
-                    ))}
+                      <span className={cn('text-[10px] font-medium w-8 text-right shrink-0', statusColor)}>
+                        {qualityPct}%
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Score Deductions Audit Trail */}
+      <div className="space-y-2">
+        <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Score Deductions (Final Score Impact)</p>
+        {allDeductions.length > 0 ? (
+          <div className="space-y-1.5">
+            {allDeductions.map((d, idx) => (
+              <div key={idx} className="flex items-start justify-between gap-4 p-3 rounded-lg border border-red-500/10 bg-red-500/[0.015] hover:border-red-500/15 transition-all">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-extrabold uppercase px-1 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shrink-0">
+                      {d.type.replace('_', ' ')}
+                    </span>
+                    <p className="text-[11px] font-semibold text-white/95 capitalize truncate">{d.name}</p>
                   </div>
-                ) : (
-                  <div className="mt-2 pl-3 text-[10px] text-zinc-500 italic">
-                    No deductions. Perfect score!
-                  </div>
-                )}
+                  <p className="text-[10px] text-zinc-500 mt-0.5 leading-normal">{d.detail}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[12px] font-black text-red-400">−{d.finalLoss} pts</p>
+                  {d.type === 'test_category' && d.rawLoss > 0 && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">−{d.rawLoss} raw quality pts (scaled ×0.7)</p>
+                  )}
+                  {d.type === 'penalty' && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">penalty points (scaled ×0.7)</p>
+                  )}
+                  {d.type === 'requirement' && (
+                    <p className="text-[9px] text-zinc-600 mt-0.5">requirement score impact (scaled ×0.3)</p>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            ))}
+          </div>
+        ) : (
+          <div className="p-3.5 rounded-lg border border-emerald-500/10 bg-emerald-500/[0.01] text-[11px] text-emerald-400/80 italic">
+            No deductions. Perfect score!
+          </div>
+        )}
       </div>
     </div>
   )
@@ -608,7 +693,7 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
       <MetricsStrip review={review} />
 
       {/* Scorecard breakdown */}
-      <ScorecardBreakdown results={review.results} />
+      <ScorecardBreakdown results={review.results} requirementMatch={review.requirementMatch} />
 
       {/* Test suite cards */}
       {hasResults && <TestSuiteCards results={review.results!} />}
@@ -624,3 +709,4 @@ export default function AIReviewReport({ review, title, prUrl }: AIReviewReportP
     </div>
   )
 }
+

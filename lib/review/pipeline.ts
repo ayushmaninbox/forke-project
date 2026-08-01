@@ -12,7 +12,7 @@ import {
 } from './scopeValidator'
 import { buildReviewContext, truncateDiff, PreviousReviewData } from './contextBuilder'
 import { runAIReview } from './gemini'
-import { calculateFinalScore } from './scoreEngine'
+import { calculateFinalScore, computeTestScore, TestScoreResult } from './scoreEngine'
 import { updateCommitStatus } from '../github/commitStatus'
 import { fetchPRFiles, fetchRepoTree, buildGitDiff } from '../github/prFetcher'
 import { registerReviewJob, unregisterReviewJob } from '../activeReviews'
@@ -176,7 +176,17 @@ export async function runFullPRPipeline(params: PipelineParams) {
     addLog('SUCCESS', 'Layer 1 deterministic tests complete.')
     updateProgress(75)
 
-    // H. Execute Baseline Comparison
+    // Compute raw deterministic test score from real runner results
+    const rawTestScoreResult: TestScoreResult = computeTestScore(
+      deterministicResults.results,
+      unauthorizedFiles,
+      secretFindings.length,
+      submissionValidation.valid
+    )
+
+    let testScoreResult = rawTestScoreResult
+
+    // H. Execute Baseline Comparison & Score Adjustment
     addLog('CHECKING', 'Comparing PR verification results against repository baseline...')
     let comparisonReport = null
     let finalDeterministicVerdict: 'pass' | 'warn' | 'fail' = 'pass'
@@ -185,6 +195,62 @@ export async function runFullPRPipeline(params: PipelineParams) {
     if (baseline && baseline.results) {
       try {
         const parsedBaselineResults = JSON.parse(baseline.results)
+        
+        // Retrieve or dynamically calculate baseline score result
+        let baselineScoreResult = parsedBaselineResults.testScoreResult
+        if (!baselineScoreResult) {
+          baselineScoreResult = computeTestScore(parsedBaselineResults, [], 0, true)
+        }
+
+        // Adjust category qualities to only penalize for new regressions
+        const adjustedCategories = rawTestScoreResult.categories.map(prCat => {
+          const baseCat = baselineScoreResult.categories.find((c: any) => c.name === prCat.name)
+          if (!baseCat) {
+            // Category wasn't in baseline, any quality less than 1.0 is a regression
+            return prCat
+          }
+
+          if (prCat.quality < baseCat.quality) {
+            // Regression detected! Quality drop is the delta of base quality - PR quality
+            const regressionQuality = 1.0 - (baseCat.quality - prCat.quality)
+            return {
+              ...prCat,
+              quality: regressionQuality,
+              contribution: Math.round(prCat.weight * regressionQuality * 100) / 100
+            }
+          }
+
+          // No regression: treat as pass (100% quality) to prevent point deduction
+          return {
+            ...prCat,
+            status: 'pass',
+            quality: 1.0,
+            contribution: prCat.weight
+          }
+        })
+
+        // Recalculate score based on adjusted category qualities
+        let earned = 0
+        let possible = 0
+        for (const c of adjustedCategories) {
+          earned += c.contribution
+          possible += c.weight
+        }
+        let adjustedRawScore = possible > 0 ? Math.round((earned / possible) * 100) : 100
+        if (rawTestScoreResult.buildFailed) {
+          adjustedRawScore = Math.min(adjustedRawScore, 40)
+        }
+
+        const totalPenalty = rawTestScoreResult.penalties.reduce((sum, p) => sum + p.points, 0)
+        const adjustedTestScore = Math.max(0, Math.min(100, adjustedRawScore - totalPenalty))
+
+        testScoreResult = {
+          ...rawTestScoreResult,
+          rawScore: adjustedRawScore,
+          testScore: adjustedTestScore,
+          categories: adjustedCategories
+        }
+
         comparisonReport = compareToBaseline(parsedBaselineResults, deterministicResults.results)
         
         // Map comparison findings to verdict
@@ -270,7 +336,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
       addLog('WARN', `Error reading history context: ${e}`)
     }
 
-    // Build LLM prompts
+    // Build LLM prompts (pass test score table so AI can reference it in narrative)
     const { systemPrompt, userMessage } = buildReviewContext(
       {
         prNumber,
@@ -279,7 +345,8 @@ export async function runFullPRPipeline(params: PipelineParams) {
         developerUsername,
         changedFiles: changedFileNames,
         gitDiff,
-        repoStructure
+        repoStructure,
+        testScoreResult,
       },
       {
         taskTitle: sandbox.taskTitle || 'Coding Task',
@@ -340,8 +407,8 @@ export async function runFullPRPipeline(params: PipelineParams) {
       })
     }
 
-    // Run the scoring algorithms
-    const { finalScore, finalVerdict } = calculateFinalScore(aiResult, unauthorizedFiles)
+    // Run the scoring algorithms — deterministic test score + AI requirement_match
+    const { finalScore, finalVerdict } = calculateFinalScore(aiResult, unauthorizedFiles, testScoreResult)
 
     // Compute composite risk score (Layer 4)
     // 0-100 where higher is riskier
@@ -376,7 +443,7 @@ export async function runFullPRPipeline(params: PipelineParams) {
       // Deterministic Results
       results: JSON.stringify({
         ...deterministicResults,
-        scoreBreakdown: aiResult.scoreBreakdown
+        testScoreResult, // deterministic weight-based score breakdown
       }),
       comparison: comparisonReport ? JSON.stringify(comparisonReport) : '{}',
       verdict: finalDeterministicVerdict,

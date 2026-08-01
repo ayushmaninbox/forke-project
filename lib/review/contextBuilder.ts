@@ -1,4 +1,5 @@
 import { REVIEW_SYSTEM_PROMPT } from './prompt'
+import type { TestScoreResult } from './scoreEngine'
 /**
  * PR Context Builder
  * Assembles the full structured prompt payload to send to the AI model.
@@ -21,7 +22,9 @@ export interface PRData {
   developerUsername: string
   changedFiles: string[]
   gitDiff: string
-  repoStructure?: string // optional directory tree
+  repoStructure?: string
+  /** Pre-computed deterministic test score — AI does NOT change these numbers */
+  testScoreResult?: TestScoreResult
 }
 
 export interface PreviousReviewData {
@@ -119,6 +122,50 @@ Check these previous issues and risks against the current git diff to see which 
 `
   }
 
+  // Build the test score table for the AI (so it can reference real data in its narrative)
+  let testScoreSection = ''
+  if (prData.testScoreResult) {
+    const { testScore, rawScore, buildFailed, categories, penalties } = prData.testScoreResult
+
+    const header = `| ${'Category'.padEnd(20)} | Status | Weight | Quality | Earned  | Max  |`
+    const divider = `|${''.padEnd(22, '-')}|--------|--------|---------|---------|------|`
+    const rows = categories.map(c => {
+      const name = c.name.replace(/_/g, ' ').padEnd(20)
+      const status = c.status.toUpperCase().padEnd(6)
+      const weight = String(c.weight).padEnd(6)
+      const quality = `${Math.round(c.quality * 100)}%`.padEnd(7)
+      const earned = String(c.contribution).padEnd(7)
+      const max = String(c.maxContribution)
+      return `| ${name} | ${status} | ${weight} | ${quality} | ${earned} | ${max}  |`
+    }).join('\n')
+
+    const penaltyText = penalties.length > 0
+      ? '\nPENALTIES:\n' + penalties.map(p => `  - ${p.reason}: -${p.points} pts`).join('\n')
+      : ''
+
+    const buildAlert = buildFailed
+      ? '\n⚠️  BUILD FAILURE DETECTED — execution score is capped. Code does not compile.\n'
+      : ''
+
+    testScoreSection = `
+=== DETERMINISTIC EXECUTION SCORE (computed by Forke engine — do NOT modify these numbers) ===
+${buildAlert}
+Execution Quality Score: ${testScore} / 100 (raw: ${rawScore}/100 before penalties)
+Score formula: (sum of weight×quality for ran categories) / (sum of weights) × 100
+Skipped categories are fully excluded from both numerator and denominator.
+
+${header}
+${divider}
+${rows}
+${penaltyText}
+
+The remaining 30% of the FINAL SCORE comes from your REQUIREMENT FULFILLMENT assessment.
+Output "requirement_match" as a float 0.0–1.0 based on how well the developer met the task.
+Final score = round(${testScore} × 0.7 + requirement_match × 100 × 0.3)
+DO NOT output a score field — only output requirement_match and the narrative fields.
+`
+  }
+
   const userMessage = `=== TASK DEFINITION ===
 Title: ${task.taskTitle}
 Description: ${task.taskDescription}
@@ -131,7 +178,7 @@ ${acceptanceCriteriaSection}
 ${allowedPathsSection}
 ${restrictedPathsSection}
 
-${previousReviewSection ? `\n${previousReviewSection}\n` : ''}=== PULL REQUEST DETAILS ===
+${testScoreSection}${previousReviewSection ? `\n${previousReviewSection}\n` : ''}=== PULL REQUEST DETAILS ===
 PR #${prData.prNumber}: "${prData.prTitle}"
 Developer: ${prData.developerUsername}
 PR Description: ${prData.prDescription || '(no description provided)'}
@@ -145,7 +192,7 @@ ${repoStructureSection}
 ${prData.gitDiff || '(no diff available)'}
 \`\`\`
 
-Please analyze the above PR against the task requirements and previous feedback, and provide your structured JSON review.`
+Please analyze the above PR. Output only requirement_match (0.0-1.0), summary, strengths, issues, risks, resolved_issues, resolved_risks, and unauthorized_file_edits. Do NOT output a score value.`
 
   return { systemPrompt, userMessage }
 }

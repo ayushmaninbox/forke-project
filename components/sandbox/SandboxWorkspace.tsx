@@ -2928,7 +2928,28 @@ export default function SandboxHome({
             {/* Report Content */}
             <div className="flex-1 w-full overflow-y-auto custom-scrollbar select-text text-left mb-4 pr-1.5 space-y-6">
               {/* Overview grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {/* Score */}
+                <div className="app-panel p-4">
+                  <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Baseline Score</span>
+                  {(() => {
+                    const ts = selectedBaselineReport.results?.testScoreResult
+                    if (!ts) {
+                      return <span className="text-zinc-500 font-mono font-bold text-sm block">N/A</span>
+                    }
+                    const score = ts.testScore
+                    return (
+                      <>
+                        <span className={`font-black text-sm block ${score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-amber-400' : 'text-red-400'}`}>
+                          {score} / 100
+                        </span>
+                        <span className="text-zinc-500 font-medium text-[10px] block">
+                          execution base quality
+                        </span>
+                      </>
+                    )
+                  })()}
+                </div>
                 <div className="app-panel p-4">
                   <span className="text-zinc-500 block text-[9px] font-semibold uppercase tracking-widest mb-1.5">Tech Stack</span>
                   <div className="space-y-1">
@@ -3164,16 +3185,113 @@ export default function SandboxHome({
                         )
                       })()
                     ) : (
-                      <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
-                        <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-                        </svg>
-                        <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Category Selected</h4>
-                        <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
-                          Select one of the 12 deterministic test categories on the left to review the raw system outputs and issues found.
-                        </p>
-                      </div>
-                    )}
+                      (() => {
+                        const ts = selectedBaselineReport.results?.testScoreResult
+                        if (!ts) {
+                          return (
+                            <div className="app-empty p-12 text-center flex flex-col items-center justify-center gap-2.5 h-full">
+                              <svg className="w-10 h-10 text-[var(--color-text-muted)] mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                              </svg>
+                              <h4 className="font-bold text-zinc-500 text-xs tracking-wide uppercase">No Score Available</h4>
+                              <p className="text-zinc-600 text-[10px] max-w-xs leading-relaxed font-semibold">
+                                Select a category on the left to view logs, or generate a new baseline snapshot to compute starting quality scores.
+                              </p>
+                            </div>
+                          )
+                        }
+
+                        const { testScore, rawScore, buildFailed, categories } = ts
+                        const possibleWeight = (categories as any[]).reduce((sum, c) => sum + (c.weight || 0), 0)
+
+                        const categoryDeductions = (categories as any[])
+                          .filter(c => c.quality < 1)
+                          .map(c => {
+                            const rawLoss = possibleWeight > 0 ? (c.weight * (1 - c.quality) / possibleWeight) * 100 : 0
+                            const count = typeof c.issuesCount === 'number' ? c.issuesCount : 0
+                            return {
+                              name: String(c.name).replace(/_/g, ' '),
+                              detail: `Status is ${c.status.toUpperCase()} (${count} issue${count === 1 ? '' : 's'} detected)`,
+                              rawLoss: Math.round(rawLoss * 10) / 10,
+                            }
+                          })
+
+                        return (
+                          <div className="flex flex-col gap-3 h-full overflow-y-auto pr-1.5 custom-scrollbar text-left">
+                            <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-1">
+                              <span className="font-black uppercase tracking-widest text-zinc-200 text-xs">
+                                Baseline Scorecard Breakdown
+                              </span>
+                              <div className="text-right">
+                                <span className="text-[10px] text-zinc-400 font-semibold">Score: </span>
+                                <span className="text-sm font-black text-amber-400">{testScore}</span>
+                                <span className="text-[10px] text-zinc-500"> / 100</span>
+                              </div>
+                            </div>
+
+                            {buildFailed && (
+                              <div className="flex items-start gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[10px]">
+                                <span className="text-red-400 leading-none">🔴</span>
+                                <div>
+                                  <p className="font-bold text-red-400">Baseline Build Failure</p>
+                                  <p className="text-red-400/70 mt-0.5">The repository code does not compile in its baseline state.</p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="rounded-xl border border-zinc-900 bg-white/[0.01] overflow-hidden text-[10px]">
+                              <table className="w-full">
+                                <thead>
+                                  <tr className="border-b border-zinc-900 bg-white/[0.02]">
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider">Category</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-16">Status</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Weight</th>
+                                    <th className="text-left px-3 py-1.5 font-medium text-zinc-500 uppercase tracking-wider w-12">Quality</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(categories as any[]).map((c: any, i: number) => {
+                                    const statusColor = c.status === 'pass'
+                                      ? 'text-emerald-400'
+                                      : c.status === 'fail'
+                                      ? 'text-red-400'
+                                      : 'text-amber-400'
+                                    return (
+                                      <tr key={i} className="border-b border-zinc-900/60 last:border-0 hover:bg-white/[0.01]">
+                                        <td className="px-3 py-2 font-bold text-zinc-300 capitalize">{c.name.replace(/_/g, ' ')}</td>
+                                        <td className={`px-3 py-2 font-mono ${statusColor}`}>{c.status.toUpperCase()}</td>
+                                        <td className="px-3 py-2 text-zinc-400 font-mono">{c.weight}</td>
+                                        <td className="px-3 py-2 text-zinc-400 font-mono">{Math.round(c.quality * 100)}%</td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {categoryDeductions.length > 0 && (
+                              <div className="space-y-2 mt-2">
+                                <span className="font-bold text-[9px] text-zinc-500 uppercase tracking-widest block">
+                                  Deduction Details
+                                </span>
+                                <div className="space-y-1.5">
+                                  {categoryDeductions.map((d, i) => (
+                                    <div key={i} className="flex items-start justify-between p-2 rounded-lg border border-zinc-900 bg-white/[0.01]">
+                                      <div className="text-[10px]">
+                                        <p className="font-bold text-zinc-300 capitalize">{d.name}</p>
+                                        <p className="text-[9px] text-zinc-500 font-medium mt-0.5">{d.detail}</p>
+                                      </div>
+                                      <div className="text-right text-[10px] shrink-0 font-bold text-red-400/90 ml-3">
+                                        -{d.rawLoss} pts (raw)
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )})()
+                      )}
                   </div>
                 </div>
               )}
